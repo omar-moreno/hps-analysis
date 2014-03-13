@@ -1,13 +1,25 @@
-# Compiled Object files
+# Compiled sources
+bin/
+.obj/
+lib/
+*.o
 *.slo
 *.lo
 *.o
-
-# Compiled Dynamic libraries
 *.so
-*.dylib
-
-# Compiled Static libraries
 *.lai
 *.la
 *.a
+*.dylib
+
+# Build directory
+build/
+
+# Temp files
+*~
+[._]*.s[a-w][a-z]
+[._]s[a-w][a-z]
+
+# Eclipse project description file
+.project
+
