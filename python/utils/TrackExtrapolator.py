@@ -6,7 +6,7 @@
 
 import math
 
-class TrackExtrapolator:
+class TrackExtrapolator(object):
 
     d0_index = 0
     phi0_index = 1
@@ -24,19 +24,19 @@ class TrackExtrapolator:
 
     def get_phi0(self):
         
-        return self.track_parameters[self.phi0_index]
+        return self.track_parameters[TrackExtrapolator.phi0_index]
 
     def get_omega(self):
         
-        return self.track_parameters[self.omega_index]
+        return self.track_parameters[TrackExtrapolator.omega_index]
 
     def get_Z0(self):
         
-        return self.track_parameters[self.z0_index]
+        return self.track_parameters[TrackExtrapolator.z0_index]
 
     def get_tanLambda(self):
         
-        return self.track_parameters[self.tanlambda_index]
+        return self.track_parameters[TrackExtrapolator.tanlambda_index]
 
     def get_x0(self): 
         
@@ -52,11 +52,11 @@ class TrackExtrapolator:
 
     def get_xc(self):
         
-        return (self.getR() - self.get_d0())*math.sin(self.get_phi0())
+        return (self.get_R() - self.get_d0())*math.sin(self.get_phi0())
 
     def get_yc(self):
         
-        return -(self.getR() - self.get_d0())*math.cos(self.get_phi0())
+        return -(self.get_R() - self.get_d0())*math.cos(self.get_phi0())
 
     def get_path_to_x_plane(self, x):
         
@@ -80,10 +80,10 @@ class TrackExtrapolator:
     def get_point_on_helix(self, path_length):
         
         r = self.get_R()
-        phi = self.get_phi0() - path_length/r
+        phi = self.get_phi0() - (path_length/r)
 
         x = self.get_xc() - r*math.sin(phi)
-        y = self.get_yc() - r*math.cos(phi)
+        y = self.get_yc() + r*math.cos(phi)
         z = self.get_Z0() + path_length*self.get_tanLambda()
 
         return x, y, z
