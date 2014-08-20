@@ -40,7 +40,11 @@ class HpsTrackExtrapolator(TrackExtrapolator):
 		else: 
 
 			position = self.extrapolate_helix_to_x_plane(z)
-			return position
+			lab_position = [0]*3
+			lab_position[0] = position[1]
+			lab_position[1] = position[2]
+			lab_position[2] = position[0]
+			return lab_position
 
 		phi = self.get_phi(position)
 
