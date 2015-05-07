@@ -29,6 +29,11 @@ find_package(LibXml2 REQUIRED)
 # include the xml2 headers
 include_directories(${LIBXML2_INCLUDE_DIRS})
 
+set(UTILS_HDR_DIR "${HPS_ANALYSIS_SOURCE_DIR}/include/utils")
+include_directories("${UTILS_HDR_DIR}")
+
+add_subdirectory("${HPS_ANALYSIS_SOURCE_DIR}/src/utils")
+
 # Include the analysis headers
 set(ANALYSIS_HDR_DIR "${HPS_ANALYSIS_SOURCE_DIR}/include/analysis")
 include_directories("${ANALYSIS_HDR_DIR}")
