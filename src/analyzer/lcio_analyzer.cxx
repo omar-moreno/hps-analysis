@@ -17,7 +17,7 @@
 #include <EVENT/LCEvent.h>
 
 #include <LcioAnalysis.h>
-#include <SvtTimingInAnalysis.h>
+//#include <SvtTimingInAnalysis.h>
 
 using namespace std;
 
@@ -69,7 +69,7 @@ int main(int argc, char** argv) {
 	list<LcioAnalysis*> analyses;
 
 	// All all analyses that are to be run.
-	analyses.push_back(new SvtTimingInAnalysis());
+	//analyses.push_back(new SvtTimingInAnalysis());
 
 	// Initialize all analyses
 	for (list<LcioAnalysis*>::iterator analysis = analyses.begin(); 

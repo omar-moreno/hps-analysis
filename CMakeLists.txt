@@ -6,8 +6,8 @@ cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 project(HPS_ANALYSIS)
 
 # Set the current version
-set(HPS_DST_VERSION_MAJOR 1)
-set(HPS_DST_VERSION_MINOR 0)
+set(HPS_ANALYSIS_VERSION_MAJOR 1)
+set(HPS_ANALYSIS_VERSION_MINOR 0)
 
 # Set the output directories of the binaries, static and shared libraries
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${HPS_ANALYSIS_BINARY_DIR}/bin")
@@ -23,6 +23,9 @@ find_package(ROOT REQUIRED)
 # Include the ROOT headers
 include_directories(${ROOT_INCLUDE_DIRS})
 
+# Include the LCIO headers
+include_directories("$ENV{LCIO}/include")
+
 # Find LibXml2
 find_package(LibXml2 REQUIRED)
 
@@ -35,10 +38,13 @@ include_directories("${UTILS_HDR_DIR}")
 add_subdirectory("${HPS_ANALYSIS_SOURCE_DIR}/src/utils")
 
 # Include the analysis headers
-set(ANALYSIS_HDR_DIR "${HPS_ANALYSIS_SOURCE_DIR}/include/analysis")
+set(ANALYSIS_HDR_DIR "${HPS_ANALYSIS_SOURCE_DIR}/include/analyses")
 include_directories("${ANALYSIS_HDR_DIR}")
 
+# Add the analyzer directory
+add_subdirectory("${HPS_ANALYSIS_SOURCE_DIR}/src/analyzer")
+
 # Add the analysis subdirectory to the build
-add_subdirectory("${HPS_ANALYSIS_SOURCE_DIR}/src/analysis")
+#add_subdirectory("${HPS_ANALYSIS_SOURCE_DIR}/src/analyses")
 
 
