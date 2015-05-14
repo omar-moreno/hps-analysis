@@ -11,10 +11,26 @@
 #ifndef __TRACK_ANALYSIS_H__
 #define __TRACK_ANALYSIS_H__
 
+//------------------//
+//--- C++ StdLib ---//
+//------------------//
+#include <unordered_map>
+
+//------------//
+//--- ROOT ---//
+//------------//
+#include <TCanvas.h>
+#include <TH1F.h>
+
 //--------------------//
 //--- HPS Analysis ---//
 //--------------------//
 #include <HpsAnalysis.h>
+
+//---------------//
+//--- HPS DST ---//
+//---------------//
+#include <SvtTrack.h>
 
 class TrackAnalysis : public HpsAnalysis { 
 
@@ -59,7 +75,15 @@ class TrackAnalysis : public HpsAnalysis {
          *  @return String representation of this analysis.
          */
         std::string toString(); 
-    
+   
+    private:
+
+        SvtTrack* track;
+
+        TCanvas* canvas; 
+
+        std::unordered_map<std::string, TH1F*> track_parameter_plots;
+
 }; // TrackAnalysis
 
 #endif // __TRACK_ANALYSIS_H__
