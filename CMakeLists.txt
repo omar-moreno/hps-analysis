@@ -17,6 +17,9 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${HPS_ANALYSIS_BINARY_DIR}/lib")
 # Set the path to additional CMake modules
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules")
 
+# Include the HpsEvent headers
+include_directories("$ENV{HPS_DST_HOME}/include/hps_event")
+
 # Find ROOT
 find_package(ROOT REQUIRED)
 
@@ -45,6 +48,6 @@ include_directories("${ANALYSIS_HDR_DIR}")
 add_subdirectory("${HPS_ANALYSIS_SOURCE_DIR}/src/analyzer")
 
 # Add the analysis subdirectory to the build
-#add_subdirectory("${HPS_ANALYSIS_SOURCE_DIR}/src/analyses")
+add_subdirectory("${HPS_ANALYSIS_SOURCE_DIR}/src/analyses")
 
 
