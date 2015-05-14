@@ -14,11 +14,14 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${HPS_ANALYSIS_BINARY_DIR}/bin")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${HPS_ANALYSIS_BINARY_DIR}/lib")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${HPS_ANALYSIS_BINARY_DIR}/lib")
 
+# Set additional compiler flags
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+
 # Set the path to additional CMake modules
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules")
 
 # Include the HpsEvent headers
-include_directories("$ENV{HPS_DST_HOME}/include/hps_event")
+include_directories("$ENV{HPS_DST_PATH}/include/hps_event")
 
 # Find ROOT
 find_package(ROOT REQUIRED)
