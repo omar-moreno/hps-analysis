@@ -108,6 +108,8 @@ int main(int argc, char **argv) {
     // Container to hold all analyses
     list<HpsAnalysis*> analyses;
 
+    analyses.push_back(new TrackAnalysis());
+
     // Initialize all analyses
     for (list<HpsAnalysis*>::iterator analysis = analyses.begin();
             analysis != analyses.end(); ++analysis) { 
