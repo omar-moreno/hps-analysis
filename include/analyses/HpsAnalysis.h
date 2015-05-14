@@ -28,7 +28,7 @@ class HpsAnalysis {
         /**
          *  Destructor
          */
-        virtual ~Analysis() {};
+        virtual ~HpsAnalysis() {};
 
         /**
          *  Method used to initialize an HPS analysis.
