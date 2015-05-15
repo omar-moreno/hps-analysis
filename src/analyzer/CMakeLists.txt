@@ -9,6 +9,7 @@ target_link_libraries(hps_analysis
     ${LIBXML2_LIBRARIES}
     ${HPS_EVENT_LIBRARY}
     TrackAnalysis
+    PairsAnalysis
 )
 
 # Find the necessary LCIO libraries

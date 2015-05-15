@@ -23,6 +23,7 @@
 //--- HPS Analysis ---//
 //--------------------//
 #include <TrackAnalysis.h>
+#include <PairsAnalysis.h>
 
 using namespace std; 
 
@@ -108,7 +109,8 @@ int main(int argc, char **argv) {
     // Container to hold all analyses
     list<HpsAnalysis*> analyses;
 
-    analyses.push_back(new TrackAnalysis());
+    //analyses.push_back(new TrackAnalysis());
+    analyses.push_back(new PairsAnalysis());
 
     // Initialize all analyses
     for (list<HpsAnalysis*>::iterator analysis = analyses.begin();
