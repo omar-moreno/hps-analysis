@@ -21,6 +21,7 @@
 //------------//
 #include <TCanvas.h>
 #include <TH1F.h>
+#include <TFile.h>
 
 //--------------------//
 //--- HPS Analysis ---//
@@ -81,8 +82,16 @@ class TrackAnalysis : public HpsAnalysis {
         SvtTrack* track;
 
         TCanvas* canvas; 
+        
+        // ROOT output_file
+        TFile* output_file; 
 
         std::unordered_map<std::string, TH1F*> track_parameter_plots;
+        std::unordered_map<std::string, TH1F*> track_plots;
+
+        // Name of the class
+		std::string class_name;
+
 
 }; // TrackAnalysis
 
