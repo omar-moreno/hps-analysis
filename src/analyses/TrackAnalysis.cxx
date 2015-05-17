@@ -53,6 +53,12 @@ void TrackAnalysis::processEvent(HpsEvent* event) {
         track_parameter_plots["tan_lambda"]->Fill(track->getTanLambda());
         
         track_plots["chi2"]->Fill(track->getChi2());
+        track_plots["Track charge"]->Fill(track->getCharge());
+        
+        std::vector<double> p = track->getMomentum();
+        track_plots["px"]->Fill(p[0]);
+        track_plots["py"]->Fill(p[1]);
+        track_plots["pz"]->Fill(p[2]);
     
         track_plots["Hits per track"]->Fill(track->getSvtHits()->GetEntriesFast()); 
     }
