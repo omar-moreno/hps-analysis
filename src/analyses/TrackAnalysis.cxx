@@ -22,12 +22,6 @@ TrackAnalysis::~TrackAnalysis() {
     delete canvas;
     delete output_file;
 
-    /*std::unordered_map<std::string, TH1F*>::iterator track_parameter_plots_it = track_parameter_plots.begin();
-    for (track_parameter_plots_it; 
-            track_parameter_plots_it != track_parameter_plots.end(); 
-            ++track_parameter_plots_it) { 
-        delete track_parameter_plots_it->second;
-    }*/
     track_parameter_plots.clear();
 }
 
@@ -56,25 +50,51 @@ void TrackAnalysis::processEvent(HpsEvent* event) {
         track_plots["Track charge"]->Fill(track->getCharge());
         
         std::vector<double> p = track->getMomentum();
+        double p_mag = sqrt(p[0]*p[0] + p[1]*p[1] + p[2]*p[2]);
+        double pt = sqrt(p[0]*p[0] + p[1]*p[1]);
+        track_plots["p"]->Fill(p_mag);
+        track_plots["pt"]->Fill(pt);
         track_plots["px"]->Fill(p[0]);
         track_plots["py"]->Fill(p[1]);
         track_plots["pz"]->Fill(p[2]);
+        track_plots_2d["pz v px"]->Fill(p[2], p[0]);
+        track_plots_2d["pz v py"]->Fill(p[2], p[1]);
+        track_plots_2d["p v pt"]->Fill(p_mag, pt);
 
         if (track->getCharge() < 0) { 
-            track_plots["px - electron"]->Fill(p[0]);
-            track_plots["py - electron"]->Fill(p[1]);
-            track_plots["pz - electron"]->Fill(p[2]);
+            electron_track_plots["px"]->Fill(p[0]);
+            electron_track_plots["py"]->Fill(p[1]);
+            electron_track_plots["pz"]->Fill(p[2]);
+            electron_track_plots["chi2"]->Fill(track->getChi2());
         } else { 
-            track_plots["px - positron"]->Fill(p[0]);
-            track_plots["py - positron"]->Fill(p[1]);
-            track_plots["pz - positron"]->Fill(p[2]);
+            positron_track_plots["px"]->Fill(p[0]);
+            positron_track_plots["py"]->Fill(p[1]);
+            positron_track_plots["pz"]->Fill(p[2]);
+            positron_track_plots["chi2"]->Fill(track->getChi2());
         }
     
         track_plots["Hits per track"]->Fill(track->getSvtHits()->GetEntriesFast()); 
+    
+        TRefArray* hits = track->getSvtHits();
+        for (int hit_n = 0; hit_n < hits->GetSize(); ++hit_n) { 
+            std::vector<double> position = ((SvtHit*) hits->At(hit_n))->getPosition();
+            int layer = ((SvtHit*) hits->At(hit_n))->getLayer();
+            hit_position_plots["Top Module " + std::to_string(layer)]->Fill(position[1], position[2]);
+        }
+
+        // FEE
+        if (track->getCharge() < 0 && p_mag > 0.7 && ((.2 -pt)/p_mag) < 0.17 && pt < 0.07) { 
+            track_plots["p - fee"]->Fill(p_mag);
+            track_plots["px - fee"]->Fill(p[0]);
+            track_plots["py - fee"]->Fill(p[1]);
+            track_plots["pz - fee"]->Fill(p[2]);
+        } 
     }
 }
 
 void TrackAnalysis::finalize() {
+
+    track_plots["p - fee"]->Fit("gaus");
 
     canvas->Print("track_analysis_results.pdf["); 
     std::unordered_map<std::string, TH1F*>::iterator track_parameter_plots_it = track_parameter_plots.begin();
@@ -91,10 +111,33 @@ void TrackAnalysis::finalize() {
             track_plots_it != track_plots.end(); 
             ++track_plots_it) { 
         track_plots_it->second->Draw();
+        
+        if (electron_track_plots[track_plots_it->first] != NULL) 
+            electron_track_plots[track_plots_it->first]->Draw("same");
+        
+        if (positron_track_plots[track_plots_it->first] != NULL) 
+            positron_track_plots[track_plots_it->first]->Draw("same");
+
         track_plots_it->second->Write();
         canvas->Print("track_analysis_results.pdf("); 
     }
-    
+
+    std::unordered_map<std::string, TH2F*>::iterator hit_position_plots_it = hit_position_plots.begin();
+    for (hit_position_plots_it;
+            hit_position_plots_it != hit_position_plots.end(); 
+            ++hit_position_plots_it) { 
+        hit_position_plots_it->second->Draw("colz");
+        canvas->Print("track_analysis_results.pdf("); 
+    }
+   
+    std::unordered_map<std::string, TH2F*>::iterator track_plots_2d_it = track_plots_2d.begin();
+    for (track_plots_2d_it;
+            track_plots_2d_it != track_plots_2d.end(); 
+            ++track_plots_2d_it) { 
+        track_plots_2d_it->second->Draw("colz");
+        canvas->Print("track_analysis_results.pdf("); 
+    }
+
     canvas->Print("track_analysis_results.pdf]");
     output_file->Close(); 
 }
@@ -103,25 +146,51 @@ void TrackAnalysis::bookHistograms() {
 
     canvas = new TCanvas("canvas", "canvas", 500, 500);
     
-    track_parameter_plots["doca"] = new TH1F("doca", "doca", 80, -80, 80);
-    track_parameter_plots["z0"] = new TH1F("z0", "z0", 30, -30, 30);
-    track_parameter_plots["phi0"] = new TH1F("phi0", "phi0", 50, -0.5, 0.5);
-    track_parameter_plots["curvature"] = new TH1F("curvature", "curvature", 200, -1, 1);
+    track_parameter_plots["doca"] = new TH1F("doca", "doca", 20, -20, 20);
+    track_parameter_plots["z0"] = new TH1F("z0", "z0", 10, -10, 10);
+    track_parameter_plots["phi0"] = new TH1F("phi0", "phi0", 40, -0.4, 0.4);
+    track_parameter_plots["curvature"] = new TH1F("curvature", "curvature", 100, -0.2, 0.2);
     track_parameter_plots["tan_lambda"] = new TH1F("tan_lambda", "tan_lambda", 100, -1, 1);
 
     track_plots["Number of tracks"] = new TH1F("number_of_tracks", "number_of_tracks", 10, 0, 10);
     track_plots["Hits per track"] = new TH1F("hits_per_track", "hits_per_track", 6, 1, 7);
     track_plots["Track charge"] = new TH1F("track_charge", "track_charge", 3, -1, 2);
-    track_plots["chi2"] = new TH1F("chi2", "chi2", 100, 0, 100);
+    track_plots["chi2"] = new TH1F("chi2", "chi2", 40, 0, 40);
+    
+    track_plots["p"] = new TH1F("p", "p", 50, 0, 2.0);
+    track_plots["pt"] = new TH1F("pt", "pt", 50, -0.1, 0.2);
     track_plots["px"] = new TH1F("px", "px", 50, -0.1, 0.2); 
     track_plots["py"] = new TH1F("py", "py", 50, -0.2, 0.2); 
-    track_plots["pz"] = new TH1F("pz", "pz", 50, 0, 3.0); 
-    track_plots["px - electron"] = new TH1F("px_electron", "px_electron", 50, -0.1, 0.2); 
-    track_plots["py - electron"] = new TH1F("py_electron", "py_electron", 50, -0.2, 0.2); 
-    track_plots["pz - electron"] = new TH1F("pz_electron", "pz_electron", 50, 0, 3.0); 
-    track_plots["px - positron"] = new TH1F("px_positron", "px_positron", 50, -0.1, 0.2); 
-    track_plots["py - positron"] = new TH1F("py_positron", "py_positron", 50, -0.2, 0.2); 
-    track_plots["pz - positron"] = new TH1F("pz_positron", "pz_positron", 50, 0, 3.0); 
+    track_plots["pz"] = new TH1F("pz", "pz", 50, 0, 2.0);
+    track_plots["p - fee"] = new TH1F("p_fee", "p_fee", 50, 0, 2.0);
+    track_plots["px - fee"] = new TH1F("px_fee", "px_fee", 50, -0.1, 0.2); 
+    track_plots["py - fee"] = new TH1F("py_fee", "py_fee", 50, -0.2, 0.2); 
+    track_plots["pz - fee"] = new TH1F("pz_fee", "pz_fee", 50, 0, 2.0);
+
+    track_plots_2d["pz v px"] = new TH2F("pz_v_px", "pz_v_px", 50, 0, 2.0, 50, -0.1, 0.2); 
+    track_plots_2d["pz v py"] = new TH2F("pz_v_py", "pz_v_py", 50, 0, 2.0, 50, -0.1, 0.2); 
+    track_plots_2d["p v pt"] = new TH2F("p_v_pt", "p_v_pt", 50, 0, 2.0, 50, -0.1, 0.2); 
+
+    electron_track_plots["px"] = new TH1F("px_electron", "px_electron", 50, -0.1, 0.2); 
+    electron_track_plots["py"] = new TH1F("py_electron", "py_electron", 50, -0.2, 0.2); 
+    electron_track_plots["pz"] = new TH1F("pz_electron", "pz_electron", 50, 0, 3.0); 
+    electron_track_plots["chi2"] = new TH1F("chi2_electron", "chi2_electron", 40, 0, 40);
+   
+    positron_track_plots["px"] = new TH1F("px_positron", "px_positron", 50, -0.1, 0.2); 
+    positron_track_plots["py"] = new TH1F("py_positron", "py_positron", 50, -0.2, 0.2); 
+    positron_track_plots["pz"] = new TH1F("pz_positron", "pz_positron", 50, 0, 3.0); 
+    positron_track_plots["chi2"] = new TH1F("chi2_positron", "chi2_positron", 40, 0, 40);
+
+    for (int module_n = 1; module_n <= 6; ++module_n) { 
+        hit_position_plots["Top Module " + std::to_string(module_n)] 
+            = new TH2F(("top_module_" + std::to_string(module_n)).c_str(),
+                       ("top_module_" + std::to_string(module_n)).c_str(), 
+                       50, -100, 100, 50, 0, 50);
+        hit_position_plots["Bottom Module " + std::to_string(module_n)] 
+            = new TH2F(("bottom_module_" + std::to_string(module_n)).c_str(),
+                       ("bottom_module_" + std::to_string(module_n)).c_str(), 
+                       50, -100, 100, 50, 0, 50); 
+    }
 }
 
 std::string TrackAnalysis::toString() { 

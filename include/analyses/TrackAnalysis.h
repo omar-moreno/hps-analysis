@@ -21,6 +21,7 @@
 //------------//
 #include <TCanvas.h>
 #include <TH1F.h>
+#include <TH2F.h>
 #include <TFile.h>
 
 //--------------------//
@@ -32,6 +33,7 @@
 //--- HPS DST ---//
 //---------------//
 #include <SvtTrack.h>
+#include <SvtHit.h>
 
 class TrackAnalysis : public HpsAnalysis { 
 
@@ -88,6 +90,11 @@ class TrackAnalysis : public HpsAnalysis {
 
         std::unordered_map<std::string, TH1F*> track_parameter_plots;
         std::unordered_map<std::string, TH1F*> track_plots;
+        std::unordered_map<std::string, TH1F*> electron_track_plots;
+        std::unordered_map<std::string, TH1F*> positron_track_plots;
+
+        std::unordered_map<std::string, TH2F*> hit_position_plots;
+        std::unordered_map<std::string, TH2F*> track_plots_2d; 
 
         // Name of the class
 		std::string class_name;
