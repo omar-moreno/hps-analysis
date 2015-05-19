@@ -59,6 +59,16 @@ void TrackAnalysis::processEvent(HpsEvent* event) {
         track_plots["px"]->Fill(p[0]);
         track_plots["py"]->Fill(p[1]);
         track_plots["pz"]->Fill(p[2]);
+
+        if (track->getCharge() < 0) { 
+            track_plots["px - electron"]->Fill(p[0]);
+            track_plots["py - electron"]->Fill(p[1]);
+            track_plots["pz - electron"]->Fill(p[2]);
+        } else { 
+            track_plots["px - positron"]->Fill(p[0]);
+            track_plots["py - positron"]->Fill(p[1]);
+            track_plots["pz - positron"]->Fill(p[2]);
+        }
     
         track_plots["Hits per track"]->Fill(track->getSvtHits()->GetEntriesFast()); 
     }
@@ -106,6 +116,12 @@ void TrackAnalysis::bookHistograms() {
     track_plots["px"] = new TH1F("px", "px", 50, -0.1, 0.2); 
     track_plots["py"] = new TH1F("py", "py", 50, -0.2, 0.2); 
     track_plots["pz"] = new TH1F("pz", "pz", 50, 0, 3.0); 
+    track_plots["px - electron"] = new TH1F("px_electron", "px_electron", 50, -0.1, 0.2); 
+    track_plots["py - electron"] = new TH1F("py_electron", "py_electron", 50, -0.2, 0.2); 
+    track_plots["pz - electron"] = new TH1F("pz_electron", "pz_electron", 50, 0, 3.0); 
+    track_plots["px - positron"] = new TH1F("px_positron", "px_positron", 50, -0.1, 0.2); 
+    track_plots["py - positron"] = new TH1F("py_positron", "py_positron", 50, -0.2, 0.2); 
+    track_plots["pz - positron"] = new TH1F("pz_positron", "pz_positron", 50, 0, 3.0); 
 }
 
 std::string TrackAnalysis::toString() { 
