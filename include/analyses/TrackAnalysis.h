@@ -15,6 +15,7 @@
 //--- C++ StdLib ---//
 //------------------//
 #include <unordered_map>
+#include <vector>
 
 //------------//
 //--- ROOT ---//
@@ -81,6 +82,11 @@ class TrackAnalysis : public HpsAnalysis {
    
     private:
 
+        /**
+         *
+         */
+        double getMagnitude(std::vector<double> v);
+
         SvtTrack* track;
 
         TCanvas* canvas; 
@@ -95,6 +101,8 @@ class TrackAnalysis : public HpsAnalysis {
 
         std::unordered_map<std::string, TH2F*> hit_position_plots;
         std::unordered_map<std::string, TH2F*> track_plots_2d; 
+        std::unordered_map<std::string, TH2F*> track_epem_2d_plots; 
+        std::unordered_map<std::string, TH2F*> track_emem_2d_plots; 
 
         // Name of the class
 		std::string class_name;

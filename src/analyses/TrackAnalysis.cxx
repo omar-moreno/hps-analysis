@@ -88,6 +88,27 @@ void TrackAnalysis::processEvent(HpsEvent* event) {
             track_plots["px - fee"]->Fill(p[0]);
             track_plots["py - fee"]->Fill(p[1]);
             track_plots["pz - fee"]->Fill(p[2]);
+        }
+    }
+
+    if (event->getNumberOfTracks() == 2) { 
+     
+        if (event->getTrack(0)->getCharge() < 0 && event->getTrack(1)->getCharge() > 0) {
+            track_epem_2d_plots["p[e+] v p[e-]"]->Fill(
+                    this->getMagnitude(event->getTrack(0)->getMomentum()),
+                    this->getMagnitude(event->getTrack(1)->getMomentum()));
+        } else if (event->getTrack(0)->getCharge() > 0 && event->getTrack(1)->getCharge() < 0) { 
+            track_epem_2d_plots["p[e+] v p[e-]"]->Fill(
+                    this->getMagnitude(event->getTrack(1)->getMomentum()),
+                    this->getMagnitude(event->getTrack(0)->getMomentum()));
+        } else if (event->getTrack(0)->getCharge() < 0 && event->getTrack(1)->getCharge() < 0) {
+            track_emem_2d_plots["p[e-] v p[e-]"]->Fill(
+                    this->getMagnitude(event->getTrack(0)->getMomentum()),
+                    this->getMagnitude(event->getTrack(1)->getMomentum()));
+        
+            track_emem_2d_plots["theta[e-] v theta[e-]"]->Fill(
+                    atan(event->getTrack(0)->getTanLambda()),
+                    atan(event->getTrack(1)->getTanLambda()));
         } 
     }
 }
@@ -138,6 +159,15 @@ void TrackAnalysis::finalize() {
         canvas->Print("track_analysis_results.pdf("); 
     }
 
+    track_epem_2d_plots["p[e+] v p[e-]"]->Draw("colz");
+    canvas->Print("track_analysis_results.pdf("); 
+
+    track_emem_2d_plots["p[e-] v p[e-]"]->Draw("colz");
+    canvas->Print("track_analysis_results.pdf("); 
+
+    track_emem_2d_plots["theta[e-] v theta[e-]"]->Draw("colz");
+    canvas->Print("track_analysis_results.pdf("); 
+    
     canvas->Print("track_analysis_results.pdf]");
     output_file->Close(); 
 }
@@ -191,9 +221,22 @@ void TrackAnalysis::bookHistograms() {
                        ("bottom_module_" + std::to_string(module_n)).c_str(), 
                        50, -100, 100, 50, 0, 50); 
     }
+
+    track_epem_2d_plots["p[e+] v p[e-]"] 
+        = new TH2F("pep_v_pem", "pep_v_pem", 50, 0, 2.0, 50, 0, 2.0);
+    
+    track_emem_2d_plots["p[e-] v p[e-]"] 
+        = new TH2F("pem_v_pem", "pem_v_pem", 50, 0, 2.0, 50, 0, 2.0);
+    track_emem_2d_plots["theta[e-] v theta[e-]"] 
+        = new TH2F("theta_em_v_theta_em", "theta_em_v_theta_em", 100, -0.05, 0.05, 100, -0.05, 0.05); 
+
 }
 
 std::string TrackAnalysis::toString() { 
     std::string string_buffer = "Class Name: " + class_name; 
     return string_buffer;   
+}
+
+double TrackAnalysis::getMagnitude(std::vector<double> v) { 
+    return sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
 }
