@@ -21,6 +21,7 @@
 //------------//
 #include <TCanvas.h>
 #include <TH1F.h>
+#include <TH2F.h>
 #include <TFile.h>
 
 //--------------------//
@@ -87,6 +88,10 @@ class PairsAnalysis : public HpsAnalysis {
         TFile* output_file; 
 
         std::unordered_map<std::string, TH1F*> uc_vtx_plots;  
+        std::unordered_map<std::string, TH1F*> uc_vtx_epem_plots;
+        std::unordered_map<std::string, TH1F*> uc_vtx_emem_plots;
+        std::unordered_map<std::string, TH2F*> uc_vtx_epem_plots_2d;
+        std::unordered_map<std::string, TH2F*> uc_vtx_emem_plots_2d;
 
         // Name of the class
         std::string class_name;
