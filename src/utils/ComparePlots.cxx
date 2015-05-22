@@ -30,6 +30,7 @@ void ComparePlots::addPlots(TList* keys) {
     while (TKey *key = (TKey*) next()) { 
         if (key->IsFolder()) this->addPlots(((TDirectory*) key->ReadObj())->GetListOfKeys());
         plot_map[key->GetName()].push_back((TH1*) key->ReadObj()); 
+        std::cout << "[ ComparePlots ]: Adding file: " << key->GetName() << std::endl;
     } 
 }
 
@@ -41,11 +42,13 @@ void ComparePlots::overlayPlots() {
     std::map<std::string, std::vector<TH1*> >::iterator plot_it = plot_map.begin();
     for (plot_it; plot_it != plot_map.end(); plot_it++) { 
         int color_index = 1;
-        plot_it->second[0]->SetLineColor(color_index);
-	    plot_it->second[0]->Draw();
+        //plot_it->second[0]->SetLineColor(color_index);
+	    plot_it->second[0]->SetMarkerStyle(20);
+        plot_it->second[0]->Draw("pe");
         for (int hist_n = 1; hist_n < plot_it->second.size(); hist_n++) { 
             ++color_index;
             plot_it->second[hist_n]->SetLineColor(color_index);
+            plot_it->second[hist_n]->Scale(plot_it->second[0]->Integral()/plot_it->second[hist_n]->Integral());
             plot_it->second[hist_n]->Draw("same");  
         }
         canvas->Write();

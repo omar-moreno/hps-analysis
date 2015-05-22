@@ -74,7 +74,7 @@ int main(int argc, char **argv) {
 
     ComparePlots comparator;
     comparator.parseFiles(root_files);
-    //comparator.overlayPlots(); 
+    comparator.overlayPlots(); 
 
     if (save_to_pdf) comparator.saveToPdf("test.pdf");
 
