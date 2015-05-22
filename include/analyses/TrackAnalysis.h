@@ -35,6 +35,7 @@
 //---------------//
 #include <SvtTrack.h>
 #include <SvtHit.h>
+#include <HpsParticle.h>
 
 class TrackAnalysis : public HpsAnalysis { 
 
