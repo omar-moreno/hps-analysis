@@ -42,14 +42,18 @@ void TrackAnalysis::processEvent(HpsEvent* event) {
         // Get a track from the event
         track = event->getTrack(track_n); 
 
+        // Fill the plots providing general event information related to tracks
+        int track_volume = track->isTopTrack() ? 0 : 1; 
+        track_plots["Track volume"]->Fill(track_volume);
+        track_plots["Track charge"]->Fill(track->getCharge());
+        track_plots["chi2"]->Fill(track->getChi2());
+
         track_plots["doca"]->Fill(track->getD0());
         track_plots["z0"]->Fill(track->getZ0());
         track_plots["phi0"]->Fill(track->getPhi());
         track_plots["curvature"]->Fill(track->getOmega());
         track_plots["tan_lambda"]->Fill(track->getTanLambda());
         
-        track_plots["chi2"]->Fill(track->getChi2());
-        track_plots["Track charge"]->Fill(track->getCharge());
         
         std::vector<double> p = track->getMomentum();
         double p_mag = sqrt(p[0]*p[0] + p[1]*p[1] + p[2]*p[2]);
@@ -205,17 +209,19 @@ void TrackAnalysis::finalize() {
 void TrackAnalysis::bookHistograms() { 
 
     canvas = new TCanvas("canvas", "canvas", 500, 500);
-    
+  
+    // General event statistics 
+    track_plots["Number of tracks"] = new TH1F("number_of_tracks", "number_of_tracks", 10, 0, 10);
+    track_plots["Track volume"] = new TH1F("track_volume", "track_volume", 3, -1, 2);
+    track_plots["Hits per track"] = new TH1F("hits_per_track", "hits_per_track", 6, 1, 7);
+    track_plots["Track charge"] = new TH1F("track_charge", "track_charge", 3, -1, 2);
+    track_plots["chi2"] = new TH1F("chi2", "chi2", 40, 0, 40);
+
     track_plots["doca"] = new TH1F("doca", "doca", 40, -20, 20);
     track_plots["z0"] = new TH1F("z0", "z0", 100, -5, 5);
     track_plots["phi0"] = new TH1F("phi0", "phi0", 40, -0.4, 0.4);
     track_plots["curvature"] = new TH1F("curvature", "curvature", 25, -0.0025, 0.0025);
     track_plots["tan_lambda"] = new TH1F("tan_lambda", "tan_lambda", 100, -0.1, 0.1);
-
-    track_plots["Number of tracks"] = new TH1F("number_of_tracks", "number_of_tracks", 10, 0, 10);
-    track_plots["Hits per track"] = new TH1F("hits_per_track", "hits_per_track", 6, 1, 7);
-    track_plots["Track charge"] = new TH1F("track_charge", "track_charge", 3, -1, 2);
-    track_plots["chi2"] = new TH1F("chi2", "chi2", 40, 0, 40);
     
     track_plots["p"] = new TH1F("p", "p", 50, 0, 2.0);
     track_plots["pt"] = new TH1F("pt", "pt", 50, -0.1, 0.2);
