@@ -6,6 +6,12 @@ find_library(ROOT_PHYSICS_LIB Physics $ENV{ROOTSYS}/lib)
 find_library(ROOT_HIST_LIB Hist $ENV{ROOTSYS}/lib)
 find_library(ROOT_GPAD_LIB Gpad $ENV{ROOTSYS}/lib)
 
+add_library(Plotter Plotter.cxx) 
+target_link_libraries(Plotter
+    ${ROOT_CORE_LIB}
+    ${ROOT_HIST_LIB}
+)
+
 add_library(ComparePlots ComparePlots.cxx)
 target_link_libraries(ComparePlots 
     ${ROOT_CORE_LIB}
