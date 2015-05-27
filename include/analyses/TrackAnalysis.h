@@ -29,6 +29,7 @@
 //--- HPS Analysis ---//
 //--------------------//
 #include <HpsAnalysis.h>
+#include <Plotter.h>
 
 //---------------//
 //--- HPS DST ---//
@@ -95,15 +96,18 @@ class TrackAnalysis : public HpsAnalysis {
         // ROOT output_file
         TFile* output_file; 
 
-        std::unordered_map<std::string, TH1F*> track_parameter_plots;
         std::unordered_map<std::string, TH1F*> track_plots;
         std::unordered_map<std::string, TH1F*> electron_track_plots;
         std::unordered_map<std::string, TH1F*> positron_track_plots;
+        std::unordered_map<std::string, TH1F*> top_track_plots;
+        std::unordered_map<std::string, TH1F*> bot_track_plots;
 
         std::unordered_map<std::string, TH2F*> hit_position_plots;
         std::unordered_map<std::string, TH2F*> track_plots_2d; 
         std::unordered_map<std::string, TH2F*> track_epem_2d_plots; 
         std::unordered_map<std::string, TH2F*> track_emem_2d_plots; 
+
+        Plotter* electron_plotter;
 
         // Name of the class
 		std::string class_name;
