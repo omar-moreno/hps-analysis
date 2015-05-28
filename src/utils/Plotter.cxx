@@ -9,7 +9,7 @@ Plotter::Plotter()
 Plotter::~Plotter() {
 }
 
-TH1* Plotter::build1DHistogram(std::string name, int n_bins, int x_min, int x_max) { 
+TH1* Plotter::build1DHistogram(std::string name, int n_bins, double x_min, double x_max) { 
     
     if (histogram1D_map[name] != NULL) { 
         throw std::runtime_error("A histogram with that name already exist!");
@@ -30,8 +30,8 @@ TH1* Plotter::build1DHistogram(std::string name, int n_bins, int x_min, int x_ma
 }
 
 
-TH2* Plotter::build2DHistogram(std::string name, int n_bins_x, int x_min, int x_max, 
-        int n_bins_y, int y_min, int y_max) { 
+TH2* Plotter::build2DHistogram(std::string name, int n_bins_x, double x_min, double x_max, 
+        int n_bins_y, double y_min, double y_max) { 
     
     if (histogram2D_map[name] != NULL) { 
         throw std::runtime_error("A histogram with that name already exist!");

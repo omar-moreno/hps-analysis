@@ -49,13 +49,13 @@ class Plotter {
         /**
          *
          */
-        TH1* build1DHistogram(std::string name, int n_bins, int x_min, int x_max); 
+        TH1* build1DHistogram(std::string name, int n_bins, double x_min, double x_max); 
        
         /**
          *
          */ 
-        TH2* build2DHistogram(std::string name, int n_bins_x, int x_min, int x_max,
-                int n_bins_y, int y_min, int y_max);
+        TH2* build2DHistogram(std::string name, int n_bins_x, double x_min, double x_max,
+                int n_bins_y, double y_min, double y_max);
         /**
          *
          */
