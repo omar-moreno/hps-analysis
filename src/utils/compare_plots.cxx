@@ -26,22 +26,27 @@ int main(int argc, char **argv) {
    
     
     string root_file_list_name;
+    string style = "";
     bool save_to_pdf = false;
 
     // Parse all the command line arguments. If there are no valid command line
     // arguments passed, print the usage and exit.
     static struct option long_options[] = {
         {"root_list", required_argument, 0, 'l' },
+        {"style", required_argument, 0, 's'},
         {"pdf", no_argument, 0, 'p' },
         { 0, 0, 0, 0 }
     };
 
     int option_index = 0;
     int option_char; 
-    while ((option_char = getopt_long(argc, argv, "l:p", long_options, &option_index)) != -1) {
+    while ((option_char = getopt_long(argc, argv, "l:s:p", long_options, &option_index)) != -1) {
         switch (option_char) {
             case 'l': 
                 root_file_list_name = optarg;
+                break;
+            case 's':
+                style = optarg; 
                 break;
             case 'p':
                 save_to_pdf = true;
@@ -73,10 +78,10 @@ int main(int argc, char **argv) {
     root_file_list.close();
 
     ComparePlots comparator;
+    if (!style.empty()) comparator.setStyle(style);
+
     comparator.parseFiles(root_files);
     comparator.overlayPlots(); 
-
-    if (save_to_pdf) comparator.saveToPdf("test.pdf");
 
     return EXIT_SUCCESS;
 }
