@@ -19,6 +19,8 @@
 #include <TH2F.h>
 #include <TH1D.h>
 #include <TH2D.h>
+#include <TFile.h>
+#include <TCanvas.h>
 
 class Plotter { 
 
@@ -63,6 +65,16 @@ class Plotter {
          *
          */
         TH2* get2DHistogram(std::string name);
+
+        /**
+         *
+         */
+        void saveToRootFile(std::string file_name); 
+        
+        /**
+         *
+         */
+        void saveToPdf(std::string file_name); 
 
 
 

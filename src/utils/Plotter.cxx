@@ -3,7 +3,7 @@
 
 Plotter::Plotter()
     : type("float"), 
-      color(kAzure+2) {
+      color(kAzure+3) {
 }
 
 Plotter::~Plotter() {
@@ -24,6 +24,9 @@ TH1* Plotter::build1DHistogram(std::string name, int n_bins, int x_min, int x_ma
     }
 
     histogram1D_map[name]->SetLineColor(color);
+    histogram1D_map[name]->SetLineWidth(2);
+    histogram1D_map[name]->SetFillStyle(3003);
+    histogram1D_map[name]->SetFillColor(color - 1);
 }
 
 
@@ -63,4 +66,43 @@ TH2* Plotter::get2DHistogram(std::string name) {
     }
 
     return histogram2D_map[name]; 
+}
+
+void Plotter::saveToRootFile(std::string file_name) { 
+
+    TFile* output_file = new TFile(file_name.c_str(), "RECREATE");
+    std::unordered_map<std::string, TH1*>::iterator histogram1D_it =  histogram1D_map.begin();
+    for (histogram1D_it; histogram1D_it != histogram1D_map.end(); ++histogram1D_it) {
+        histogram1D_it->second->Draw(); 
+        histogram1D_it->second->SetName(histogram1D_it->second->GetTitle());
+        histogram1D_it->second->Write();
+    }
+
+    std::unordered_map<std::string, TH2*>::iterator histogram2D_it =  histogram2D_map.begin();
+    for (histogram2D_it; histogram2D_it != histogram2D_map.end(); ++histogram2D_it) {
+        histogram2D_it->second->Draw(); 
+        histogram2D_it->second->SetName(histogram2D_it->second->GetTitle());
+        histogram2D_it->second->Write();
+    }
+    
+    delete output_file;
+}
+
+void Plotter::saveToPdf(std::string file_name) { 
+
+    TCanvas* canvas = new TCanvas("canvas", "canvas", 600, 600);
+    canvas->Print((file_name + "[").c_str());
+    std::unordered_map<std::string, TH1*>::iterator histogram1D_it =  histogram1D_map.begin();
+    for (histogram1D_it; histogram1D_it != histogram1D_map.end(); ++histogram1D_it) {
+        histogram1D_it->second->Draw(); 
+        canvas->Print((file_name + "(").c_str());
+    }
+
+    std::unordered_map<std::string, TH2*>::iterator histogram2D_it =  histogram2D_map.begin();
+    for (histogram2D_it; histogram2D_it != histogram2D_map.end(); ++histogram2D_it) {
+        histogram2D_it->second->Draw("colz"); 
+        canvas->Print((file_name + "(").c_str());
+    }
+    canvas->Print((file_name + "]").c_str());
+    delete canvas;
 }
