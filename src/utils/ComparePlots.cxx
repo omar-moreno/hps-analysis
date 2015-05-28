@@ -8,7 +8,8 @@
 
 #include <ComparePlots.h>
 
-ComparePlots::ComparePlots() { 
+ComparePlots::ComparePlots() 
+    : style("") { 
 }
 
 ComparePlots::~ComparePlots() { 
@@ -38,39 +39,48 @@ void ComparePlots::overlayPlots() {
     
     TFile* overlay_root_file = new TFile("plot_comparison.root", "RECREATE");
     TCanvas* canvas = new TCanvas("canvas", "canvas", 500, 500); 
+    canvas->Print("plot_comparison.pdf[");
     
     std::map<std::string, std::vector<TH1*> >::iterator plot_it = plot_map.begin();
     for (plot_it; plot_it != plot_map.end(); plot_it++) { 
+        
         int color_index = 1;
-        //plot_it->second[0]->SetLineColor(color_index);
-	    plot_it->second[0]->SetMarkerStyle(20);
-        plot_it->second[0]->Draw("pe");
+        std::string options = "";
+        if (style.compare("basic") == 0) { 
+            plot_it->second[0]->SetLineColor(color_index);
+            plot_it->second[0]->SetLineWidth(2);
+        } else if (style.compare("mc") == 0) {
+            options = "pe"; 
+	        plot_it->second[0]->SetMarkerStyle(20);
+            plot_it->second[0]->SetMarkerColor(kOrange + 9);
+            plot_it->second[0]->SetLineWidth(2);
+            plot_it->second[0]->SetLineColor(kOrange + 9);
+            plot_it->second[0]->SetMarkerSize(.7); 
+        }
+        plot_it->second[0]->Draw(options.c_str());
+        int max_bin_value = plot_it->second[0]->GetBinContent(plot_it->second[0]->GetMaximumBin()); 
+
         for (int hist_n = 1; hist_n < plot_it->second.size(); hist_n++) { 
             ++color_index;
-            plot_it->second[hist_n]->SetLineColor(color_index);
-            plot_it->second[hist_n]->Scale(plot_it->second[0]->Integral()/plot_it->second[hist_n]->Integral());
+            if (style.compare("basic") == 0) { 
+                plot_it->second[hist_n]->SetLineColor(color_index);
+                plot_it->second[hist_n]->SetLineWidth(2);
+            } else if (style.compare("mc") == 0) {
+
+                plot_it->second[hist_n]->Scale(plot_it->second[0]->Integral()/plot_it->second[hist_n]->Integral());
+            }
+
             plot_it->second[hist_n]->Draw("same");  
+            if (plot_it->second[hist_n]->GetBinContent(plot_it->second[hist_n]->GetMaximumBin()) > max_bin_value) { 
+                max_bin_value = plot_it->second[hist_n]->GetBinContent(plot_it->second[hist_n]->GetMaximumBin());
+            } 
         }
+        plot_it->second[0]->GetYaxis()->SetRangeUser(0, max_bin_value + .1*max_bin_value);
         canvas->Write();
+        canvas->Print("plot_comparison.pdf(");
     }
 
-    overlay_root_file->Close();
-
+    canvas->Print("plot_comparison.pdf]");
     delete overlay_root_file;
     delete canvas; 
-}
-
-void ComparePlots::saveToPdf(std::string pdf_name) { 
-   
-    TCanvas* canvas = new TCanvas("canvas", "canvas", 500, 500); 
-    std::map<std::string, std::vector<TH1*> >::iterator plot_it = plot_map.begin();
-    canvas->Print((pdf_name + "[").c_str());
-    for (plot_it; plot_it != plot_map.end(); ++plot_it) { 
-        for (int hist_n = 0; hist_n < plot_it->second.size(); ++hist_n) { 
-            plot_it->second[hist_n]->Draw();
-            canvas->Print((pdf_name + "(").c_str());
-        }
-    }
-    canvas->Print((pdf_name + "]").c_str());
-    delete canvas;
 }

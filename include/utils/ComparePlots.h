@@ -53,7 +53,7 @@ class ComparePlots {
         /**
          *
          */
-        void saveToPdf(std::string pdf_name);
+        void setStyle(const std::string style) { this->style = style; }; 
 
     private: 
 
@@ -65,6 +65,8 @@ class ComparePlots {
 
         //
         std::map <std::string, std::vector<TH1*> > plot_map;
+
+        std::string style;
 
 };
 
