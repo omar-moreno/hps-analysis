@@ -35,7 +35,7 @@ void TrackAnalysis::initialize() {
 
 void TrackAnalysis::processEvent(HpsEvent* event) {
 
-    if (!event->isPair1Trigger()) return;
+    //if (!event->isPair1Trigger()) return;
 
     track_plotter->get1DHistogram("Number of tracks")->Fill(event->getNumberOfTracks());
 
@@ -154,7 +154,11 @@ void TrackAnalysis::processEvent(HpsEvent* event) {
         for (int hit_n = 0; hit_n < hits->GetSize(); ++hit_n) { 
             std::vector<double> position = ((SvtHit*) hits->At(hit_n))->getPosition();
             int layer = ((SvtHit*) hits->At(hit_n))->getLayer();
-            track_plotter->get2DHistogram("Top Module " + std::to_string(layer))->Fill(position[1], position[2]);
+            if (track->isTopTrack()) { 
+                track_plotter->get2DHistogram("Top Layer " + std::to_string(layer))->Fill(position[1], position[2]);
+            } else { 
+                track_plotter->get2DHistogram("Bottom Layer " + std::to_string(layer))->Fill(position[1], position[2]);
+            }
         }
 
         // FEE
@@ -214,10 +218,10 @@ void TrackAnalysis::bookHistograms() {
     track_plotter->build1DHistogram("Track charge", 3, -1, 2);
     track_plotter->build1DHistogram("chi2", 40, 0, 40);
 
-    track_plotter->build1DHistogram("doca", 40, -20, 20);
-    track_plotter->build1DHistogram("z0", 100, -5, 5);
-    track_plotter->build1DHistogram("sin(phi0)", 40, -0.4, 0.4);
-    track_plotter->build1DHistogram("curvature", 25, -0.0025, 0.0025);
+    track_plotter->build1DHistogram("doca", 80, -10, 10);
+    track_plotter->build1DHistogram("z0", 80, -2, 2);
+    track_plotter->build1DHistogram("sin(phi0)", 40, -0.2, 0.2);
+    track_plotter->build1DHistogram("curvature", 50, -0.001, 0.001);
     track_plotter->build1DHistogram("tan_lambda", 100, -0.1, 0.1);
     
     track_plotter->build1DHistogram("p", 50, 0, 2.0);
@@ -231,76 +235,77 @@ void TrackAnalysis::bookHistograms() {
     track_plotter->build1DHistogram("pz - fee", 50, 0, 2.0);
 
     track_plotter->build2DHistogram("pz v px", 50, 0, 2.0, 50, -0.1, 0.2); 
-    track_plotter->build2DHistogram("pz v py", 50, 0, 2.0, 50, -0.1, 0.2); 
+    track_plotter->build2DHistogram("pz v py", 50, 0, 2.0, 50, -0.15, 0.15); 
     track_plotter->build2DHistogram("p v pt", 50, 0, 2.0, 50, -0.1, 0.2); 
 
     electron_plotter->setType("float")->setLineColor(kOrange + 9);
-    electron_plotter->build1DHistogram("doca", 40, -20, 20);
-    electron_plotter->build1DHistogram("z0", 100, -5, 5);
-    electron_plotter->build1DHistogram("sin(phi0)", 40, -0.4, 0.4);
-    electron_plotter->build1DHistogram("curvature", 25, -0.0025, 0.0025);
+    electron_plotter->build1DHistogram("doca", 80, -10, 10);
+    electron_plotter->build1DHistogram("z0", 80, -2, 2);
+    electron_plotter->build1DHistogram("sin(phi0)", 40, -0.2, 0.2);
+    electron_plotter->build1DHistogram("curvature", 50, -0.001, 0.001);
     electron_plotter->build1DHistogram("tan_lambda", 100, -0.1, 0.1);
 
     electron_plotter->build1DHistogram("p", 50, 0, 2.0);
     electron_plotter->build1DHistogram("pt", 50, -0.1, 0.2);
     electron_plotter->build1DHistogram("px", 50, -0.1, 0.2); 
-    electron_plotter->build1DHistogram("py", 50, -0.2, 0.2); 
-    electron_plotter->build1DHistogram("pz", 50, 0, 3.0); 
+    electron_plotter->build1DHistogram("py", 50, -0.15, 0.15); 
+    electron_plotter->build1DHistogram("pz", 50, 0, 2.0); 
     electron_plotter->build1DHistogram("chi2", 40, 0, 40);
     electron_plotter->build1DHistogram("ep", 60, 0, 2);
 
     positron_plotter->setType("float");
-    positron_plotter->build1DHistogram("doca", 40, -20, 20);
-    positron_plotter->build1DHistogram("z0", 100, -5, 5);
-    positron_plotter->build1DHistogram("sin(phi0)", 60, -60, 60);
-    positron_plotter->build1DHistogram("curvature", 25, -0.0025, 0.0025);
+    positron_plotter->build1DHistogram("doca", 80, -10, 10);
+    positron_plotter->build1DHistogram("z0", 80, -2, 2);
+    positron_plotter->build1DHistogram("sin(phi0)", 40, -0.2, 0.2);
+    positron_plotter->build1DHistogram("curvature", 50, -0.001, 0.001);
     positron_plotter->build1DHistogram("tan_lambda", 100, -0.1, 0.1);
 
     positron_plotter->build1DHistogram("p", 50, 0, 2.0);
     positron_plotter->build1DHistogram("pt", 50, -0.1, 0.2);
     positron_plotter->build1DHistogram("px", 50, -0.1, 0.2); 
     positron_plotter->build1DHistogram("py", 50, -0.15, 0.15); 
-    positron_plotter->build1DHistogram("pz", 50, 0, 3.0); 
+    positron_plotter->build1DHistogram("pz", 50, 0, 2.0); 
     positron_plotter->build1DHistogram("chi2", 40, 0, 40);
 
-    top_plotter->build1DHistogram("doca", 40, -20, 20);
-    top_plotter->build1DHistogram("z0", 100, -5, 5);
-    top_plotter->build1DHistogram("sin(phi0)", 60, -60, 60);
-    top_plotter->build1DHistogram("curvature", 25, -0.0025, 0.0025);
+    bottom_plotter->setType("float");
+    top_plotter->build1DHistogram("doca", 80, -10, 10);
+    top_plotter->build1DHistogram("z0", 80, -2, 2);
+    top_plotter->build1DHistogram("sin(phi0)", 40, -0.2, 0.2);
+    top_plotter->build1DHistogram("curvature", 50, -0.001, 0.001);
     top_plotter->build1DHistogram("tan_lambda", 100, -0.1, 0.1);
 
     top_plotter->build1DHistogram("p", 50, 0, 2.0);
     top_plotter->build1DHistogram("pt", 50, -0.1, 0.2);
     top_plotter->build1DHistogram("px", 50, -0.1, 0.2); 
-    top_plotter->build1DHistogram("py", 50, -0.2, 0.2); 
-    top_plotter->build1DHistogram("pz", 50, 0, 3.0); 
+    top_plotter->build1DHistogram("py", 50, -0.15, 0.15); 
+    top_plotter->build1DHistogram("pz", 50, 0, 2.0); 
     top_plotter->build1DHistogram("chi2", 40, 0, 40);
     top_plotter->build1DHistogram("ep", 60, 0, 2);
-
-    bottom_plotter->build1DHistogram("doca", 40, -20, 20);
-    bottom_plotter->build1DHistogram("z0", 100, -5, 5);
-    bottom_plotter->build1DHistogram("sin(phi0)", 60, -60, 60);
-    bottom_plotter->build1DHistogram("curvature", 25, -0.0025, 0.0025);
+    
+    bottom_plotter->setType("float")->setLineColor(kOrange + 9);
+    bottom_plotter->build1DHistogram("doca", 80, -10, 10);
+    bottom_plotter->build1DHistogram("z0", 80, -2, 2);
+    bottom_plotter->build1DHistogram("sin(phi0)", 40, -0.2, 0.2);
+    bottom_plotter->build1DHistogram("curvature", 50, -0.001, 0.001);
     bottom_plotter->build1DHistogram("tan_lambda", 100, -0.1, 0.1);
 
     bottom_plotter->build1DHistogram("p", 50, 0, 2.0);
     bottom_plotter->build1DHistogram("pt", 50, -0.1, 0.2);
     bottom_plotter->build1DHistogram("px", 50, -0.1, 0.2); 
-    bottom_plotter->build1DHistogram("py", 50, -0.2, 0.2); 
-    bottom_plotter->build1DHistogram("pz", 50, 0, 3.0); 
+    bottom_plotter->build1DHistogram("py", 50, -0.15, 0.15); 
+    bottom_plotter->build1DHistogram("pz", 50, 0, 2.0); 
     bottom_plotter->build1DHistogram("chi2", 40, 0, 40);
     bottom_plotter->build1DHistogram("ep", 60, 0, 2);
 
 
     for (int module_n = 1; module_n <= 6; ++module_n) { 
-        track_plotter->build2DHistogram("Top Module " + std::to_string(module_n), 50, -100, 100, 50, 0, 50);
-        track_plotter->build2DHistogram("Bottom Module " + std::to_string(module_n), 50, -100, 100, 50, 0, 50); 
+        track_plotter->build2DHistogram("Top Layer " + std::to_string(module_n), 130, -100, 160, 40, -10, 70);
+        track_plotter->build2DHistogram("Bottom Layer " + std::to_string(module_n), 130, -100, 160, 40, -70, 10); 
     }
 
     track_plotter->build2DHistogram("p[e+] v p[e-]", 50, 0, 2.0, 50, 0, 2.0);
     track_plotter->build2DHistogram("p[e-] v p[e-]", 50, 0, 2.0, 50, 0, 2.0);
     track_plotter->build2DHistogram("theta[e-] v theta[e-]", 100, -0.05, 0.05, 100, -0.05, 0.05); 
-
 }
 
 std::string TrackAnalysis::toString() { 
