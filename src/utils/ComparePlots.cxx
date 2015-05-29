@@ -30,6 +30,7 @@ void ComparePlots::addPlots(TList* keys) {
     TIter next(keys);
     while (TKey *key = (TKey*) next()) { 
         if (key->IsFolder()) this->addPlots(((TDirectory*) key->ReadObj())->GetListOfKeys());
+        if (std::string(key->ReadObj()->ClassName()).find("1") == std::string::npos) continue;
         plot_map[key->GetName()].push_back((TH1*) key->ReadObj()); 
         std::cout << "[ ComparePlots ]: Adding file: " << key->GetName() << std::endl;
     } 
@@ -66,7 +67,10 @@ void ComparePlots::overlayPlots() {
                 plot_it->second[hist_n]->SetLineColor(color_index);
                 plot_it->second[hist_n]->SetLineWidth(2);
             } else if (style.compare("mc") == 0) {
-
+                plot_it->second[hist_n]->SetFillStyle(3003);
+                plot_it->second[hist_n]->SetFillColor(kAzure + 2);
+                plot_it->second[hist_n]->SetLineColor(kAzure + 3);
+                plot_it->second[hist_n]->SetLineWidth(2); 
                 plot_it->second[hist_n]->Scale(plot_it->second[0]->Integral()/plot_it->second[hist_n]->Integral());
             }
 
