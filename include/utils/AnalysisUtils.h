@@ -21,6 +21,13 @@ namespace AnalysisUtils {
      */
     double getMagnitude(std::vector<double> v);
 
+    /**
+     *
+     */
+    template <typename T> int sgn(T val) {
+        return (T(0) < val) - (val < T(0));
+    }
+
 }
 
 #endif // __ANALYSIS_UTILS_H__
