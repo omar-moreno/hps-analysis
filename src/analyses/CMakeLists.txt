@@ -19,3 +19,8 @@ target_link_libraries(PairsAnalysis
     ${ROOT_HIST_LIBRARY}
     ${HPS_EVENT_LIBRARY}
 )
+
+add_library(TagProbeAnalysis TagProbeAnalysis.cxx)
+target_link_libraries(TagProbeAnalysis
+    TrackExtrapolator
+)
