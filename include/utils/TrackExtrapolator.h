@@ -48,12 +48,34 @@ namespace TrackExtrapolator {
     /**
      *
      */
+    double getPhi(SvtTrack* track, std::vector<double> position);
+    
+    /**
+     *
+     */
+    // TODO: Move this function to a track utility namespace
+    double getSinTheta(SvtTrack* track); 
+
+    /**
+     *
+     */
+    // TODO: Move this function to a track utility namespace
+    double getCosTheta(SvtTrack* track); 
+
+    /**
+     *
+     */
     std::vector<double> getPointOnHelix(SvtTrack* track, double path_length);
 
     /**
      *
      */
-    std::vector<double> extrapolateHelixToXPlane(SvtTrack* track, double x);    
+    std::vector<double> extrapolateHelixToXPlane(SvtTrack* track, double x);   
+
+    /**
+     *
+     */
+    std::vector<double> extrapolateTrack(SvtTrack* track, double z);  
 
 }
 
