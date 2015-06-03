@@ -2,9 +2,22 @@
 #ifndef __TAG_PROBE_ANALYSIS_H__
 #define __TAG_PROBE_ANALYSIS_H__
 
+//------------------//
+//--- C++ StdLib ---//
+//------------------//
+#include <vector>
+#include <ctime>
+#include <cstdlib>
+
+//--------------------//
+//--- HPS Analysis ---//
+//--------------------//
 #include <HpsAnalysis.h>
 #include <TrackExtrapolator.h>
 
+//---------------//
+//--- HPS DST ---//
+//---------------//
 #include <SvtTrack.h>
 #include <EcalCluster.h>
 
@@ -55,9 +68,31 @@ class TagProbeAnalysis : public HpsAnalysis {
         
     private: 
 
+        bool passClusterEnergyCut(HpsEvent* event);
+
+        bool passClusterEnergySumCut(HpsEvent* event);
+
+        bool passFiducialCut(HpsEvent* event);  
+
+        bool isMatch(EcalCluster* cluster, SvtTrack* track);
+
         SvtTrack* track;
-        EcalCluster* cluster; 
+        SvtTrack* matched_tag_track;
         
+        EcalCluster* cluster;
+
+        Plotter* ecal_plotter;
+        Plotter* svt_plotter; 
+       
+        double cluster_energy_threshold;
+        double cluster_energy_sum_threshold;  
+        double total_events;
+        double pass_fiducial_cut;  
+        double pass_cluster_threshold_cut;
+        double pass_cluster_energy_sum_cut;  
+        double candidates;
+        double found;  
+
         // Name of the class
 		std::string class_name;
 
