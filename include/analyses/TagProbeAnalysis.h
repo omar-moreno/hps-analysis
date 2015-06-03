@@ -5,6 +5,10 @@
 #include <HpsAnalysis.h>
 #include <TrackExtrapolator.h>
 
+#include <SvtTrack.h>
+#include <EcalCluster.h>
+
+
 class TagProbeAnalysis : public HpsAnalysis { 
 
     public: 
