@@ -16,7 +16,7 @@ target_link_libraries(Plotter
 
 add_library(TrackExtrapolator TrackExtrapolator.cxx)
 target_link_libraries(TrackExtrapolator
-    HpsEvent
+    ${HPS_EVENT_LIBRARY}
 )
 
 add_library(ComparePlots ComparePlots.cxx)
