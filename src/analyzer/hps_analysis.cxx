@@ -24,6 +24,7 @@
 //--------------------//
 #include <TrackAnalysis.h>
 #include <PairsAnalysis.h>
+#include <TagProbeAnalysis.h>
 
 using namespace std; 
 
@@ -110,7 +111,8 @@ int main(int argc, char **argv) {
     list<HpsAnalysis*> analyses;
 
     //analyses.push_back(new TrackAnalysis());
-    analyses.push_back(new PairsAnalysis());
+    //analyses.push_back(new PairsAnalysis());
+    analyses.push_back(new TagProbeAnalysis());
 
     // Initialize all analyses
     for (list<HpsAnalysis*>::iterator analysis = analyses.begin();

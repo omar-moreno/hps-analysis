@@ -10,6 +10,7 @@ target_link_libraries(hps_analysis
     ${HPS_EVENT_LIBRARY}
     TrackAnalysis
     PairsAnalysis
+    TagProbeAnalysis
 )
 
 # Find the necessary LCIO libraries
