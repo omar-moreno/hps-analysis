@@ -2,6 +2,8 @@
 #ifndef __TRACK_EXTRAPOLATOR_H__
 #define __TRACK_EXTRAPOLATOR_H__
 
+#include <cmath>
+
 #include <SvtTrack.h>
 
 #include <AnalysisUtils.h>
@@ -12,6 +14,16 @@ namespace TrackExtrapolator {
      *
      */
     double getR(SvtTrack* track);
+
+    /**
+     *
+     */
+    double getX0(SvtTrack* track);
+
+    /**
+     *
+     */
+    double getY0(SvtTrack* track);
 
     /**
      *
@@ -41,7 +53,7 @@ namespace TrackExtrapolator {
     /**
      *
      */
-    double extrapolateHelixToXPlane(SvtTrack* track, double x);    
+    std::vector<double> extrapolateHelixToXPlane(SvtTrack* track, double x);    
 
 }
 
