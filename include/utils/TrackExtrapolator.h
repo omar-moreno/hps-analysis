@@ -2,6 +2,7 @@
 #ifndef __TRACK_EXTRAPOLATOR_H__
 #define __TRACK_EXTRAPOLATOR_H__
 
+#include <iostream>
 #include <cmath>
 
 #include <SvtTrack.h>

@@ -84,9 +84,15 @@ std::vector<double> TrackExtrapolator::extrapolateTrack(SvtTrack* track, double 
     std::vector<double> position(3,0); 
     double dz = 0;
 
-    if (z >= 997.2) { 
+    if (z >= 997.2) {
+       //std::cout << "[ TrackExtrapolator ]: Track outside of dipole." << std::endl;  
+       
        position = extrapolateHelixToXPlane(track, 997.2);
+       //std::cout << "[ TrackExtrapolator ]: Track position at dipole edge: ( " 
+       //    << position[0] << ", " << position[1] << ", " << position[2] << " )" << std::endl; 
+
        dz = z - 997.2;
+       //std::cout << "[ TrackExtrapolator ]: dz: " << dz << std::endl;
     } else if (z <= 0) { 
        position = extrapolateHelixToXPlane(track, 0);
        dz = z - position[0];  
@@ -96,14 +102,22 @@ std::vector<double> TrackExtrapolator::extrapolateTrack(SvtTrack* track, double 
     }
 
     double phi = getPhi(track, position);
+    //std::cout << "[ TrackExtrapolator ]: Phi " << phi << std::endl;
 
     double r = dz/getSinTheta(track)*cos(phi);
+    //std::cout << "[ TrackExtrapolator ]: r " << r << std::endl;
+
     double dx = r*getSinTheta(track)*sin(phi);
+    //std::cout << "[ TrackExtrapolator ]: dx " << dx << std::endl;
+    
     double dy = r*getCosTheta(track);
+    //std::cout << "[ TrackExtrapolator ]: dy " << dy << std::endl;
 
-    position[1] = position[1] + dx; 
-    position[2] = position[2] + dy;
+    std::vector<double> extrapolated_position(3, 0);
+    extrapolated_position[0] = position[1] + dx;
+    extrapolated_position[1] = position[2] + dy;
+    extrapolated_position[2] = z; 
 
-    return position;
+    return extrapolated_position;
 }
 
