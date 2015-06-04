@@ -14,6 +14,7 @@
 //--------------------//
 #include <HpsAnalysis.h>
 #include <TrackExtrapolator.h>
+#include <Plotter.h>
 
 //---------------//
 //--- HPS DST ---//
@@ -72,7 +73,9 @@ class TagProbeAnalysis : public HpsAnalysis {
 
         bool passClusterEnergySumCut(HpsEvent* event);
 
-        bool passFiducialCut(HpsEvent* event);  
+        bool passFiducialCut(HpsEvent* event); 
+
+        bool passClusterTimeCut(HpsEvent* event);  
 
         bool isMatch(EcalCluster* cluster, SvtTrack* track);
 

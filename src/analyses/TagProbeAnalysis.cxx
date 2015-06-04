@@ -5,8 +5,8 @@ TagProbeAnalysis::TagProbeAnalysis()
     : track(NULL),
       matched_tag_track(NULL),
       cluster(NULL),
-      ecal_plotter(NULL),
-      svt_plotter(NULL),
+      ecal_plotter(new Plotter()),
+      svt_plotter(new Plotter()),
       cluster_energy_threshold(.200),
       cluster_energy_sum_threshold(.800),
       total_events(0),
@@ -33,12 +33,21 @@ void TagProbeAnalysis::processEvent(HpsEvent* event) {
     if (event->getNumberOfEcalClusters() != 2) return;
     ++total_events;
 
+    ecal_plotter->get1DHistogram("Cluster pair dt")->Fill(
+            event->getEcalCluster(0)->getClusterTime() - event->getEcalCluster(1)->getClusterTime());
+
+
+    ecal_plotter->get1DHistogram("Cluster pair energy sum")->Fill(
+            event->getEcalCluster(0)->getEnergy() + event->getEcalCluster(1)->getEnergy());
+
     if (!passFiducialCut(event)) return;
     ++pass_fiducial_cut;
 
+    if (!passClusterTimeCut(event)) return;
+
     // Check that both clusters pass the cluster energy cut
-    if (!passClusterEnergyCut(event)) return;
-    ++pass_cluster_threshold_cut;
+    //if (!passClusterEnergyCut(event)) return;
+    //++pass_cluster_threshold_cut;
 
     // Check that the sum of the cluster energy is less than the beam energy
     if (!passClusterEnergySumCut(event)) return;
@@ -57,7 +66,11 @@ void TagProbeAnalysis::processEvent(HpsEvent* event) {
         
         // Get a track from the event
         track = event->getTrack(track_n);
-    
+   
+         
+        ecal_plotter->get1DHistogram("Tag cluster time - track time")->Fill(cluster->getClusterTime() 
+                - track->getTrackTime());
+
         if (isMatch(cluster, track)) { 
             matched_tag_track = track;
             break;
@@ -68,27 +81,58 @@ void TagProbeAnalysis::processEvent(HpsEvent* event) {
 
     candidates++;
 
+    EcalHit* seed_hit = cluster->getSeed();
+    ecal_plotter->get2DHistogram("Tag clusters")->Fill(seed_hit->getXCrystalIndex(), 
+            seed_hit->getYCrystalIndex(), 1); 
+
     if (cluster_index == 0) { 
         cluster = event->getEcalCluster(1);
     } else {
         cluster = event->getEcalCluster(0);
     }
 
+    seed_hit = cluster->getSeed();
+    ecal_plotter->get2DHistogram("Probe clusters")->Fill(seed_hit->getXCrystalIndex(), 
+            seed_hit->getYCrystalIndex(), 1); 
+    
     for (int track_n = 0; track_n < event->getNumberOfTracks(); ++track_n) { 
         
         // Get a track from the event
         track = event->getTrack(track_n);
+            
+        ecal_plotter->get1DHistogram("Probe cluster time - track time")->Fill(cluster->getClusterTime()    
+                - track->getTrackTime());
        
         if (matched_tag_track == track) continue;  
 
         if (isMatch(cluster, track)) { 
             found++;
+        
+            seed_hit = cluster->getSeed();
+            ecal_plotter->get2DHistogram("Matched clusters")->Fill(seed_hit->getXCrystalIndex(), 
+                seed_hit->getYCrystalIndex(), 1); 
+            ecal_plotter->get2DHistogram("Tracking efficiency")->Fill(seed_hit->getXCrystalIndex(), 
+                seed_hit->getYCrystalIndex(), 1);
+
+            ecal_plotter->get1DHistogram("Cluster pair dt - Pass cuts")->Fill(
+                    event->getEcalCluster(0)->getClusterTime() - event->getEcalCluster(1)->getClusterTime());
+
+            ecal_plotter->get1DHistogram("Cluster pair energy sum - Pass Cuts")->Fill(
+                    event->getEcalCluster(0)->getEnergy() + event->getEcalCluster(1)->getEnergy());
+
+            ecal_plotter->get1DHistogram("Probe cluster time - track time - Pass cuts")->Fill(cluster->getClusterTime()    
+                    - track->getTrackTime());
         }
     } 
 }
 
 void TagProbeAnalysis::finalize() { 
-    
+  
+    ecal_plotter->get2DHistogram("Tracking efficiency")->Divide(ecal_plotter->get2DHistogram("Probe clusters"));
+
+    ecal_plotter->saveToRootFile("tracking_efficiency.root");
+    ecal_plotter->saveToPdf("tracking_efficiency.pdf");
+
     std::cout << "//---------------------------------------------------//" << std::endl;
     std::cout << "// Total events: " << total_events << std::endl;
     std::cout << "// Events passing cluster threshold cut: " 
@@ -108,13 +152,24 @@ void TagProbeAnalysis::finalize() {
 void TagProbeAnalysis::bookHistograms() { 
     
     ecal_plotter->setType("float");
-    ecal_plotter->build1DHistogram("Cluster energy - All", 50, 0, 2);
-    ecal_plotter->build1DHistogram("Cluster energy - Pass Cut", 50, 0, 2);
+    ecal_plotter->build1DHistogram("Cluster pair energy sum", 50, 0, 2);
+    ecal_plotter->build1DHistogram("Cluster pair energy sum - Pass Cuts", 50, 0, 2);
+    ecal_plotter->build1DHistogram("Cluster pair dt", 100, -50, 50);
+    ecal_plotter->build1DHistogram("Cluster pair dt - Pass cuts", 100, -50, 50);
+    ecal_plotter->build1DHistogram("Tag cluster time - track time", 100, -20, 80);
+    ecal_plotter->build1DHistogram("Tag cluster time - track time - Pass cuts", 100, -20, 80);
+    ecal_plotter->build1DHistogram("Probe cluster time - track time", 100, -20, 80);
+    ecal_plotter->build1DHistogram("Probe cluster time - track time - Pass cuts", 100, -20, 80);
+    ecal_plotter->build2DHistogram("Tag clusters", 47, -23, 24, 12, -6, 6);
     ecal_plotter->build2DHistogram("Probe clusters", 47, -23, 24, 12, -6, 6);
+    ecal_plotter->build2DHistogram("Matched clusters", 47, -23, 24, 12, -6, 6);
+    ecal_plotter->build2DHistogram("Tracking efficiency", 47, -23, 24, 12, -6, 6);
 
     svt_plotter->setType("float");
     svt_plotter->build1DHistogram("Track-Cluster dx", 100, -200, 200);
     svt_plotter->build1DHistogram("Track-Cluster dy", 100, -200, 200);
+    svt_plotter->build1DHistogram("Track-Cluster dx - Pass cuts", 100, -200, 200);
+    svt_plotter->build1DHistogram("Track-Cluster dy - Pass cuts", 100, -200, 200);
 
     return;
 }
@@ -151,6 +206,15 @@ bool TagProbeAnalysis::passFiducialCut(HpsEvent* event) {
     return true;
 }
 
+bool TagProbeAnalysis::passClusterTimeCut(HpsEvent* event) { 
+    
+    if (abs(event->getEcalCluster(0)->getClusterTime() 
+                - event->getEcalCluster(1)->getClusterTime()) > 8) return false;
+
+    return true; 
+}
+
+
 bool TagProbeAnalysis::isMatch(EcalCluster* cluster, SvtTrack* track) { 
 
     // Get the cluster position
@@ -170,15 +234,16 @@ bool TagProbeAnalysis::isMatch(EcalCluster* cluster, SvtTrack* track) {
          << " z: " << track_pos_at_cluster_shower_max[2]
          << std::endl;*/ 
 
+
     // If the track and cluster are in opposite volumes, then they can't 
     // be a match
     if (cluster_pos[1]*track_pos_at_cluster_shower_max[1] < 0) return false;
    
     // Check that dx and dy between the extrapolated track and cluster
     // positions is reasonable
-    if (abs(cluster_pos[0] - track_pos_at_cluster_shower_max[0]) > 50) return false;
+    if (abs(cluster_pos[0] - track_pos_at_cluster_shower_max[0]) > 20) return false;
     
-    if (abs(cluster_pos[1] - track_pos_at_cluster_shower_max[1]) > 50) return false;
+    if (abs(cluster_pos[1] - track_pos_at_cluster_shower_max[1]) > 20) return false;
 
     return true;
 }
