@@ -48,6 +48,7 @@ TH2* Plotter::build2DHistogram(std::string name, int n_bins_x, double x_min, dou
     }
     
     histogram2D_map[name]->SetLineColor(color);
+    histogram2D_map[name]->SetStats(0); 
 }
 
 TH1* Plotter::get1DHistogram(std::string name) { 
