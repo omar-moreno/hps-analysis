@@ -9,6 +9,7 @@ target_link_libraries(TrackAnalysis
     ${ROOT_HIST_LIBRARY}
     ${HPS_EVENT_LIBRARY}
     Plotter
+    TrackExtrapolator
 )
 
 add_library(PairsAnalysis PairsAnalysis.cxx)

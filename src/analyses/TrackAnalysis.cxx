@@ -35,7 +35,7 @@ void TrackAnalysis::initialize() {
 
 void TrackAnalysis::processEvent(HpsEvent* event) {
 
-    //if (!event->isPair1Trigger()) return;
+    if (!event->isPair1Trigger()) return;
 
     track_plotter->get1DHistogram("Number of tracks")->Fill(event->getNumberOfTracks());
 
@@ -44,6 +44,9 @@ void TrackAnalysis::processEvent(HpsEvent* event) {
 
         // Get a track from the event
         track = event->getTrack(track_n); 
+
+        //if (track->getD0() < 2) continue;
+        //if (track->getChi2() > 1) continue;
 
         // Fill the plots providing general event information related to tracks
         int track_volume = track->isTopTrack() ? 0 : 1; 
@@ -74,6 +77,11 @@ void TrackAnalysis::processEvent(HpsEvent* event) {
         track_plotter->get2DHistogram("pz v py")->Fill(p[2], p[1]);
         track_plotter->get2DHistogram("p v pt")->Fill(p_mag, pt);
 
+        // Extrapolate the track to the target
+        std::vector<double> track_pos_target = TrackExtrapolator::extrapolateTrack(track, 0);
+        
+        track_plotter->get2DHistogram("track position at target")->Fill(track_pos_target[0], track_pos_target[1]);
+
         // Fill the electron and positron plots
         if (track->getCharge() < 0) { 
             electron_plotter->get1DHistogram("p")->Fill(p_mag);
@@ -94,6 +102,9 @@ void TrackAnalysis::processEvent(HpsEvent* event) {
                double energy = ((EcalCluster*) ((HpsParticle*) track->getParticle().GetObject())->getClusters()->At(0))->getEnergy();
                 electron_plotter->get1DHistogram("ep")->Fill(energy/p_mag);
             }
+
+            electron_plotter->get2DHistogram("track position at target")->Fill(track_pos_target[0], track_pos_target[1]);
+
         } else { 
             positron_plotter->get1DHistogram("p")->Fill(p_mag);
             positron_plotter->get1DHistogram("pt")->Fill(pt);
@@ -106,6 +117,8 @@ void TrackAnalysis::processEvent(HpsEvent* event) {
             positron_plotter->get1DHistogram("sin(phi0)")->Fill(sin(track->getPhi0()));
             positron_plotter->get1DHistogram("curvature")->Fill(track->getOmega());
             positron_plotter->get1DHistogram("tan_lambda")->Fill(track->getTanLambda());
+
+            positron_plotter->get2DHistogram("track position at target")->Fill(track_pos_target[0], track_pos_target[1]);
         }
     
         // Fill the top and bottom track plots
@@ -153,11 +166,58 @@ void TrackAnalysis::processEvent(HpsEvent* event) {
         TRefArray* hits = track->getSvtHits();
         for (int hit_n = 0; hit_n < hits->GetSize(); ++hit_n) { 
             std::vector<double> position = ((SvtHit*) hits->At(hit_n))->getPosition();
+
+            // Extrapolate the track to the target
+            std::vector<double> track_pos_layer = TrackExtrapolator::extrapolateTrack(track, position[0]);
+
+            double x_residual = track_pos_layer[0] - position[1]; 
+            double y_residual = track_pos_layer[1] - position[2];
+
             int layer = ((SvtHit*) hits->At(hit_n))->getLayer();
             if (track->isTopTrack()) { 
-                track_plotter->get2DHistogram("Top Layer " + std::to_string(layer))->Fill(position[1], position[2]);
+                track_plotter->get2DHistogram("Top Layer " + std::to_string(layer) + " - Hit Positions")->Fill(
+                        position[1], position[2]);
+                track_plotter->get1DHistogram("Top Layer " + std::to_string(layer) + " - x Residuals")->Fill(
+                        x_residual); 
+                track_plotter->get1DHistogram("Top Layer " + std::to_string(layer) + " - y Residuals")->Fill(
+                        y_residual); 
+                if (track->getCharge() < 0) { 
+                    electron_plotter->get2DHistogram("Top Layer " + std::to_string(layer) + " - Hit Positions")->Fill(
+                        position[1], position[2]);
+                    electron_plotter->get1DHistogram("Top Layer " + std::to_string(layer) + " - x Residuals")->Fill(
+                        x_residual); 
+                    electron_plotter->get1DHistogram("Top Layer " + std::to_string(layer) + " - y Residuals")->Fill(
+                        y_residual); 
+                } else {
+                    positron_plotter->get2DHistogram("Top Layer " + std::to_string(layer) + " - Hit Positions")->Fill(
+                        position[1], position[2]);
+                    positron_plotter->get1DHistogram("Top Layer " + std::to_string(layer) + " - x Residuals")->Fill(
+                        x_residual); 
+                    positron_plotter->get1DHistogram("Top Layer " + std::to_string(layer) + " - y Residuals")->Fill(
+                        y_residual); 
+                }
             } else { 
-                track_plotter->get2DHistogram("Bottom Layer " + std::to_string(layer))->Fill(position[1], position[2]);
+                track_plotter->get2DHistogram("Bottom Layer " + std::to_string(layer) + " - Hit Positions")->Fill(
+                        position[1], position[2]);
+                track_plotter->get1DHistogram("Bottom Layer " + std::to_string(layer) + " - x Residuals")->Fill(
+                        x_residual); 
+                track_plotter->get1DHistogram("Bottom Layer " + std::to_string(layer) + " - y Residuals")->Fill(
+                        y_residual); 
+                if (track->getCharge() < 0) { 
+                    electron_plotter->get2DHistogram("Bottom Layer " + std::to_string(layer) + " - Hit Positions")->Fill(
+                        position[1], position[2]);
+                    electron_plotter->get1DHistogram("Bottom Layer " + std::to_string(layer) + " - x Residuals")->Fill(
+                        x_residual); 
+                    electron_plotter->get1DHistogram("Bottom Layer " + std::to_string(layer) + " - y Residuals")->Fill(
+                        y_residual); 
+                } else {
+                    positron_plotter->get2DHistogram("Bottom Layer " + std::to_string(layer) + " - Hit Positions")->Fill(
+                        position[1], position[2]);
+                    positron_plotter->get1DHistogram("Bottom Layer " + std::to_string(layer) + " - x Residuals")->Fill(
+                        x_residual); 
+                    positron_plotter->get1DHistogram("Bottom Layer " + std::to_string(layer) + " - y Residuals")->Fill(
+                        y_residual); 
+                }
             }
         }
 
@@ -170,7 +230,7 @@ void TrackAnalysis::processEvent(HpsEvent* event) {
         }
     }
 
-    if (event->getNumberOfTracks() == 2) { 
+    if (event->getNumberOfTracks() == 2) {
      
         if (event->getTrack(0)->getCharge() < 0 && event->getTrack(1)->getCharge() > 0) {
             track_plotter->get2DHistogram("p[e+] v p[e-]")->Fill(
@@ -236,7 +296,9 @@ void TrackAnalysis::bookHistograms() {
 
     track_plotter->build2DHistogram("pz v px", 50, 0, 2.0, 50, -0.1, 0.2); 
     track_plotter->build2DHistogram("pz v py", 50, 0, 2.0, 50, -0.15, 0.15); 
-    track_plotter->build2DHistogram("p v pt", 50, 0, 2.0, 50, -0.1, 0.2); 
+    track_plotter->build2DHistogram("p v pt", 50, 0, 2.0, 50, -0.1, 0.2);
+
+    track_plotter->build2DHistogram("track position at target", 80, -20, 20, 40, -5, 5);
 
     electron_plotter->setType("float")->setLineColor(kOrange + 9);
     electron_plotter->build1DHistogram("doca", 80, -10, 10);
@@ -253,12 +315,15 @@ void TrackAnalysis::bookHistograms() {
     electron_plotter->build1DHistogram("chi2", 40, 0, 40);
     electron_plotter->build1DHistogram("ep", 60, 0, 2);
 
+    electron_plotter->build2DHistogram("track position at target", 80, -20, 20, 40, -5, 5); 
+
     positron_plotter->setType("float");
     positron_plotter->build1DHistogram("doca", 80, -10, 10);
     positron_plotter->build1DHistogram("z0", 80, -2, 2);
     positron_plotter->build1DHistogram("sin(phi0)", 40, -0.2, 0.2);
     positron_plotter->build1DHistogram("curvature", 50, -0.001, 0.001);
     positron_plotter->build1DHistogram("tan_lambda", 100, -0.1, 0.1);
+            
 
     positron_plotter->build1DHistogram("p", 50, 0, 2.0);
     positron_plotter->build1DHistogram("pt", 50, -0.1, 0.2);
@@ -266,6 +331,8 @@ void TrackAnalysis::bookHistograms() {
     positron_plotter->build1DHistogram("py", 50, -0.15, 0.15); 
     positron_plotter->build1DHistogram("pz", 50, 0, 2.0); 
     positron_plotter->build1DHistogram("chi2", 40, 0, 40);
+
+    positron_plotter->build2DHistogram("track position at target", 80, -20, 20, 40, -5, 5); 
 
     bottom_plotter->setType("float");
     top_plotter->build1DHistogram("doca", 80, -10, 10);
@@ -296,16 +363,37 @@ void TrackAnalysis::bookHistograms() {
     bottom_plotter->build1DHistogram("pz", 50, 0, 2.0); 
     bottom_plotter->build1DHistogram("chi2", 40, 0, 40);
     bottom_plotter->build1DHistogram("ep", 60, 0, 2);
-
-
+    
     for (int module_n = 1; module_n <= 6; ++module_n) { 
-        track_plotter->build2DHistogram("Top Layer " + std::to_string(module_n), 130, -100, 160, 40, -10, 70);
-        track_plotter->build2DHistogram("Bottom Layer " + std::to_string(module_n), 130, -100, 160, 40, -70, 10); 
+        track_plotter->build2DHistogram("Top Layer " + std::to_string(module_n) + " - Hit Positions",
+                130, -100, 160, 40, -10, 70);
+        track_plotter->build2DHistogram("Bottom Layer " + std::to_string(module_n) + " - Hit Positions",
+                130, -100, 160, 40, -70, 10);
+        electron_plotter->build2DHistogram("Top Layer " + std::to_string(module_n) + " - Hit Positions",
+                130, -100, 160, 40, -10, 70);
+        electron_plotter->build2DHistogram("Bottom Layer " + std::to_string(module_n) + " - Hit Positions",
+                130, -100, 160, 40, -70, 10);
+        positron_plotter->build2DHistogram("Top Layer " + std::to_string(module_n) + " - Hit Positions",
+                130, -100, 160, 40, -10, 70);
+        positron_plotter->build2DHistogram("Bottom Layer " + std::to_string(module_n) + " - Hit Positions",
+                130, -100, 160, 40, -70, 10);
+        track_plotter->build1DHistogram("Top Layer " + std::to_string(module_n) + " - x Residuals", 120, -60, 60); 
+        track_plotter->build1DHistogram("Top Layer " + std::to_string(module_n) + " - y Residuals", 120, -60, 60); 
+        track_plotter->build1DHistogram("Bottom Layer " + std::to_string(module_n) + " - x Residuals", 120, -60, 60); 
+        track_plotter->build1DHistogram("Bottom Layer " + std::to_string(module_n) + " - y Residuals", 120, -60, 60); 
+        electron_plotter->build1DHistogram("Top Layer " + std::to_string(module_n) + " - x Residuals", 120, -60, 60); 
+        electron_plotter->build1DHistogram("Top Layer " + std::to_string(module_n) + " - y Residuals", 120, -60, 60); 
+        electron_plotter->build1DHistogram("Bottom Layer " + std::to_string(module_n) + " - x Residuals", 120, -60, 60); 
+        electron_plotter->build1DHistogram("Bottom Layer " + std::to_string(module_n) + " - y Residuals", 120, -60, 60); 
+        positron_plotter->build1DHistogram("Top Layer " + std::to_string(module_n) + " - x Residuals", 120, -60, 60); 
+        positron_plotter->build1DHistogram("Top Layer " + std::to_string(module_n) + " - y Residuals", 120, -60, 60); 
+        positron_plotter->build1DHistogram("Bottom Layer " + std::to_string(module_n) + " - x Residuals", 120, -60, 60); 
+        positron_plotter->build1DHistogram("Bottom Layer " + std::to_string(module_n) + " - y Residuals", 120, -60, 60); 
     }
-
+    
     track_plotter->build2DHistogram("p[e+] v p[e-]", 50, 0, 2.0, 50, 0, 2.0);
     track_plotter->build2DHistogram("p[e-] v p[e-]", 50, 0, 2.0, 50, 0, 2.0);
-    track_plotter->build2DHistogram("theta[e-] v theta[e-]", 100, -0.05, 0.05, 100, -0.05, 0.05); 
+    track_plotter->build2DHistogram("theta[e-] v theta[e-]", 100, -0.05, 0.05, 100, -0.05, 0.05);
 }
 
 std::string TrackAnalysis::toString() { 

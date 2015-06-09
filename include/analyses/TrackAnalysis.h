@@ -29,6 +29,7 @@
 //--- HPS Analysis ---//
 //--------------------//
 #include <HpsAnalysis.h>
+#include <TrackExtrapolator.h>
 #include <Plotter.h>
 
 //---------------//
