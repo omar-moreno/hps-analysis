@@ -19,15 +19,13 @@
 //------------//
 //--- ROOT ---//
 //------------//
-#include <TCanvas.h>
-#include <TH1F.h>
-#include <TH2F.h>
 #include <TFile.h>
 
 //--------------------//
 //--- HPS Analysis ---//
 //--------------------//
 #include <HpsAnalysis.h>
+#include <Plotter.h>
 
 //---------------//
 //--- HPS DST ---//
@@ -87,12 +85,10 @@ class PairsAnalysis : public HpsAnalysis {
         // ROOT output_file
         TFile* output_file; 
 
-        std::unordered_map<std::string, TH1F*> uc_vtx_plots;  
-        std::unordered_map<std::string, TH1F*> uc_vtx_epem_plots;
-        std::unordered_map<std::string, TH1F*> uc_vtx_emem_plots;
-        std::unordered_map<std::string, TH2F*> uc_vtx_epem_plots_2d;
-        std::unordered_map<std::string, TH2F*> uc_vtx_emem_plots_2d;
-
+        Plotter* uc_vtx_plotter;
+        Plotter* uc_vtx_epem_plotter;
+        Plotter* uc_vtx_emem_plotter;
+        
         // Name of the class
         std::string class_name;
 

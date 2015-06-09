@@ -19,6 +19,7 @@ target_link_libraries(PairsAnalysis
     ${ROOT_GPAD_LIBRARY}
     ${ROOT_HIST_LIBRARY}
     ${HPS_EVENT_LIBRARY}
+    Plotter
 )
 
 add_library(TagProbeAnalysis TagProbeAnalysis.cxx)
