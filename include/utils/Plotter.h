@@ -6,7 +6,7 @@
 //--- C++ StdLib ---//
 //------------------//
 #include <string>
-#include <unordered_map>
+#include <map>
 #include <stdexcept>
 #include <iostream>
 #include <typeinfo>
@@ -80,8 +80,8 @@ class Plotter {
 
     private: 
 
-        std::unordered_map<std::string, TH1*> histogram1D_map;
-        std::unordered_map<std::string, TH2*> histogram2D_map;
+        std::map<std::string, TH1*> histogram1D_map;
+        std::map<std::string, TH2*> histogram2D_map;
 
         std::string type; 
 

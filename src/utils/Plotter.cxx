@@ -72,14 +72,14 @@ TH2* Plotter::get2DHistogram(std::string name) {
 void Plotter::saveToRootFile(std::string file_name) { 
 
     TFile* output_file = new TFile(file_name.c_str(), "RECREATE");
-    std::unordered_map<std::string, TH1*>::iterator histogram1D_it =  histogram1D_map.begin();
+    std::map<std::string, TH1*>::iterator histogram1D_it =  histogram1D_map.begin();
     for (histogram1D_it; histogram1D_it != histogram1D_map.end(); ++histogram1D_it) {
         histogram1D_it->second->Draw(); 
         histogram1D_it->second->SetName(histogram1D_it->second->GetTitle());
         histogram1D_it->second->Write();
     }
 
-    std::unordered_map<std::string, TH2*>::iterator histogram2D_it =  histogram2D_map.begin();
+    std::map<std::string, TH2*>::iterator histogram2D_it =  histogram2D_map.begin();
     for (histogram2D_it; histogram2D_it != histogram2D_map.end(); ++histogram2D_it) {
         histogram2D_it->second->Draw(); 
         histogram2D_it->second->SetName(histogram2D_it->second->GetTitle());
@@ -93,13 +93,13 @@ void Plotter::saveToPdf(std::string file_name) {
 
     TCanvas* canvas = new TCanvas("canvas", "canvas", 600, 600);
     canvas->Print((file_name + "[").c_str());
-    std::unordered_map<std::string, TH1*>::iterator histogram1D_it =  histogram1D_map.begin();
+    std::map<std::string, TH1*>::iterator histogram1D_it =  histogram1D_map.begin();
     for (histogram1D_it; histogram1D_it != histogram1D_map.end(); ++histogram1D_it) {
         histogram1D_it->second->Draw(); 
         canvas->Print((file_name + "(").c_str());
     }
 
-    std::unordered_map<std::string, TH2*>::iterator histogram2D_it =  histogram2D_map.begin();
+    std::map<std::string, TH2*>::iterator histogram2D_it =  histogram2D_map.begin();
     for (histogram2D_it; histogram2D_it != histogram2D_map.end(); ++histogram2D_it) {
         histogram2D_it->second->Draw("colz"); 
         canvas->Print((file_name + "(").c_str());
