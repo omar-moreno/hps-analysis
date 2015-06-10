@@ -25,6 +25,7 @@
 #include <TrackAnalysis.h>
 #include <PairsAnalysis.h>
 #include <TagProbeAnalysis.h>
+#include <SimpleTrackingEfficiencyAnalysis.h>
 
 using namespace std; 
 
@@ -112,7 +113,8 @@ int main(int argc, char **argv) {
 
     //analyses.push_back(new TrackAnalysis());
     //analyses.push_back(new PairsAnalysis());
-    analyses.push_back(new TagProbeAnalysis());
+    //analyses.push_back(new TagProbeAnalysis());
+    analyses.push_back(new SimpleTrackingEfficiencyAnalysis());
 
     // Initialize all analyses
     for (list<HpsAnalysis*>::iterator analysis = analyses.begin();
@@ -124,7 +126,7 @@ int main(int argc, char **argv) {
     for (int entry = 0; entry < tree->GetEntries(); ++entry) {
    
     	// Print the event number every 500 events
-    	if((entry+1)%500 == 0){
+    	if((entry+1)%10000 == 0){
     		std::cout << "Event: " << entry+1 << endl;
     	}
         

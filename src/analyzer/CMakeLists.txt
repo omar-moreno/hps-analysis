@@ -11,6 +11,7 @@ target_link_libraries(hps_analysis
     TrackAnalysis
     PairsAnalysis
     TagProbeAnalysis
+    SimpleTrackingEfficiencyAnalysis
 )
 
 # Find the necessary LCIO libraries

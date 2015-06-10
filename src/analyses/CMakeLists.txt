@@ -28,3 +28,10 @@ target_link_libraries(TagProbeAnalysis
     TrackExtrapolator
     Plotter
 )
+
+add_library(SimpleTrackingEfficiencyAnalysis SimpleTrackingEfficiencyAnalysis.cxx)
+target_link_libraries(SimpleTrackingEfficiencyAnalysis
+    ${HPS_EVENT_LIBRARY}
+    TrackExtrapolator
+    Plotter
+)
