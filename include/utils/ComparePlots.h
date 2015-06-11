@@ -62,12 +62,26 @@ class ComparePlots {
          */
         void addPlots(TList* keys);
 
+        /**
+         *
+         */
+        void applyBasic1DStyle();
+
+        /**
+         *
+         */
+        void applyBasic2DStyle();
+
+        /**
+         *
+         */
+        void applyMCStyle();
 
         //
-        std::map <std::string, std::vector<TH1*> > plot_map;
+        std::map <std::string, std::vector<TH1*> > histogram1D_map;
+        std::map <std::string, std::vector<TH1*> > histogram2D_map;
 
         std::string style;
-
 };
 
 #endif // __COMPARE_PLOTS_H__
