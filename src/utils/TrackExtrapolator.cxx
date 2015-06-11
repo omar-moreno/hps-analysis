@@ -84,14 +84,14 @@ std::vector<double> TrackExtrapolator::extrapolateTrack(SvtTrack* track, double 
     std::vector<double> position(3,0); 
     double dz = 0;
 
-    if (z >= 997.2) {
+    if (z >= 912) {
        //std::cout << "[ TrackExtrapolator ]: Track outside of dipole." << std::endl;  
        
-       position = extrapolateHelixToXPlane(track, 997.2);
+       position = extrapolateHelixToXPlane(track, 912);
        //std::cout << "[ TrackExtrapolator ]: Track position at dipole edge: ( " 
        //    << position[0] << ", " << position[1] << ", " << position[2] << " )" << std::endl; 
 
-       dz = z - 997.2;
+       dz = z - 912;
        //std::cout << "[ TrackExtrapolator ]: dz: " << dz << std::endl;
     } else if (z <= 0) { 
        position = extrapolateHelixToXPlane(track, 0);
