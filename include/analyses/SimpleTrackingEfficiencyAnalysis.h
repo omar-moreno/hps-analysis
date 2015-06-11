@@ -61,6 +61,11 @@ class SimpleTrackingEfficiencyAnalysis : public HpsAnalysis {
 
     private:
 
+        //--- Cuts ---//
+        bool passEnergyCut(EcalCluster* cluster);
+        bool passClusterTimeCut(EcalCluster* cluster);
+        bool passClusterSizeCut(EcalCluster* cluster);
+
         bool isMatch(EcalCluster* cluster, SvtTrack* track);
 
         SvtTrack* track;
@@ -68,6 +73,11 @@ class SimpleTrackingEfficiencyAnalysis : public HpsAnalysis {
 
         Plotter* plotter;
         
+        double cluster_energy_low_threshold; 
+        double cluster_energy_high_threshold; 
+
+        bool cuts_enabled; 
+
         // Name of the class
 		std::string class_name;
 };
