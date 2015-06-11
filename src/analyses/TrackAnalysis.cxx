@@ -45,7 +45,7 @@ void TrackAnalysis::processEvent(HpsEvent* event) {
         // Get a track from the event
         track = event->getTrack(track_n); 
 
-        //if (track->getD0() < 2) continue;
+        //if (abs(track->getD0()) < 3) continue;
         //if (track->getChi2() > 1) continue;
 
         // Fill the plots providing general event information related to tracks
@@ -60,8 +60,14 @@ void TrackAnalysis::processEvent(HpsEvent* event) {
         track_plotter->get1DHistogram("sin(phi0)")->Fill(sin(track->getPhi0()));
         track_plotter->get1DHistogram("curvature")->Fill(track->getOmega());
         track_plotter->get1DHistogram("tan_lambda")->Fill(track->getTanLambda());
-       
-         
+        track_plotter->get1DHistogram("cos(theta)")->Fill(TrackExtrapolator::getCosTheta(track));
+
+        // Fill the track time parameters
+        track_plotter->get1DHistogram("track time")->Fill(track->getTrackTime());
+        track_plotter->get2DHistogram("track time v d0")->Fill(track->getTrackTime(), track->getD0());
+        
+        track_plotter->get2DHistogram("sin(phi0) v curvature")->Fill(sin(track->getPhi0()), track->getOmega()); 
+
         // Calculate the momentum magnitude and transverse momentum
         std::vector<double> p = track->getMomentum();
         double p_mag = sqrt(p[0]*p[0] + p[1]*p[1] + p[2]*p[2]);
@@ -77,10 +83,15 @@ void TrackAnalysis::processEvent(HpsEvent* event) {
         track_plotter->get2DHistogram("pz v py")->Fill(p[2], p[1]);
         track_plotter->get2DHistogram("p v pt")->Fill(p_mag, pt);
 
+        track_plotter->get2DHistogram("sin(phi0) v px")->Fill(sin(track->getPhi0()), p[0]); 
+        track_plotter->get2DHistogram("sin(phi0) v py")->Fill(sin(track->getPhi0()), p[1]); 
+
         // Extrapolate the track to the target
         std::vector<double> track_pos_target = TrackExtrapolator::extrapolateTrack(track, 0);
+        std::vector<double> track_pos_sp = TrackExtrapolator::extrapolateTrack(track, -100);
         
         track_plotter->get2DHistogram("track position at target")->Fill(track_pos_target[0], track_pos_target[1]);
+        track_plotter->get2DHistogram("track position at sp")->Fill(track_pos_sp[0], track_pos_sp[1]);
 
         // Fill the electron and positron plots
         if (track->getCharge() < 0) { 
@@ -97,6 +108,14 @@ void TrackAnalysis::processEvent(HpsEvent* event) {
             electron_plotter->get1DHistogram("sin(phi0)")->Fill(sin(track->getPhi0()));
             electron_plotter->get1DHistogram("curvature")->Fill(track->getOmega());
             electron_plotter->get1DHistogram("tan_lambda")->Fill(track->getTanLambda());
+            electron_plotter->get1DHistogram("cos(theta)")->Fill(TrackExtrapolator::getCosTheta(track));
+
+            electron_plotter->get1DHistogram("track time")->Fill(track->getTrackTime());
+            electron_plotter->get2DHistogram("track time v d0")->Fill(track->getTrackTime(), track->getD0());
+
+            electron_plotter->get2DHistogram("sin(phi0) v curvature")->Fill(sin(track->getPhi0()), track->getOmega()); 
+            electron_plotter->get2DHistogram("sin(phi0) v px")->Fill(sin(track->getPhi0()), p[0]); 
+            electron_plotter->get2DHistogram("sin(phi0) v py")->Fill(sin(track->getPhi0()), p[1]); 
 
             if (((HpsParticle*) track->getParticle().GetObject())->getClusters()->GetEntriesFast() != 0) { 
                double energy = ((EcalCluster*) ((HpsParticle*) track->getParticle().GetObject())->getClusters()->At(0))->getEnergy();
@@ -104,6 +123,7 @@ void TrackAnalysis::processEvent(HpsEvent* event) {
             }
 
             electron_plotter->get2DHistogram("track position at target")->Fill(track_pos_target[0], track_pos_target[1]);
+            electron_plotter->get2DHistogram("track position at sp")->Fill(track_pos_sp[0], track_pos_sp[1]);
 
         } else { 
             positron_plotter->get1DHistogram("p")->Fill(p_mag);
@@ -117,8 +137,17 @@ void TrackAnalysis::processEvent(HpsEvent* event) {
             positron_plotter->get1DHistogram("sin(phi0)")->Fill(sin(track->getPhi0()));
             positron_plotter->get1DHistogram("curvature")->Fill(track->getOmega());
             positron_plotter->get1DHistogram("tan_lambda")->Fill(track->getTanLambda());
+            positron_plotter->get1DHistogram("cos(theta)")->Fill(TrackExtrapolator::getCosTheta(track));
+
+            positron_plotter->get2DHistogram("sin(phi0) v curvature")->Fill(sin(track->getPhi0()), track->getOmega()); 
+            positron_plotter->get2DHistogram("sin(phi0) v px")->Fill(sin(track->getPhi0()), p[0]); 
+            positron_plotter->get2DHistogram("sin(phi0) v py")->Fill(sin(track->getPhi0()), p[1]); 
+
+            positron_plotter->get1DHistogram("track time")->Fill(track->getTrackTime());
+            positron_plotter->get2DHistogram("track time v d0")->Fill(track->getTrackTime(), track->getD0());
 
             positron_plotter->get2DHistogram("track position at target")->Fill(track_pos_target[0], track_pos_target[1]);
+            positron_plotter->get2DHistogram("track position at sp")->Fill(track_pos_sp[0], track_pos_sp[1]);
         }
     
         // Fill the top and bottom track plots
@@ -213,6 +242,14 @@ void TrackAnalysis::processEvent(HpsEvent* event) {
                     positron_plotter->get1DHistogram(bot_name + " - y Residuals")->Fill(y_residual); 
                 }
             }
+
+            track_plotter->get1DHistogram("track time - hit time")->Fill(track->getTrackTime() - ((SvtHit*) hits->At(hit_n))->getTime());
+        
+            if (track->getCharge() < 0) { 
+                electron_plotter->get1DHistogram("track time - hit time")->Fill(track->getTrackTime() - ((SvtHit*) hits->At(hit_n))->getTime());
+            } else { 
+                positron_plotter->get1DHistogram("track time - hit time")->Fill(track->getTrackTime() - ((SvtHit*) hits->At(hit_n))->getTime());
+            }
         }
 
         // FEE
@@ -225,24 +262,27 @@ void TrackAnalysis::processEvent(HpsEvent* event) {
     }
 
     if (event->getNumberOfTracks() == 2) {
-     
-        if (event->getTrack(0)->getCharge() < 0 && event->getTrack(1)->getCharge() > 0) {
-            track_plotter->get2DHistogram("p[e+] v p[e-]")->Fill(
-                    this->getMagnitude(event->getTrack(0)->getMomentum()),
-                    this->getMagnitude(event->getTrack(1)->getMomentum()));
-        } else if (event->getTrack(0)->getCharge() > 0 && event->getTrack(1)->getCharge() < 0) { 
-            track_plotter->get2DHistogram("p[e+] v p[e-]")->Fill(
-                    this->getMagnitude(event->getTrack(1)->getMomentum()),
-                    this->getMagnitude(event->getTrack(0)->getMomentum()));
-        } else if (event->getTrack(0)->getCharge() < 0 && event->getTrack(1)->getCharge() < 0) {
-            track_plotter->get2DHistogram("p[e-] v p[e-]")->Fill(
-                    this->getMagnitude(event->getTrack(0)->getMomentum()),
-                    this->getMagnitude(event->getTrack(1)->getMomentum()));
+    
+        //if (abs(event->getTrack(0)->getD0()) > 3 || abs(event->getTrack(1)->getD0()) > 3) {
+
+            if (event->getTrack(0)->getCharge() < 0 && event->getTrack(1)->getCharge() > 0) {
+                track_plotter->get2DHistogram("p[e+] v p[e-]")->Fill(
+                        this->getMagnitude(event->getTrack(0)->getMomentum()),
+                        this->getMagnitude(event->getTrack(1)->getMomentum()));
+            } else if (event->getTrack(0)->getCharge() > 0 && event->getTrack(1)->getCharge() < 0) { 
+                track_plotter->get2DHistogram("p[e+] v p[e-]")->Fill(
+                        this->getMagnitude(event->getTrack(1)->getMomentum()),
+                        this->getMagnitude(event->getTrack(0)->getMomentum()));
+            } else if (event->getTrack(0)->getCharge() < 0 && event->getTrack(1)->getCharge() < 0) {
+                track_plotter->get2DHistogram("p[e-] v p[e-]")->Fill(
+                        this->getMagnitude(event->getTrack(0)->getMomentum()),
+                        this->getMagnitude(event->getTrack(1)->getMomentum()));
         
-            track_plotter->get2DHistogram("theta[e-] v theta[e-]")->Fill(
-                    atan(event->getTrack(0)->getTanLambda()),
-                    atan(event->getTrack(1)->getTanLambda()));
-        } 
+                track_plotter->get2DHistogram("theta[e-] v theta[e-]")->Fill(
+                        atan(event->getTrack(0)->getTanLambda()),
+                        atan(event->getTrack(1)->getTanLambda()));
+            } 
+        //} 
     }
 }
 
@@ -297,6 +337,7 @@ void TrackAnalysis::bookHistograms() {
     track_plotter->build1DHistogram("sin(phi0)", 40, -0.2, 0.2);
     track_plotter->build1DHistogram("curvature", 50, -0.001, 0.001);
     track_plotter->build1DHistogram("tan_lambda", 100, -0.1, 0.1);
+    track_plotter->build1DHistogram("cos(theta)", 40, -0.1, 0.1);
     
     track_plotter->build1DHistogram("p", 50, 0, 2.0);
     track_plotter->build1DHistogram("pt", 50, -0.1, 0.2);
@@ -308,11 +349,19 @@ void TrackAnalysis::bookHistograms() {
     track_plotter->build1DHistogram("py - fee", 50, -0.15, 0.15); 
     track_plotter->build1DHistogram("pz - fee", 50, 0, 2.0);
 
+    track_plotter->build1DHistogram("track time", 100, -10, 10);
+    track_plotter->build1DHistogram("track time - hit time", 100, -10, 10);
+
     track_plotter->build2DHistogram("pz v px", 50, 0, 2.0, 50, -0.1, 0.2); 
     track_plotter->build2DHistogram("pz v py", 50, 0, 2.0, 50, -0.15, 0.15); 
     track_plotter->build2DHistogram("p v pt", 50, 0, 2.0, 50, -0.1, 0.2);
+    track_plotter->build2DHistogram("sin(phi0) v curvature", 40, -0.2, 0.2, 50, -0.001, 0.001);
 
     track_plotter->build2DHistogram("track position at target", 80, -20, 20, 40, -5, 5);
+    track_plotter->build2DHistogram("track position at sp", 80, -20, 20, 80, -20, 20);
+    track_plotter->build2DHistogram("sin(phi0) v px", 40, -0.2, 0.2, 50, -0.1, 0.2);
+    track_plotter->build2DHistogram("sin(phi0) v py", 40, -0.2, 0.2, 50, -0.15, 0.15);
+    track_plotter->build2DHistogram("track time v d0", 100, -10, 10, 80, -10, 10);
 
     electron_plotter->setType("float")->setLineColor(kOrange + 9);
     electron_plotter->build1DHistogram("doca", 80, -10, 10);
@@ -320,6 +369,7 @@ void TrackAnalysis::bookHistograms() {
     electron_plotter->build1DHistogram("sin(phi0)", 40, -0.2, 0.2);
     electron_plotter->build1DHistogram("curvature", 50, -0.001, 0.001);
     electron_plotter->build1DHistogram("tan_lambda", 100, -0.1, 0.1);
+    electron_plotter->build1DHistogram("cos(theta)", 40, -0.1, 0.1);
 
     electron_plotter->build1DHistogram("p", 50, 0, 2.0);
     electron_plotter->build1DHistogram("pt", 50, -0.1, 0.2);
@@ -329,7 +379,15 @@ void TrackAnalysis::bookHistograms() {
     electron_plotter->build1DHistogram("chi2", 40, 0, 40);
     electron_plotter->build1DHistogram("ep", 60, 0, 2);
 
+    electron_plotter->build1DHistogram("track time", 100, -10, 10);
+    electron_plotter->build1DHistogram("track time - hit time", 100, -10, 10);
+
     electron_plotter->build2DHistogram("track position at target", 80, -20, 20, 40, -5, 5); 
+    electron_plotter->build2DHistogram("track position at sp", 80, -20, 20, 80, -20, 20);
+    electron_plotter->build2DHistogram("sin(phi0) v curvature", 40, -0.2, 0.2, 50, -0.001, 0.001);
+    electron_plotter->build2DHistogram("sin(phi0) v px", 40, -0.2, 0.2, 50, -0.1, 0.2);
+    electron_plotter->build2DHistogram("sin(phi0) v py", 40, -0.2, 0.2, 50, -0.15, 0.15);
+    electron_plotter->build2DHistogram("track time v d0", 100, -10, 10, 80, -10, 10);
 
     positron_plotter->setType("float");
     positron_plotter->build1DHistogram("doca", 80, -10, 10);
@@ -337,6 +395,7 @@ void TrackAnalysis::bookHistograms() {
     positron_plotter->build1DHistogram("sin(phi0)", 40, -0.2, 0.2);
     positron_plotter->build1DHistogram("curvature", 50, -0.001, 0.001);
     positron_plotter->build1DHistogram("tan_lambda", 100, -0.1, 0.1);
+    positron_plotter->build1DHistogram("cos(theta)", 40, -0.1, 0.1);
             
 
     positron_plotter->build1DHistogram("p", 50, 0, 2.0);
@@ -346,7 +405,15 @@ void TrackAnalysis::bookHistograms() {
     positron_plotter->build1DHistogram("pz", 50, 0, 2.0); 
     positron_plotter->build1DHistogram("chi2", 40, 0, 40);
 
+    positron_plotter->build1DHistogram("track time", 100, -10, 10);
+    positron_plotter->build1DHistogram("track time - hit time", 100, -10, 10);
+
     positron_plotter->build2DHistogram("track position at target", 80, -20, 20, 40, -5, 5); 
+    positron_plotter->build2DHistogram("track position at sp", 80, -20, 20, 80, -20, 20);
+    positron_plotter->build2DHistogram("sin(phi0) v curvature", 40, -0.2, 0.2, 50, -0.001, 0.001);
+    positron_plotter->build2DHistogram("sin(phi0) v px", 40, -0.2, 0.2, 50, -0.1, 0.2);
+    positron_plotter->build2DHistogram("sin(phi0) v py", 40, -0.2, 0.2, 50, -0.15, 0.15);
+    positron_plotter->build2DHistogram("track time v d0", 100, -10, 10, 80, -10, 10);
 
     bottom_plotter->setType("float");
     top_plotter->build1DHistogram("doca", 80, -10, 10);
