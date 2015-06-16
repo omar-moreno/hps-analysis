@@ -54,7 +54,7 @@ TH2* Plotter::build2DHistogram(std::string name, int n_bins_x, double x_min, dou
 TH1* Plotter::get1DHistogram(std::string name) { 
     
     if (histogram1D_map[name] == NULL) { 
-        throw std::runtime_error("Histogram doesn't exist.");
+        throw std::runtime_error("Histogram " + name + " has not been created.");
     }
 
     return histogram1D_map[name];
@@ -63,7 +63,7 @@ TH1* Plotter::get1DHistogram(std::string name) {
 TH2* Plotter::get2DHistogram(std::string name) { 
 
     if (histogram2D_map[name] == NULL) { 
-        throw std::runtime_error("Histogram doesn't exist.");
+        throw std::runtime_error("Histogram " + name + " has not been created.");
     }
 
     return histogram2D_map[name]; 
