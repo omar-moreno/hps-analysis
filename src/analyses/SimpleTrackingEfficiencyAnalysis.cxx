@@ -5,7 +5,7 @@ SimpleTrackingEfficiencyAnalysis::SimpleTrackingEfficiencyAnalysis()
     : track(NULL),
       cluster(NULL),
       plotter(new Plotter()),
-      cluster_energy_low_threshold(.8 /* GeV */),
+      cluster_energy_low_threshold(.7 /* GeV */),
       cluster_energy_high_threshold(1.15 /* GeV */),
       cuts_enabled(true),
       class_name("SimpleTrackingEfficiencyAnalysis") {
@@ -21,42 +21,75 @@ void SimpleTrackingEfficiencyAnalysis::initialize() {
 
 void SimpleTrackingEfficiencyAnalysis::processEvent(HpsEvent* event) { 
   
-    // Only look at single 0 triggers
-    if (!event->isSingle0Trigger()) return;
-
-    // For now, only look at events with a single cluster    
-    if (event->getNumberOfEcalClusters() != 1) return;
+    // Only look at single 1 triggers
+    if (!event->isSingle1Trigger()) return;
 
     // Loop over all clusters in an event and try to match a track to them
     for (int cluster_n = 0; cluster_n < event->getNumberOfEcalClusters(); ++cluster_n) {
   
         // Get the cluster from the event 
         cluster = event->getEcalCluster(cluster_n);
+    
+        // Reset the cut flags
+        bool pass_time_cut = false;
+        bool pass_cluster_size_cut = false;
+        bool pass_energy_cut = false;
 
-        // Check that the cluster passes the energy requirement
-        if (!passEnergyCut(cluster)) continue;
-
-        // Check that the cluster passes the time requirement
-        if (!passClusterTimeCut(cluster)) continue;
-
-        // 
-        if (!passClusterSizeCut(cluster)) continue;
+        // Fill the cluster information for all events
+        double cluster_energy = cluster->getEnergy();
+        double cluster_time = cluster->getClusterTime();
+        plotter->get1DHistogram("cluster energy")->Fill(cluster_energy);
+        plotter->get1DHistogram("cluster time")->Fill(cluster_time);
+        plotter->get2DHistogram("cluster energy v cluster time - all")->Fill(cluster_energy, cluster_time);
+        plotter->get2DHistogram("cluster energy v cluster size - all")->Fill(cluster_energy, 
+                cluster->getEcalHits()->GetEntriesFast());
 
         // Get the seed hit of the cluster
         EcalHit* seed_hit = cluster->getSeed();
 
-        plotter->get1DHistogram("cluster energy")->Fill(cluster->getEnergy());
-        plotter->get1DHistogram("cluster time")->Fill(cluster->getClusterTime());
-        plotter->get2DHistogram("cluster energy v cluster time")->Fill(cluster->getEnergy(), 
-                cluster->getClusterTime());
-        plotter->get2DHistogram("cluster energy v cluster size")->Fill(cluster->getEnergy(), 
-                cluster->getEcalHits()->GetEntriesFast());
-        plotter->get2DHistogram("candidates")->Fill(
-                seed_hit->getXCrystalIndex(), seed_hit->getYCrystalIndex(), 1);
-        
-        plotter->get1DHistogram("candidates - cluster energy")->Fill(cluster->getEnergy(), 1);
-        plotter->get1DHistogram("candidates - cluster time")->Fill(cluster->getClusterTime(), 1);
+        // Make the same plots for the top and bottom Ecal volumes 
+        if (seed_hit->getYCrystalIndex() > 0) { 
+            plotter->get1DHistogram("cluster energy - top")->Fill(cluster_energy);
+            plotter->get1DHistogram("cluster time - top")->Fill(cluster_time);
+        } else { 
+            plotter->get1DHistogram("cluster energy - bottom")->Fill(cluster_energy);
+            plotter->get1DHistogram("cluster time - bottom")->Fill(cluster_time);
+        }  
 
+        plotter->get2DHistogram("cluster count - all")->Fill(
+                seed_hit->getXCrystalIndex(), seed_hit->getYCrystalIndex(), 1);
+
+        if (!isEdgeCrystal(seed_hit)) { 
+            plotter->get1DHistogram("cluster energy - no edge")->Fill(cluster_energy);
+            plotter->get1DHistogram("cluster time - no edge")->Fill(cluster_time);
+        }
+ 
+        // Check that the cluster passes the time requirement
+        if (passClusterTimeCut(cluster)) {
+            plotter->get2DHistogram("cluster energy v cluster time - pass time cut")->Fill(cluster_energy, cluster_time);
+            pass_time_cut = true;
+        }
+
+        // 
+        if (passClusterSizeCut(cluster)) { 
+            pass_cluster_size_cut = true; 
+        } 
+
+
+        // Check that the cluster passes the energy requirement
+        if (passEnergyCut(cluster)) {
+           pass_energy_cut = true; 
+        }
+
+        if (pass_time_cut && pass_cluster_size_cut && pass_energy_cut) { 
+            plotter->get2DHistogram("cluster energy v cluster time - fee")->Fill(cluster_energy, cluster_time);
+            plotter->get2DHistogram("cluster energy v cluster size - fee")->Fill(cluster_energy, 
+                    cluster->getEcalHits()->GetEntriesFast());
+            plotter->get2DHistogram("cluster count - fee")->Fill(
+                    seed_hit->getXCrystalIndex(), seed_hit->getYCrystalIndex(), 1);
+        }
+
+        bool match = false;
         for (int track_n = 0; track_n < event->getNumberOfTracks(); ++track_n) { 
             
             // Get a track from the event
@@ -66,42 +99,106 @@ void SimpleTrackingEfficiencyAnalysis::processEvent(HpsEvent* event) {
             plotter->get1DHistogram("cluster time - track time")->Fill(
                     cluster->getClusterTime() - track->getTrackTime());
 
+
+            // Calculate the momentum magnitude and transverse momentum
+            std::vector<double> p = track->getMomentum();
+            double p_mag = sqrt(p[0]*p[0] + p[1]*p[1] + p[2]*p[2]);
+
+            plotter->get1DHistogram("E/p")->Fill(cluster_energy/p_mag);
+        
+            if (!isEdgeCrystal(seed_hit)) { 
+                plotter->get1DHistogram("E/p - no edge")->Fill(cluster_energy/p_mag);
+            }
+
+
             if (isMatch(cluster, track)) {
-                plotter->get2DHistogram("tracking efficiency")->Fill(seed_hit->getXCrystalIndex(), 
+                plotter->get2DHistogram("tracking efficiency - all")->Fill(seed_hit->getXCrystalIndex(), 
                     seed_hit->getYCrystalIndex(), 1);
                 plotter->get1DHistogram("tracking efficiency - cluster energy")->Fill(cluster->getEnergy(), 1);
                 plotter->get1DHistogram("tracking efficiency - cluster time")->Fill(cluster->getClusterTime(), 1);
+                if (pass_time_cut && pass_cluster_size_cut && pass_energy_cut) { 
+                    plotter->get2DHistogram("tracking efficiency - fee")->Fill(seed_hit->getXCrystalIndex(), 
+                        seed_hit->getYCrystalIndex(), 1);
+                    plotter->get1DHistogram("E/p - fee")->Fill(cluster_energy/p_mag);
+                }
+
+                if (!isEdgeCrystal(seed_hit)) { 
+                    plotter->get1DHistogram("tracking efficiency - cluster energy - no edge")->Fill(cluster->getEnergy(), 1);
+                    plotter->get1DHistogram("tracking efficiency - cluster time - no edge")->Fill(cluster->getClusterTime(), 1);
+                }
+                match = true;
                 break; 
             } 
+        }
+        if (pass_time_cut && pass_cluster_size_cut && pass_energy_cut && !match) { 
+            plotter->get2DHistogram("cluster count - no match")->Fill(
+                    seed_hit->getXCrystalIndex(), seed_hit->getYCrystalIndex(), 1);
         }
     }
 }
 
 void SimpleTrackingEfficiencyAnalysis::finalize() { 
-    plotter->get2DHistogram("tracking efficiency")->Divide(plotter->get2DHistogram("candidates"));
+    
+    plotter->get2DHistogram("tracking efficiency - fee")->Divide(
+            plotter->get2DHistogram("cluster count - fee"));
+    plotter->get2DHistogram("tracking efficiency - all")->Divide(
+            plotter->get2DHistogram("cluster count - all"));
     plotter->get1DHistogram("tracking efficiency - cluster energy")->Divide(
-            plotter->get1DHistogram("candidates - cluster energy"));
+            plotter->get1DHistogram("cluster energy"));
     plotter->get1DHistogram("tracking efficiency - cluster time")->Divide(
-            plotter->get1DHistogram("candidates - cluster time"));
+            plotter->get1DHistogram("cluster time"));
+    plotter->get1DHistogram("tracking efficiency - cluster energy - no edge")->Divide(
+            plotter->get1DHistogram("cluster energy - no edge"));
+    plotter->get1DHistogram("tracking efficiency - cluster time - no edge")->Divide(
+            plotter->get1DHistogram("cluster time - no edge"));
+
 
     plotter->saveToPdf("simple_tracking_efficiency.pdf");
+    plotter->saveToRootFile("simple_tracking_efficiency.root");
 }
 
 void SimpleTrackingEfficiencyAnalysis::bookHistograms() { 
 
-    plotter->build1DHistogram("cluster energy", 50, 0, 2);
-    plotter->build1DHistogram("cluster time", 100, -20, 80);
-    plotter->build1DHistogram("cluster time - track time", 100, -20, 80);
-    plotter->build1DHistogram("track time", 100, -20, 80);
-    plotter->build1DHistogram("candidates - cluster energy", 50, 0, 2);
-    plotter->build1DHistogram("tracking efficiency - cluster energy", 50, 0, 2);
-    plotter->build1DHistogram("candidates - cluster time", 100, -20, 80);
-    plotter->build1DHistogram("tracking efficiency - cluster time", 100, -20, 80);
 
-    plotter->build2DHistogram("cluster energy v cluster time", 50, 0, 2, 100, -20, 80);
-    plotter->build2DHistogram("cluster energy v cluster size", 50, 0, 2, 10, 0, 10);
-    plotter->build2DHistogram("candidates", 47, -23, 24, 12, -6, 6);
-    plotter->build2DHistogram("tracking efficiency", 47, -23, 24, 12, -6, 6);
+    plotter->build1DHistogram("cluster energy", 50, 0, 1.5);
+    plotter->build1DHistogram("cluster time", 160, 0, 80);
+    plotter->build1DHistogram("track time", 40, -20, 20);
+    plotter->build1DHistogram("cluster time - track time", 100, -20, 80);
+    plotter->build1DHistogram("E/p", 40, 0, 1.5);
+    plotter->build2DHistogram("cluster x v extrapolated track x", 100, -100, 100, 100, -100, 100);
+    plotter->build2DHistogram("cluster y v extrapolated track y", 100, -100, 100, 100, -100, 100);
+    plotter->build1DHistogram("cluster x - extrapolated track x", 50, -25, 25);
+    plotter->build1DHistogram("cluster y - extrapolated track y", 50, -25, 25);
+    plotter->build2DHistogram("cluster count - all", 47, -23, 24, 12, -6, 6);
+    plotter->build2DHistogram("cluster energy v cluster size - all", 50, 0, 1.5, 10, 0, 10);
+    plotter->build2DHistogram("cluster energy v cluster time - all", 50, 0, 1.5, 160, 0, 80);
+    plotter->build2DHistogram("tracking efficiency - all", 47, -23, 24, 12, -6, 6);
+
+    plotter->build1DHistogram("tracking efficiency - cluster energy", 50, 0, 1.5);
+    plotter->build1DHistogram("tracking efficiency - cluster time", 160, 0, 80);
+
+    plotter->build1DHistogram("cluster energy - top", 50, 0, 1.5);
+    plotter->build1DHistogram("cluster time - top", 160, 0, 80);
+
+    plotter->build1DHistogram("cluster energy - bottom", 50, 0, 1.5);
+    plotter->build1DHistogram("cluster time - bottom", 160, 0, 80);
+
+    plotter->build1DHistogram("cluster energy - no edge", 50, 0, 1.5);
+    plotter->build1DHistogram("cluster time - no edge", 160, 0, 80);
+    plotter->build1DHistogram("E/p - no edge", 40, 0, 1.5);
+    plotter->build1DHistogram("tracking efficiency - cluster energy - no edge", 50, 0, 1.5);
+    plotter->build1DHistogram("tracking efficiency - cluster time - no edge", 160, 0, 80);
+
+    plotter->build2DHistogram("cluster energy v cluster time - pass time cut", 50, 0, 1.5, 160, 0, 80);
+    
+    plotter->build2DHistogram("cluster energy v cluster time - fee", 50, 0, 1.5, 160, 0, 80);
+    plotter->build2DHistogram("cluster energy v cluster size - fee", 50, 0, 1.5, 10, 0, 10);
+    plotter->build2DHistogram("cluster count - fee", 47, -23, 24, 12, -6, 6);
+    plotter->build2DHistogram("tracking efficiency - fee", 47, -23, 24, 12, -6, 6);
+    plotter->build1DHistogram("E/p - fee", 40, 0, 1.5);
+
+    plotter->build2DHistogram("cluster count - no match", 47, -23, 24, 12, -6, 6);
+
 }
 
 std::string SimpleTrackingEfficiencyAnalysis::toString() { 
@@ -118,16 +215,14 @@ bool SimpleTrackingEfficiencyAnalysis::passEnergyCut(EcalCluster* cluster) {
 }
 
 bool SimpleTrackingEfficiencyAnalysis::passClusterTimeCut(EcalCluster* cluster) {   
-    if (cluster->getClusterTime() < 40 || cluster->getClusterTime() > 50) return false;
+    if (cluster->getClusterTime() < 43 || cluster->getClusterTime() > 49) return false;
 
     return true;   
 }
 
 bool SimpleTrackingEfficiencyAnalysis::passClusterSizeCut(EcalCluster* cluster) { 
-    if (cluster->getEcalHits()->GetEntriesFast() < 3 
-            || cluster->getEcalHits()->GetEntriesFast() > 6) return false;
+    if (cluster->getEcalHits()->GetEntriesFast() < 3) return false;
     return true;
-
 }
 
 bool SimpleTrackingEfficiencyAnalysis::isMatch(EcalCluster* cluster, SvtTrack* track) { 
@@ -153,12 +248,34 @@ bool SimpleTrackingEfficiencyAnalysis::isMatch(EcalCluster* cluster, SvtTrack* t
     // If the track and cluster are in opposite volumes, then they can't 
     // be a match
     if (cluster_pos[1]*track_pos_at_cluster_shower_max[1] < 0) return false;
-   
+
+    plotter->get2DHistogram("cluster x v extrapolated track x")->Fill(cluster_pos[0], 
+            track_pos_at_cluster_shower_max[0]);
+    plotter->get2DHistogram("cluster y v extrapolated track y")->Fill(cluster_pos[1], 
+            track_pos_at_cluster_shower_max[1]);
+
+    plotter->get1DHistogram("cluster x - extrapolated track x")->Fill(cluster_pos[0] 
+            - track_pos_at_cluster_shower_max[0]);
+    plotter->get1DHistogram("cluster y - extrapolated track y")->Fill(cluster_pos[0] 
+            - track_pos_at_cluster_shower_max[0]);
+  
     // Check that dx and dy between the extrapolated track and cluster
     // positions is reasonable
-    if (abs(cluster_pos[0] - track_pos_at_cluster_shower_max[0]) > 20) return false;
+    if (cluster_pos[0] - track_pos_at_cluster_shower_max[0] > 12 ||
+            cluster_pos[0] - track_pos_at_cluster_shower_max[0] < -18) return false;
     
-    if (abs(cluster_pos[1] - track_pos_at_cluster_shower_max[1]) > 20) return false;
+    if (cluster_pos[1] - track_pos_at_cluster_shower_max[1] > 12
+            || cluster_pos[1] - track_pos_at_cluster_shower_max[1] < -18) return false;
 
     return true;
+}
+
+bool SimpleTrackingEfficiencyAnalysis::isEdgeCrystal(EcalHit* hit) { 
+    
+    int x_crystal_index = hit->getXCrystalIndex();
+
+    if (abs(x_crystal_index) == 1) return true;
+
+    return false;
+
 }

@@ -67,6 +67,7 @@ class SimpleTrackingEfficiencyAnalysis : public HpsAnalysis {
         bool passClusterSizeCut(EcalCluster* cluster);
 
         bool isMatch(EcalCluster* cluster, SvtTrack* track);
+        bool isEdgeCrystal(EcalHit* hit);
 
         SvtTrack* track;
         EcalCluster* cluster;
