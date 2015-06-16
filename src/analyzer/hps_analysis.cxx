@@ -37,6 +37,7 @@
 #include <PairsAnalysis.h>
 #include <TagProbeAnalysis.h>
 #include <SimpleTrackingEfficiencyAnalysis.h>
+#include <SharedHitAnalysis.h>
 
 using namespace std; 
 
@@ -138,10 +139,11 @@ int main(int argc, char **argv) {
     // Container to hold all analyses
     list<HpsAnalysis*> analyses;
 
-    analyses.push_back(new TrackAnalysis());
+    //analyses.push_back(new TrackAnalysis());
     //analyses.push_back(new PairsAnalysis());
     //analyses.push_back(new TagProbeAnalysis());
     //analyses.push_back(new SimpleTrackingEfficiencyAnalysis());
+    analyses.push_back(new SharedHitAnalysis());
 
     // Initialize all analyses
     for (list<HpsAnalysis*>::iterator analysis = analyses.begin();

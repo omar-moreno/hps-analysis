@@ -35,3 +35,9 @@ target_link_libraries(SimpleTrackingEfficiencyAnalysis
     TrackExtrapolator
     Plotter
 )
+
+add_library(SharedHitAnalysis SharedHitAnalysis.cxx)
+target_link_libraries(SharedHitAnalysis
+    ${HPS_EVENT_LIBRARY}
+    Plotter
+)
