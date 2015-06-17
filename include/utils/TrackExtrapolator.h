@@ -78,6 +78,11 @@ namespace TrackExtrapolator {
      */
     std::vector<double> extrapolateTrack(SvtTrack* track, double z);  
 
+    /**
+     *
+     */
+    std::vector<double> extrapolateTrackWithFringe(SvtTrack* track, double z);
+
 }
 
 #endif // __TRACK_EXTRAPOLATOR_H__

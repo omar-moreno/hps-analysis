@@ -121,3 +121,19 @@ std::vector<double> TrackExtrapolator::extrapolateTrack(SvtTrack* track, double 
     return extrapolated_position;
 }
 
+std::vector<double> TrackExtrapolator::extrapolateTrackWithFringe(SvtTrack* track, double z) { 
+
+    // Propogate to the beginning of the fringe field
+    std::vector<double> start_fringe = TrackExtrapolator::extrapolateTrack(track, 911);
+
+    // Get the B-field at the current position
+    // double b_field = ...
+
+
+
+    // Calculate phi at that position
+    double phi = getPhi(track, start_fringe);
+
+
+}
+
