@@ -10,6 +10,9 @@
 #ifndef __SHARED_HIT_ANALYSIS_H__
 #define __SHARED_HIT_ANALYSIS_H__
 
+#include <algorithm>
+#include <list>
+
 //--------------------//
 //--- HPS Analysis ---//
 //--------------------//
