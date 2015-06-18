@@ -71,10 +71,9 @@ class SharedHitAnalysis : public HpsAnalysis {
 
     private: 
 
-        SvtTrack* first_track;
-        SvtTrack* second_track;
-
         Plotter* track_plotter;
+        Plotter* electron_plotter;
+        Plotter* positron_plotter;
 
         // Name of the class
 		std::string class_name;
