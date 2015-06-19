@@ -116,6 +116,27 @@ void SimpleTrackingEfficiencyAnalysis::processEvent(HpsEvent* event) {
                     seed_hit->getYCrystalIndex(), 1);
                 plotter->get1DHistogram("tracking efficiency - cluster energy")->Fill(cluster->getEnergy(), 1);
                 plotter->get1DHistogram("tracking efficiency - cluster time")->Fill(cluster->getClusterTime(), 1);
+                
+                plotter->get1DHistogram("doca - match")->Fill(track->getD0());
+                plotter->get1DHistogram("z0 - match")->Fill(track->getZ0());
+                plotter->get1DHistogram("sin(phi0) - match")->Fill(sin(track->getPhi0()));
+                plotter->get1DHistogram("curvature - match")->Fill(track->getOmega());
+                plotter->get1DHistogram("tan_lambda - match")->Fill(track->getTanLambda());
+
+                if (track->getCharge() < 0) { 
+                    plotter->get1DHistogram("doca - electron - match")->Fill(track->getD0());
+                    plotter->get1DHistogram("z0 - electron - match")->Fill(track->getZ0());
+                    plotter->get1DHistogram("sin(phi0) - electron - match")->Fill(sin(track->getPhi0()));
+                    plotter->get1DHistogram("curvature - electron - match")->Fill(track->getOmega());
+                    plotter->get1DHistogram("tan_lambda - electron - match")->Fill(track->getTanLambda());
+                } else { 
+                    plotter->get1DHistogram("doca - positron - match")->Fill(track->getD0());
+                    plotter->get1DHistogram("z0 - positron - match")->Fill(track->getZ0());
+                    plotter->get1DHistogram("sin(phi0) - positron - match")->Fill(sin(track->getPhi0()));
+                    plotter->get1DHistogram("curvature - positron - match")->Fill(track->getOmega());
+                    plotter->get1DHistogram("tan_lambda - positron - match")->Fill(track->getTanLambda());
+                }
+
                 if (pass_time_cut && pass_cluster_size_cut && pass_energy_cut) { 
                     plotter->get2DHistogram("tracking efficiency - fee")->Fill(seed_hit->getXCrystalIndex(), 
                         seed_hit->getYCrystalIndex(), 1);
@@ -128,6 +149,26 @@ void SimpleTrackingEfficiencyAnalysis::processEvent(HpsEvent* event) {
                 }
                 match = true;
                 break; 
+            } else { 
+                plotter->get1DHistogram("doca - no match")->Fill(track->getD0());
+                plotter->get1DHistogram("z0 - no match")->Fill(track->getZ0());
+                plotter->get1DHistogram("sin(phi0) - no match")->Fill(sin(track->getPhi0()));
+                plotter->get1DHistogram("curvature - no match")->Fill(track->getOmega());
+                plotter->get1DHistogram("tan_lambda - no match")->Fill(track->getTanLambda());
+
+                if (track->getCharge() < 0) { 
+                    plotter->get1DHistogram("doca - electron - no match")->Fill(track->getD0());
+                    plotter->get1DHistogram("z0 - electron - no match")->Fill(track->getZ0());
+                    plotter->get1DHistogram("sin(phi0) - electron - no match")->Fill(sin(track->getPhi0()));
+                    plotter->get1DHistogram("curvature - electron - no match")->Fill(track->getOmega());
+                    plotter->get1DHistogram("tan_lambda - electron - no match")->Fill(track->getTanLambda());
+                } else { 
+                    plotter->get1DHistogram("doca - positron - no match")->Fill(track->getD0());
+                    plotter->get1DHistogram("z0 - positron - no match")->Fill(track->getZ0());
+                    plotter->get1DHistogram("sin(phi0) - positron - no match")->Fill(sin(track->getPhi0()));
+                    plotter->get1DHistogram("curvature - positron - no match")->Fill(track->getOmega());
+                    plotter->get1DHistogram("tan_lambda - positron - no match")->Fill(track->getTanLambda());
+                }
             } 
         }
         if (pass_time_cut && pass_cluster_size_cut && pass_energy_cut && !match) { 
@@ -198,6 +239,43 @@ void SimpleTrackingEfficiencyAnalysis::bookHistograms() {
     plotter->build1DHistogram("E/p - fee", 40, 0, 1.5);
 
     plotter->build2DHistogram("cluster count - no match", 47, -23, 24, 12, -6, 6);
+    plotter->build1DHistogram("doca - no match", 80, -10, 10);
+    plotter->build1DHistogram("z0 - no match", 80, -2, 2);
+    plotter->build1DHistogram("sin(phi0) - no match", 40, -0.2, 0.2);
+    plotter->build1DHistogram("curvature - no match", 50, -0.001, 0.001);
+    plotter->build1DHistogram("tan_lambda - no match", 100, -0.1, 0.1);
+    plotter->build1DHistogram("cos(theta) - no match", 40, -0.1, 0.1);
+    plotter->build1DHistogram("doca - electron - no match", 80, -10, 10);
+    plotter->build1DHistogram("z0 - electron - no match", 80, -2, 2);
+    plotter->build1DHistogram("sin(phi0) - electron - no match", 40, -0.2, 0.2);
+    plotter->build1DHistogram("curvature - electron - no match", 50, -0.001, 0.001);
+    plotter->build1DHistogram("tan_lambda - electron - no match", 100, -0.1, 0.1);
+    plotter->build1DHistogram("cos(theta) - electron - no match", 40, -0.1, 0.1);
+    plotter->build1DHistogram("doca - positron - no match", 80, -10, 10);
+    plotter->build1DHistogram("z0 - positron - no match", 80, -2, 2);
+    plotter->build1DHistogram("sin(phi0) - positron - no match", 40, -0.2, 0.2);
+    plotter->build1DHistogram("curvature - positron - no match", 50, -0.001, 0.001);
+    plotter->build1DHistogram("tan_lambda - positron - no match", 100, -0.1, 0.1);
+    plotter->build1DHistogram("cos(theta) - positron - no match", 40, -0.1, 0.1);
+
+    plotter->build1DHistogram("doca - match", 80, -10, 10);
+    plotter->build1DHistogram("z0 - match", 80, -2, 2);
+    plotter->build1DHistogram("sin(phi0) - match", 40, -0.2, 0.2);
+    plotter->build1DHistogram("curvature - match", 50, -0.001, 0.001);
+    plotter->build1DHistogram("tan_lambda - match", 100, -0.1, 0.1);
+    plotter->build1DHistogram("cos(theta) - match", 40, -0.1, 0.1);
+    plotter->build1DHistogram("doca - electron - match", 80, -10, 10);
+    plotter->build1DHistogram("sin(phi0) - electron - match", 40, -0.2, 0.2);
+    plotter->build1DHistogram("z0 - electron - match", 80, -2, 2);
+    plotter->build1DHistogram("curvature - electron - match", 50, -0.001, 0.001);
+    plotter->build1DHistogram("tan_lambda - electron - match", 100, -0.1, 0.1);
+    plotter->build1DHistogram("cos(theta) - electron - match", 40, -0.1, 0.1);
+    plotter->build1DHistogram("doca - positron - match", 80, -10, 10);
+    plotter->build1DHistogram("z0 - positron - match", 80, -2, 2);
+    plotter->build1DHistogram("sin(phi0) - positron - match", 40, -0.2, 0.2);
+    plotter->build1DHistogram("curvature - positron - match", 50, -0.001, 0.001);
+    plotter->build1DHistogram("tan_lambda - positron - match", 100, -0.1, 0.1);
+    plotter->build1DHistogram("cos(theta) - positron - match", 40, -0.1, 0.1);
 
 }
 
