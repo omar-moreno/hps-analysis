@@ -12,7 +12,7 @@ Plotter::~Plotter() {
 TH1* Plotter::build1DHistogram(std::string name, int n_bins, double x_min, double x_max) { 
     
     if (histogram1D_map[name] != NULL) { 
-        throw std::runtime_error("A histogram with that name already exist!");
+        throw std::runtime_error("The histogram " + name + " already exist!");
     }
     
     std::string root_name = name + "_" + std::to_string(rand()%10000);
@@ -27,6 +27,8 @@ TH1* Plotter::build1DHistogram(std::string name, int n_bins, double x_min, doubl
     histogram1D_map[name]->SetLineWidth(2);
     histogram1D_map[name]->SetFillStyle(3003);
     histogram1D_map[name]->SetFillColor(color - 1);
+    
+    return histogram1D_map[name];
 }
 
 
@@ -34,7 +36,7 @@ TH2* Plotter::build2DHistogram(std::string name, int n_bins_x, double x_min, dou
         int n_bins_y, double y_min, double y_max) { 
     
     if (histogram2D_map[name] != NULL) { 
-        throw std::runtime_error("A histogram with that name already exist!");
+        throw std::runtime_error("The histogram " + name + " already exist!");
     }
 
     std::string root_name = name + "_" + std::to_string(rand()%10000);
@@ -49,6 +51,8 @@ TH2* Plotter::build2DHistogram(std::string name, int n_bins_x, double x_min, dou
     
     histogram2D_map[name]->SetLineColor(color);
     histogram2D_map[name]->SetStats(0); 
+
+    return histogram2D_map[name];
 }
 
 TH1* Plotter::get1DHistogram(std::string name) { 
