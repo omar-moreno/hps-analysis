@@ -46,20 +46,22 @@ void printUsage();
 int main(int argc, char **argv) {
 
     string dst_file_name;
-    string file_list_name; 
+    string file_list_name;
+    int event_count = -1; 
 
     // Parse all the command line arguments.  If there are no valid command
     // line arguments passed, print the usage and exit the application
     static struct option long_options[] = {
         {"file_name",  required_argument, 0, 'i'},
         {"file_list",  required_argument, 0, 'l'},
+        {"events",     required_argument, 0, 'n'},
         {"help",       no_argument,       0, 'h'},
         {0, 0, 0, 0}
     };
 
     int option_index = 0;
     int option_char; 
-    while ((option_char = getopt_long(argc, argv, "i:l:h", long_options, &option_index)) != -1) {
+    while ((option_char = getopt_long(argc, argv, "i:l:n:h", long_options, &option_index)) != -1) {
 
         switch(option_char){
             case 'i': 
@@ -68,6 +70,9 @@ int main(int argc, char **argv) {
             case 'l':
                 file_list_name = optarg;
                 break; 
+            case 'n':
+                event_count = atoi(optarg);
+                break;
             case 'h':
                 printUsage();
                 return EXIT_SUCCESS; 
@@ -139,11 +144,11 @@ int main(int argc, char **argv) {
     // Container to hold all analyses
     list<HpsAnalysis*> analyses;
 
-    //analyses.push_back(new TrackAnalysis());
+    analyses.push_back(new TrackAnalysis());
     //analyses.push_back(new PairsAnalysis());
     //analyses.push_back(new TagProbeAnalysis());
     //analyses.push_back(new SimpleTrackingEfficiencyAnalysis());
-    analyses.push_back(new SharedHitAnalysis());
+    //analyses.push_back(new SharedHitAnalysis());
 
     // Initialize all analyses
     for (list<HpsAnalysis*>::iterator analysis = analyses.begin();
@@ -191,6 +196,8 @@ int main(int argc, char **argv) {
                     analysis != analyses.end(); ++analysis) { 
                 (*analysis)->processEvent(event);
             }
+        
+            if (entry+1 == event_count) break;
         }
         
         // Delete the file
