@@ -29,6 +29,17 @@ target_link_libraries(ComparePlots
     ${ROOT_HIST_LIB}
 )
 
+add_library(RootFileReader RootFileReader.cxx)
+target_link_libraries(RootFileReader 
+    ${ROOT_CORE_LIB}
+    ${ROOT_GPAD_LIB}
+    ${ROOT_TREE_LIB}
+    ${ROOT_RIO_LIB}
+    ${ROOT_PHYSICS_LIB}
+    ${ROOT_HIST_LIB}
+)
+
+
 add_executable(compare_plots compare_plots.cxx)
 target_link_libraries(compare_plots 
     ComparePlots    
