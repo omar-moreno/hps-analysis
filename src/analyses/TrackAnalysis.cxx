@@ -326,124 +326,166 @@ void TrackAnalysis::bookHistograms() {
 
     // General event statistics
     track_plotter->setType("float"); 
-    track_plotter->build1DHistogram("Number of tracks", 10, 0, 10);
-    track_plotter->build1DHistogram("Track volume", 3, -1, 2);
-    track_plotter->build1DHistogram("Hits per track", 6, 1, 7);
-    track_plotter->build1DHistogram("Track charge", 3, -1, 2);
-    track_plotter->build1DHistogram("chi2", 40, 0, 40);
+    track_plotter->build1DHistogram("Number of tracks", 10, 0, 10)->GetXaxis()->SetTitle("Number of tracks");
+    track_plotter->build1DHistogram("Track volume", 3, -1, 2)->GetXaxis()->SetTitle("Track volume");
+    track_plotter->build1DHistogram("Hits per track", 6, 1, 7)->GetXaxis()->SetTitle("Hits per track");
+    track_plotter->build1DHistogram("Track charge", 3, -1, 2)->GetXaxis()->SetTitle("Track charge");
+    track_plotter->build1DHistogram("chi2", 40, 0, 40)->GetXaxis()->SetTitle("Track #chi^{2}");
 
-    track_plotter->build1DHistogram("doca", 80, -10, 10);
-    track_plotter->build1DHistogram("z0", 80, -2, 2);
-    track_plotter->build1DHistogram("sin(phi0)", 40, -0.2, 0.2);
-    track_plotter->build1DHistogram("curvature", 50, -0.001, 0.001);
-    track_plotter->build1DHistogram("tan_lambda", 100, -0.1, 0.1);
-    track_plotter->build1DHistogram("cos(theta)", 40, -0.1, 0.1);
+    track_plotter->build1DHistogram("doca", 80, -10, 10)->GetXaxis()->SetTitle("D0 [mm]");
+    track_plotter->build1DHistogram("z0", 80, -2, 2)->GetXaxis()->SetTitle("Z0 [mm]");
+    track_plotter->build1DHistogram("sin(phi0)", 40, -0.2, 0.2)->GetXaxis()->SetTitle("sin(#phi_{0})");
+    track_plotter->build1DHistogram("curvature", 50, -0.001, 0.001)->GetXaxis()->SetTitle("#Omega");
+    track_plotter->build1DHistogram("tan_lambda", 100, -0.1, 0.1)->GetXaxis()->SetTitle("tan #lambda");
+    track_plotter->build1DHistogram("cos(theta)", 40, -0.1, 0.1)->GetXaxis()->SetTitle("cos #theta");
     
-    track_plotter->build1DHistogram("p", 50, 0, 2.0);
-    track_plotter->build1DHistogram("pt", 50, -0.1, 0.2);
-    track_plotter->build1DHistogram("px", 50, -0.1, 0.2); 
-    track_plotter->build1DHistogram("py", 50, -0.15, 0.15); 
-    track_plotter->build1DHistogram("pz", 50, 0, 2.0);
-    track_plotter->build1DHistogram("p - fee", 50, .4, 2.0);
-    track_plotter->build1DHistogram("px - fee", 50, -0.1, 0.2); 
-    track_plotter->build1DHistogram("py - fee", 50, -0.15, 0.15); 
-    track_plotter->build1DHistogram("pz - fee", 50, 0, 2.0);
+    track_plotter->build1DHistogram("p", 50, 0, 2.0)->GetXaxis()->SetTitle("p [GeV]");
+    track_plotter->build1DHistogram("pt", 50, -0.1, 0.2)->GetXaxis()->SetTitle("p_{t} [GeV]");
+    track_plotter->build1DHistogram("px", 50, -0.1, 0.2)->GetXaxis()->SetTitle("p_{x} [GeV]"); 
+    track_plotter->build1DHistogram("py", 50, -0.15, 0.15)->GetXaxis()->SetTitle("p_{y} [GeV]"); 
+    track_plotter->build1DHistogram("pz", 50, 0, 2.0)->GetXaxis()->SetTitle("p_{z} [GeV]");
+    track_plotter->build1DHistogram("p - fee", 50, .4, 2.0)->GetXaxis()->SetTitle("FEE - p [GeV]");
+    track_plotter->build1DHistogram("px - fee", 50, -0.1, 0.2)->GetXaxis()->SetTitle("FEE - p_{x} [GeV]"); 
+    track_plotter->build1DHistogram("py - fee", 50, -0.15, 0.15)->GetXaxis()->SetTitle("FEE - p_{y} [GeV]"); 
+    track_plotter->build1DHistogram("pz - fee", 50, 0, 2.0)->GetXaxis()->SetTitle("FEE - p_{z} [GeV]");
 
-    track_plotter->build1DHistogram("track time", 100, -10, 10);
-    track_plotter->build1DHistogram("track time - hit time", 100, -10, 10);
+    track_plotter->build1DHistogram("track time", 100, -10, 10)->GetXaxis()->SetTitle("Track time [ns]");
+    track_plotter->build1DHistogram("track time - hit time", 100, -10, 10)->GetXaxis()->SetTitle("Track time - Hit time [ns]");
 
-    track_plotter->build2DHistogram("pz v px", 50, 0, 2.0, 50, -0.1, 0.2); 
+    track_plotter->build2DHistogram("pz v px", 50, 0, 2.0, 50, -0.1, 0.2);
+    track_plotter->get2DHistogram("pz v px")->GetXaxis()->SetTitle("p_{z} [GeV]"); 
+    track_plotter->get2DHistogram("pz v px")->GetYaxis()->SetTitle("p_{x} [GeV]"); 
     track_plotter->build2DHistogram("pz v py", 50, 0, 2.0, 50, -0.15, 0.15); 
+    track_plotter->get2DHistogram("pz v py")->GetXaxis()->SetTitle("p_{z} [GeV]"); 
+    track_plotter->get2DHistogram("pz v py")->GetYaxis()->SetTitle("p_{y} [GeV]"); 
     track_plotter->build2DHistogram("p v pt", 50, 0, 2.0, 50, -0.1, 0.2);
-    track_plotter->build2DHistogram("sin(phi0) v curvature", 40, -0.2, 0.2, 50, -0.001, 0.001);
+    track_plotter->get2DHistogram("p v pt")->GetXaxis()->SetTitle("p [GeV]"); 
+    track_plotter->get2DHistogram("p v pt")->GetYaxis()->SetTitle("p_{t} [GeV]"); 
 
     track_plotter->build2DHistogram("track position at target", 80, -20, 20, 40, -5, 5);
+    track_plotter->get2DHistogram("track position at target")->GetXaxis()->SetTitle("x [mm]"); 
+    track_plotter->get2DHistogram("track position at target")->GetYaxis()->SetTitle("y [mm]"); 
     track_plotter->build2DHistogram("track position at sp", 80, -20, 20, 80, -20, 20);
+    track_plotter->get2DHistogram("track position at sp")->GetXaxis()->SetTitle("x [mm]"); 
+    track_plotter->get2DHistogram("track position at sp")->GetYaxis()->SetTitle("y [mm]"); 
     track_plotter->build2DHistogram("sin(phi0) v px", 40, -0.2, 0.2, 50, -0.1, 0.2);
+    track_plotter->get2DHistogram("sin(phi0) v px")->GetXaxis()->SetTitle("sin #phi_{0}"); 
+    track_plotter->get2DHistogram("sin(phi0) v px")->GetYaxis()->SetTitle("p_{x} [GeV]"); 
     track_plotter->build2DHistogram("sin(phi0) v py", 40, -0.2, 0.2, 50, -0.15, 0.15);
+    track_plotter->get2DHistogram("sin(phi0) v py")->GetXaxis()->SetTitle("sin #phi_{0}"); 
+    track_plotter->get2DHistogram("sin(phi0) v py")->GetYaxis()->SetTitle("p_{y} [GeV]"); 
+    track_plotter->build2DHistogram("sin(phi0) v curvature", 40, -0.2, 0.2, 50, -0.001, 0.001);
+    track_plotter->get2DHistogram("sin(phi0) v curvature")->GetXaxis()->SetTitle("sin #phi_{0}"); 
+    track_plotter->get2DHistogram("sin(phi0) v curvature")->GetYaxis()->SetTitle("#Omega"); 
     track_plotter->build2DHistogram("track time v d0", 100, -10, 10, 80, -10, 10);
+    track_plotter->get2DHistogram("track time v d0")->GetXaxis()->SetTitle("Track time [ns]"); 
+    track_plotter->get2DHistogram("track time v d0")->GetYaxis()->SetTitle("D0 [mm]"); 
 
     electron_plotter->setType("float")->setLineColor(kOrange + 9);
-    electron_plotter->build1DHistogram("doca", 80, -10, 10);
-    electron_plotter->build1DHistogram("z0", 80, -2, 2);
-    electron_plotter->build1DHistogram("sin(phi0)", 40, -0.2, 0.2);
-    electron_plotter->build1DHistogram("curvature", 50, -0.001, 0.001);
-    electron_plotter->build1DHistogram("tan_lambda", 100, -0.1, 0.1);
-    electron_plotter->build1DHistogram("cos(theta)", 40, -0.1, 0.1);
-
-    electron_plotter->build1DHistogram("p", 50, 0, 2.0);
-    electron_plotter->build1DHistogram("pt", 50, -0.1, 0.2);
-    electron_plotter->build1DHistogram("px", 50, -0.1, 0.2); 
-    electron_plotter->build1DHistogram("py", 50, -0.15, 0.15); 
-    electron_plotter->build1DHistogram("pz", 50, 0, 2.0); 
-    electron_plotter->build1DHistogram("chi2", 40, 0, 40);
-    electron_plotter->build1DHistogram("ep", 60, 0, 2);
-
-    electron_plotter->build1DHistogram("track time", 100, -10, 10);
-    electron_plotter->build1DHistogram("track time - hit time", 100, -10, 10);
-
-    electron_plotter->build2DHistogram("track position at target", 80, -20, 20, 40, -5, 5); 
-    electron_plotter->build2DHistogram("track position at sp", 80, -20, 20, 80, -20, 20);
-    electron_plotter->build2DHistogram("sin(phi0) v curvature", 40, -0.2, 0.2, 50, -0.001, 0.001);
-    electron_plotter->build2DHistogram("sin(phi0) v px", 40, -0.2, 0.2, 50, -0.1, 0.2);
-    electron_plotter->build2DHistogram("sin(phi0) v py", 40, -0.2, 0.2, 50, -0.15, 0.15);
-    electron_plotter->build2DHistogram("track time v d0", 100, -10, 10, 80, -10, 10);
-
-    positron_plotter->setType("float");
-    positron_plotter->build1DHistogram("doca", 80, -10, 10);
-    positron_plotter->build1DHistogram("z0", 80, -2, 2);
-    positron_plotter->build1DHistogram("sin(phi0)", 40, -0.2, 0.2);
-    positron_plotter->build1DHistogram("curvature", 50, -0.001, 0.001);
-    positron_plotter->build1DHistogram("tan_lambda", 100, -0.1, 0.1);
-    positron_plotter->build1DHistogram("cos(theta)", 40, -0.1, 0.1);
-            
-
-    positron_plotter->build1DHistogram("p", 50, 0, 2.0);
-    positron_plotter->build1DHistogram("pt", 50, -0.1, 0.2);
-    positron_plotter->build1DHistogram("px", 50, -0.1, 0.2); 
-    positron_plotter->build1DHistogram("py", 50, -0.15, 0.15); 
-    positron_plotter->build1DHistogram("pz", 50, 0, 2.0); 
-    positron_plotter->build1DHistogram("chi2", 40, 0, 40);
-
-    positron_plotter->build1DHistogram("track time", 100, -10, 10);
-    positron_plotter->build1DHistogram("track time - hit time", 100, -10, 10);
-
-    positron_plotter->build2DHistogram("track position at target", 80, -20, 20, 40, -5, 5); 
-    positron_plotter->build2DHistogram("track position at sp", 80, -20, 20, 80, -20, 20);
-    positron_plotter->build2DHistogram("sin(phi0) v curvature", 40, -0.2, 0.2, 50, -0.001, 0.001);
-    positron_plotter->build2DHistogram("sin(phi0) v px", 40, -0.2, 0.2, 50, -0.1, 0.2);
-    positron_plotter->build2DHistogram("sin(phi0) v py", 40, -0.2, 0.2, 50, -0.15, 0.15);
-    positron_plotter->build2DHistogram("track time v d0", 100, -10, 10, 80, -10, 10);
-
-    bottom_plotter->setType("float");
-    top_plotter->build1DHistogram("doca", 80, -10, 10);
-    top_plotter->build1DHistogram("z0", 80, -2, 2);
-    top_plotter->build1DHistogram("sin(phi0)", 40, -0.2, 0.2);
-    top_plotter->build1DHistogram("curvature", 50, -0.001, 0.001);
-    top_plotter->build1DHistogram("tan_lambda", 100, -0.1, 0.1);
-
-    top_plotter->build1DHistogram("p", 50, 0, 2.0);
-    top_plotter->build1DHistogram("pt", 50, -0.1, 0.2);
-    top_plotter->build1DHistogram("px", 50, -0.1, 0.2); 
-    top_plotter->build1DHistogram("py", 50, -0.15, 0.15); 
-    top_plotter->build1DHistogram("pz", 50, 0, 2.0); 
-    top_plotter->build1DHistogram("chi2", 40, 0, 40);
-    top_plotter->build1DHistogram("ep", 60, 0, 2);
     
-    bottom_plotter->setType("float")->setLineColor(kOrange + 9);
-    bottom_plotter->build1DHistogram("doca", 80, -10, 10);
-    bottom_plotter->build1DHistogram("z0", 80, -2, 2);
-    bottom_plotter->build1DHistogram("sin(phi0)", 40, -0.2, 0.2);
-    bottom_plotter->build1DHistogram("curvature", 50, -0.001, 0.001);
-    bottom_plotter->build1DHistogram("tan_lambda", 100, -0.1, 0.1);
+    electron_plotter->build1DHistogram("doca", 80, -10, 10)->GetXaxis()->SetTitle("D0 [mm]");
+    electron_plotter->build1DHistogram("z0", 80, -2, 2)->GetXaxis()->SetTitle("Z0 [mm]");
+    electron_plotter->build1DHistogram("sin(phi0)", 40, -0.2, 0.2)->GetXaxis()->SetTitle("sin(#phi_{0})");
+    electron_plotter->build1DHistogram("curvature", 50, -0.001, 0.001)->GetXaxis()->SetTitle("#Omega");
+    electron_plotter->build1DHistogram("tan_lambda", 100, -0.1, 0.1)->GetXaxis()->SetTitle("tan #lambda");
+    electron_plotter->build1DHistogram("cos(theta)", 40, -0.1, 0.1)->GetXaxis()->SetTitle("cos #theta");
 
-    bottom_plotter->build1DHistogram("p", 50, 0, 2.0);
-    bottom_plotter->build1DHistogram("pt", 50, -0.1, 0.2);
-    bottom_plotter->build1DHistogram("px", 50, -0.1, 0.2); 
-    bottom_plotter->build1DHistogram("py", 50, -0.15, 0.15); 
-    bottom_plotter->build1DHistogram("pz", 50, 0, 2.0); 
-    bottom_plotter->build1DHistogram("chi2", 40, 0, 40);
-    bottom_plotter->build1DHistogram("ep", 60, 0, 2);
+    electron_plotter->build1DHistogram("p", 50, 0, 2.0)->GetXaxis()->SetTitle("p [GeV]");
+    electron_plotter->build1DHistogram("pt", 50, -0.1, 0.2)->GetXaxis()->SetTitle("p_{t} [GeV]");
+    electron_plotter->build1DHistogram("px", 50, -0.1, 0.2)->GetXaxis()->SetTitle("p_{x} [GeV]"); 
+    electron_plotter->build1DHistogram("py", 50, -0.15, 0.15)->GetXaxis()->SetTitle("p_{y} [GeV]"); 
+    electron_plotter->build1DHistogram("pz", 50, 0, 2.0)->GetXaxis()->SetTitle("p_{z} [GeV]");
+    electron_plotter->build1DHistogram("chi2", 40, 0, 40)->GetXaxis()->SetTitle("Track #chi^{2}");
+    electron_plotter->build1DHistogram("ep", 60, 0, 2)->GetXaxis()->SetTitle("E/p");
+
+    electron_plotter->build1DHistogram("track time", 100, -10, 10)->GetXaxis()->SetTitle("Track time [ns]");
+    electron_plotter->build1DHistogram("track time - hit time", 100, -10, 10)->GetXaxis()->SetTitle("Track time - Hit time [ns]");
+
+    electron_plotter->build2DHistogram("track position at target", 80, -20, 20, 40, -5, 5);
+    electron_plotter->get2DHistogram("track position at target")->GetXaxis()->SetTitle("x [mm]"); 
+    electron_plotter->get2DHistogram("track position at target")->GetYaxis()->SetTitle("y [mm]"); 
+    electron_plotter->build2DHistogram("track position at sp", 80, -20, 20, 80, -20, 20);
+    electron_plotter->get2DHistogram("track position at sp")->GetXaxis()->SetTitle("x [mm]"); 
+    electron_plotter->get2DHistogram("track position at sp")->GetYaxis()->SetTitle("y [mm]"); 
+    electron_plotter->build2DHistogram("sin(phi0) v px", 40, -0.2, 0.2, 50, -0.1, 0.2);
+    electron_plotter->get2DHistogram("sin(phi0) v px")->GetXaxis()->SetTitle("sin #phi_{0}"); 
+    electron_plotter->get2DHistogram("sin(phi0) v px")->GetYaxis()->SetTitle("p_{x} [GeV]"); 
+    electron_plotter->build2DHistogram("sin(phi0) v py", 40, -0.2, 0.2, 50, -0.15, 0.15);
+    electron_plotter->get2DHistogram("sin(phi0) v py")->GetXaxis()->SetTitle("sin #phi_{0}"); 
+    electron_plotter->get2DHistogram("sin(phi0) v py")->GetYaxis()->SetTitle("p_{y} [GeV]"); 
+    electron_plotter->build2DHistogram("sin(phi0) v curvature", 40, -0.2, 0.2, 50, -0.001, 0.001);
+    electron_plotter->get2DHistogram("sin(phi0) v curvature")->GetXaxis()->SetTitle("sin #phi_{0}"); 
+    electron_plotter->get2DHistogram("sin(phi0) v curvature")->GetYaxis()->SetTitle("#Omega"); 
+    electron_plotter->build2DHistogram("track time v d0", 100, -10, 10, 80, -10, 10);
+    electron_plotter->get2DHistogram("track time v d0")->GetXaxis()->SetTitle("Track time [ns]"); 
+    electron_plotter->get2DHistogram("track time v d0")->GetYaxis()->SetTitle("D0 [mm]"); 
+
+    positron_plotter->build1DHistogram("doca", 80, -10, 10)->GetXaxis()->SetTitle("D0 [mm]");
+    positron_plotter->build1DHistogram("z0", 80, -2, 2)->GetXaxis()->SetTitle("Z0 [mm]");
+    positron_plotter->build1DHistogram("sin(phi0)", 40, -0.2, 0.2)->GetXaxis()->SetTitle("sin(#phi_{0})");
+    positron_plotter->build1DHistogram("curvature", 50, -0.001, 0.001)->GetXaxis()->SetTitle("#Omega");
+    positron_plotter->build1DHistogram("tan_lambda", 100, -0.1, 0.1)->GetXaxis()->SetTitle("tan #lambda");
+    positron_plotter->build1DHistogram("cos(theta)", 40, -0.1, 0.1)->GetXaxis()->SetTitle("cos #theta");
+
+    positron_plotter->build1DHistogram("p", 50, 0, 2.0)->GetXaxis()->SetTitle("p [GeV]");
+    positron_plotter->build1DHistogram("pt", 50, -0.1, 0.2)->GetXaxis()->SetTitle("p_{t} [GeV]");
+    positron_plotter->build1DHistogram("px", 50, -0.1, 0.2)->GetXaxis()->SetTitle("p_{x} [GeV]"); 
+    positron_plotter->build1DHistogram("py", 50, -0.15, 0.15)->GetXaxis()->SetTitle("p_{y} [GeV]"); 
+    positron_plotter->build1DHistogram("pz", 50, 0, 2.0)->GetXaxis()->SetTitle("p_{z} [GeV]");
+    positron_plotter->build1DHistogram("chi2", 40, 0, 40)->GetXaxis()->SetTitle("Track #chi^{2}");
+
+    positron_plotter->build1DHistogram("track time", 100, -10, 10)->GetXaxis()->SetTitle("Track time [ns]");
+    positron_plotter->build1DHistogram("track time - hit time", 100, -10, 10)->GetXaxis()->SetTitle("Track time - Hit time [ns]");
+
+    positron_plotter->build2DHistogram("track position at target", 80, -20, 20, 40, -5, 5);
+    positron_plotter->get2DHistogram("track position at target")->GetXaxis()->SetTitle("x [mm]"); 
+    positron_plotter->get2DHistogram("track position at target")->GetYaxis()->SetTitle("y [mm]"); 
+    positron_plotter->build2DHistogram("track position at sp", 80, -20, 20, 80, -20, 20);
+    positron_plotter->get2DHistogram("track position at sp")->GetXaxis()->SetTitle("x [mm]"); 
+    positron_plotter->get2DHistogram("track position at sp")->GetYaxis()->SetTitle("y [mm]"); 
+    positron_plotter->build2DHistogram("sin(phi0) v px", 40, -0.2, 0.2, 50, -0.1, 0.2);
+    positron_plotter->get2DHistogram("sin(phi0) v px")->GetXaxis()->SetTitle("sin #phi_{0}"); 
+    positron_plotter->get2DHistogram("sin(phi0) v px")->GetYaxis()->SetTitle("p_{x} [GeV]"); 
+    positron_plotter->build2DHistogram("sin(phi0) v py", 40, -0.2, 0.2, 50, -0.15, 0.15);
+    positron_plotter->get2DHistogram("sin(phi0) v py")->GetXaxis()->SetTitle("sin #phi_{0}"); 
+    positron_plotter->get2DHistogram("sin(phi0) v py")->GetYaxis()->SetTitle("p_{y} [GeV]"); 
+    positron_plotter->build2DHistogram("sin(phi0) v curvature", 40, -0.2, 0.2, 50, -0.001, 0.001);
+    positron_plotter->get2DHistogram("sin(phi0) v curvature")->GetXaxis()->SetTitle("sin #phi_{0}"); 
+    positron_plotter->get2DHistogram("sin(phi0) v curvature")->GetYaxis()->SetTitle("#Omega"); 
+    positron_plotter->build2DHistogram("track time v d0", 100, -10, 10, 80, -10, 10);
+    positron_plotter->get2DHistogram("track time v d0")->GetXaxis()->SetTitle("Track time [ns]"); 
+    positron_plotter->get2DHistogram("track time v d0")->GetYaxis()->SetTitle("D0 [mm]"); 
+
+    top_plotter->setType("float");
+    top_plotter->build1DHistogram("doca", 80, -10, 10)->GetXaxis()->SetTitle("D0 [mm]");
+    top_plotter->build1DHistogram("z0", 80, -2, 2)->GetXaxis()->SetTitle("Z0 [mm]");
+    top_plotter->build1DHistogram("sin(phi0)", 40, -0.2, 0.2)->GetXaxis()->SetTitle("sin(#phi_{0})");
+    top_plotter->build1DHistogram("curvature", 50, -0.001, 0.001)->GetXaxis()->SetTitle("#Omega");
+    top_plotter->build1DHistogram("tan_lambda", 100, -0.1, 0.1)->GetXaxis()->SetTitle("tan #lambda");
+    top_plotter->build1DHistogram("cos(theta)", 40, -0.1, 0.1)->GetXaxis()->SetTitle("cos #theta");
+
+    top_plotter->build1DHistogram("p", 50, 0, 2.0)->GetXaxis()->SetTitle("p [GeV]");
+    top_plotter->build1DHistogram("pt", 50, -0.1, 0.2)->GetXaxis()->SetTitle("p_{t} [GeV]");
+    top_plotter->build1DHistogram("px", 50, -0.1, 0.2)->GetXaxis()->SetTitle("p_{x} [GeV]"); 
+    top_plotter->build1DHistogram("py", 50, -0.15, 0.15)->GetXaxis()->SetTitle("p_{y} [GeV]"); 
+    top_plotter->build1DHistogram("pz", 50, 0, 2.0)->GetXaxis()->SetTitle("p_{z} [GeV]");
+    top_plotter->build1DHistogram("chi2", 40, 0, 40)->GetXaxis()->SetTitle("Track #chi^{2}");
+    top_plotter->build1DHistogram("ep", 60, 0, 2)->GetXaxis()->SetTitle("E/p");
+
+    bottom_plotter->build1DHistogram("doca", 80, -10, 10)->GetXaxis()->SetTitle("D0 [mm]");
+    bottom_plotter->build1DHistogram("z0", 80, -2, 2)->GetXaxis()->SetTitle("Z0 [mm]");
+    bottom_plotter->build1DHistogram("sin(phi0)", 40, -0.2, 0.2)->GetXaxis()->SetTitle("sin(#phi_{0})");
+    bottom_plotter->build1DHistogram("curvature", 50, -0.001, 0.001)->GetXaxis()->SetTitle("#Omega");
+    bottom_plotter->build1DHistogram("tan_lambda", 100, -0.1, 0.1)->GetXaxis()->SetTitle("tan #lambda");
+    bottom_plotter->build1DHistogram("cos(theta)", 40, -0.1, 0.1)->GetXaxis()->SetTitle("cos #theta");
+
+    bottom_plotter->build1DHistogram("p", 50, 0, 2.0)->GetXaxis()->SetTitle("p [GeV]");
+    bottom_plotter->build1DHistogram("pt", 50, -0.1, 0.2)->GetXaxis()->SetTitle("p_{t} [GeV]");
+    bottom_plotter->build1DHistogram("px", 50, -0.1, 0.2)->GetXaxis()->SetTitle("p_{x} [GeV]"); 
+    bottom_plotter->build1DHistogram("py", 50, -0.15, 0.15)->GetXaxis()->SetTitle("p_{y} [GeV]"); 
+    bottom_plotter->build1DHistogram("pz", 50, 0, 2.0)->GetXaxis()->SetTitle("p_{z} [GeV]");
+    bottom_plotter->build1DHistogram("chi2", 40, 0, 40)->GetXaxis()->SetTitle("Track #chi^{2}");
+    bottom_plotter->build1DHistogram("ep", 60, 0, 2)->GetXaxis()->SetTitle("E/p");
     
     for (int module_n = 1; module_n <= 6; ++module_n) {
         std::string top_name = "Top Layer " + std::to_string(module_n);
@@ -451,30 +493,48 @@ void TrackAnalysis::bookHistograms() {
         
         // Track positions at the target
         track_plotter->build2DHistogram(top_name + " - Hit Positions", 130, -100, 160, 40, -10, 70);
+        track_plotter->get2DHistogram(top_name + " - Hit Positions")->GetXaxis()->SetTitle("Top Hit x [mm]"); 
+        track_plotter->get2DHistogram(top_name + " - Hit Positions")->GetYaxis()->SetTitle("Top Hit y [mm]"); 
         track_plotter->build2DHistogram(bot_name + " - Hit Positions", 130, -100, 160, 40, -70, 10);
+        track_plotter->get2DHistogram(bot_name + " - Hit Positions")->GetXaxis()->SetTitle("Bottom Hit x [mm]"); 
+        track_plotter->get2DHistogram(bot_name + " - Hit Positions")->GetYaxis()->SetTitle("Bottom Hit y [mm]"); 
         electron_plotter->build2DHistogram(top_name + " - Hit Positions", 130, -100, 160, 40, -10, 70);
+        electron_plotter->get2DHistogram(top_name + " - Hit Positions")->GetXaxis()->SetTitle("Top Hit x [mm]"); 
+        electron_plotter->get2DHistogram(top_name + " - Hit Positions")->GetYaxis()->SetTitle("Top Hit y [mm]"); 
         electron_plotter->build2DHistogram(bot_name + " - Hit Positions", 130, -100, 160, 40, -70, 10);
+        electron_plotter->get2DHistogram(bot_name + " - Hit Positions")->GetXaxis()->SetTitle("Bottom Hit x [mm]"); 
+        electron_plotter->get2DHistogram(bot_name + " - Hit Positions")->GetYaxis()->SetTitle("Bottom Hit y [mm]"); 
         positron_plotter->build2DHistogram(top_name + " - Hit Positions", 130, -100, 160, 40, -10, 70);
+        positron_plotter->get2DHistogram(top_name + " - Hit Positions")->GetXaxis()->SetTitle("Top Hit x [mm]"); 
+        positron_plotter->get2DHistogram(top_name + " - Hit Positions")->GetYaxis()->SetTitle("Top Hit y [mm]"); 
         positron_plotter->build2DHistogram(bot_name + " - Hit Positions", 130, -100, 160, 40, -70, 10);
+        positron_plotter->get2DHistogram(bot_name + " - Hit Positions")->GetXaxis()->SetTitle("Bottom Hit x [mm]"); 
+        positron_plotter->get2DHistogram(bot_name + " - Hit Positions")->GetYaxis()->SetTitle("Bottom Hit y [mm]"); 
 
         // Residuals in x and y
-        track_plotter->build1DHistogram(top_name + " - x Residuals", 120, -5, 5); 
-        track_plotter->build1DHistogram(top_name + " - y Residuals", 120, -5, 5); 
-        track_plotter->build1DHistogram(bot_name + " - x Residuals", 120, -5, 5); 
-        track_plotter->build1DHistogram(bot_name + " - y Residuals", 120, -5, 5); 
-        electron_plotter->build1DHistogram(top_name + " - x Residuals", 120, -5, 5); 
-        electron_plotter->build1DHistogram(top_name + " - y Residuals", 120, -5, 5); 
-        electron_plotter->build1DHistogram(bot_name + " - x Residuals", 120, -5, 5); 
-        electron_plotter->build1DHistogram(bot_name + " - y Residuals", 120, -5, 5); 
-        positron_plotter->build1DHistogram(top_name + " - x Residuals", 120, -5, 5); 
-        positron_plotter->build1DHistogram(top_name + " - y Residuals", 120, -5, 5); 
-        positron_plotter->build1DHistogram(bot_name + " - x Residuals", 120, -5, 5); 
-        positron_plotter->build1DHistogram(bot_name + " - y Residuals", 120, -5, 5); 
+        track_plotter->build1DHistogram(top_name + " - x Residuals", 120, -5, 5)->GetXaxis()->SetTitle("Top Layer x Residual"); 
+        track_plotter->build1DHistogram(top_name + " - y Residuals", 120, -5, 5)->GetXaxis()->SetTitle("Top Layer y Residual"); 
+        track_plotter->build1DHistogram(bot_name + " - x Residuals", 120, -5, 5)->GetXaxis()->SetTitle("Bottom Layer x Residual"); 
+        track_plotter->build1DHistogram(bot_name + " - y Residuals", 120, -5, 5)->GetXaxis()->SetTitle("Bottom Layer y Residual"); 
+        electron_plotter->build1DHistogram(top_name + " - x Residuals", 120, -5, 5)->GetXaxis()->SetTitle("Top Layer x Residual"); 
+        electron_plotter->build1DHistogram(top_name + " - y Residuals", 120, -5, 5)->GetXaxis()->SetTitle("Top Layer y Residual"); 
+        electron_plotter->build1DHistogram(bot_name + " - x Residuals", 120, -5, 5)->GetXaxis()->SetTitle("Bottom Layer x Residual"); 
+        electron_plotter->build1DHistogram(bot_name + " - y Residuals", 120, -5, 5)->GetXaxis()->SetTitle("Bottom Layer y Residual"); 
+        positron_plotter->build1DHistogram(top_name + " - x Residuals", 120, -5, 5)->GetXaxis()->SetTitle("Top Layer x Residual"); 
+        positron_plotter->build1DHistogram(top_name + " - y Residuals", 120, -5, 5)->GetXaxis()->SetTitle("Top Layer y Residual"); 
+        positron_plotter->build1DHistogram(bot_name + " - x Residuals", 120, -5, 5)->GetXaxis()->SetTitle("Bottom Layer x Residual"); 
+        positron_plotter->build1DHistogram(bot_name + " - y Residuals", 120, -5, 5)->GetXaxis()->SetTitle("Bottom Layer y Residual"); 
     }
     
     track_plotter->build2DHistogram("p[e+] v p[e-]", 50, 0, 2.0, 50, 0, 2.0);
+    track_plotter->get2DHistogram("p[e+] v p[e-]")->GetXaxis()->SetTitle("p[e+] [GeV]"); 
+    track_plotter->get2DHistogram("p[e+] v p[e-]")->GetYaxis()->SetTitle("p[e-] [GeV]"); 
     track_plotter->build2DHistogram("p[e-] v p[e-]", 50, 0, 2.0, 50, 0, 2.0);
+    track_plotter->get2DHistogram("p[e-] v p[e-]")->GetXaxis()->SetTitle("p[e-] [GeV]"); 
+    track_plotter->get2DHistogram("p[e-] v p[e-]")->GetYaxis()->SetTitle("p[e-] [GeV]"); 
     track_plotter->build2DHistogram("theta[e-] v theta[e-]", 100, -0.05, 0.05, 100, -0.05, 0.05);
+    track_plotter->get2DHistogram("theta[e-] v theta[e-]")->GetXaxis()->SetTitle("theta[e-]"); 
+    track_plotter->get2DHistogram("theta[e-] v theta[e-]")->GetYaxis()->SetTitle("theta[e-]"); 
 }
 
 std::string TrackAnalysis::toString() { 
