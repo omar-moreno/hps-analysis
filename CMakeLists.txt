@@ -53,4 +53,5 @@ add_subdirectory("${HPS_ANALYSIS_SOURCE_DIR}/src/analyzer")
 # Add the analysis subdirectory to the build
 add_subdirectory("${HPS_ANALYSIS_SOURCE_DIR}/src/analyses")
 
+add_subdirectory("root")
 
