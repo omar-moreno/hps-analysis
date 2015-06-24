@@ -25,8 +25,14 @@
 #include <TKey.h>
 #include <TDirectory.h>
 #include <TH1.h>
+#include <TMultiGraph.h>
 
-class ComparePlots { 
+//--------------------//
+//--- HPS Analysis ---//
+//--------------------//
+#include <RootFileReader.h>
+
+class ComparePlots : public RootFileReader { 
 
     public: 
 
@@ -43,12 +49,7 @@ class ComparePlots {
         /**
          *
          */
-        void parseFiles(std::list<TFile*> root_files);
-
-        /**
-         *
-         */
-        void overlayPlots(); 
+        void overlayPlots();
 
         /**
          *
@@ -56,11 +57,6 @@ class ComparePlots {
         void setStyle(const std::string style) { this->style = style; }; 
 
     private: 
-
-        /**
-         *
-         */
-        void addPlots(TList* keys);
 
         /**
          *
@@ -76,10 +72,6 @@ class ComparePlots {
          *
          */
         void applyMCStyle();
-
-        //
-        std::map <std::string, std::vector<TH1*> > histogram1D_map;
-        std::map <std::string, std::vector<TH1*> > histogram2D_map;
 
         std::string style;
 };
