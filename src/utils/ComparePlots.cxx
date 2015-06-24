@@ -62,13 +62,7 @@ void ComparePlots::overlayPlots() {
         for (int hist_n = 1; hist_n < histogram2D_it->second.size(); hist_n++) { 
 
             histogram2D_it->second[hist_n]->Draw("box same");  
-            /*if (histogram2D_it->second[hist_n]->GetBinContent(histogram2D_it->second[hist_n]->GetMaximumBin()) 
-                    > max_bin_value) { 
-                max_bin_value 
-                    = histogram2D_it->second[hist_n]->GetBinContent(histogram2D_it->second[hist_n]->GetMaximumBin());
-            }*/ 
         }
-        //histogram2D_it->second[0]->GetYaxis()->SetRangeUser(0, max_bin_value + .1*max_bin_value);
         canvas->Write();
         canvas->Print("plot_comparison.pdf(");
     }
@@ -114,12 +108,12 @@ void ComparePlots::applyBasic1DStyle() {
     for (graph_it; graph_it != graph_map.end(); graph_it++) { 
 
         int color_index = 1;
-        for (int hist_n = 1; hist_n < graph_it->second.size(); hist_n++) { 
+        for (int hist_n = 0; hist_n < graph_it->second.size(); hist_n++) { 
 
-            //graph_it->second[hist_n]->SetMarkerStyle(20);
+            graph_it->second[hist_n]->SetMarkerStyle(20);
             graph_it->second[hist_n]->SetMarkerColor(color_index);
             graph_it->second[hist_n]->SetLineColor(color_index);
-            //graph_it->second[hist_n]->SetMarkerSize(.7); 
+            graph_it->second[hist_n]->SetMarkerSize(.3); 
             color_index++;
         }
     }
