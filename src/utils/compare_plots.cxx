@@ -26,6 +26,7 @@ int main(int argc, char **argv) {
    
     
     string root_file_list_name;
+    string histogram_name; 
     string style = "";
     bool save_to_pdf = false;
 
@@ -33,6 +34,7 @@ int main(int argc, char **argv) {
     // arguments passed, print the usage and exit.
     static struct option long_options[] = {
         {"root_list", required_argument, 0, 'l' },
+        {"name", required_argument, 0, 'n' },
         {"style", required_argument, 0, 's'},
         {"pdf", no_argument, 0, 'p' },
         { 0, 0, 0, 0 }
@@ -40,7 +42,7 @@ int main(int argc, char **argv) {
 
     int option_index = 0;
     int option_char; 
-    while ((option_char = getopt_long(argc, argv, "l:s:p", long_options, &option_index)) != -1) {
+    while ((option_char = getopt_long(argc, argv, "l:s:pn:", long_options, &option_index)) != -1) {
         switch (option_char) {
             case 'l': 
                 root_file_list_name = optarg;
@@ -50,6 +52,11 @@ int main(int argc, char **argv) {
                 break;
             case 'p':
                 save_to_pdf = true;
+                break;
+            case 'n': 
+                histogram_name = optarg;
+                break; 
+            default: 
                 break;
         }
     }
@@ -77,11 +84,12 @@ int main(int argc, char **argv) {
     } 
     root_file_list.close();
 
-    ComparePlots comparator;
-    if (!style.empty()) comparator.setStyle(style);
+    ComparePlots* comparator = new ComparePlots();
+    if (!style.empty()) comparator->setStyle(style);
 
-    comparator.parseFiles(root_files);
-    comparator.overlayPlots(); 
+    if (!histogram_name.empty()) comparator->parseFiles(root_files, histogram_name);
+    else comparator->parseFiles(root_files);
+    comparator->overlayPlots(); 
 
     return EXIT_SUCCESS;
 }
