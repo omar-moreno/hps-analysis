@@ -7,7 +7,9 @@
 
 #include <RootFileReader.h>
 
-RootFileReader::RootFileReader() {
+RootFileReader::RootFileReader()
+    : histogram_substring("")
+{
 }
 
 RootFileReader::~RootFileReader() { 
@@ -35,14 +37,51 @@ void RootFileReader::parseFile(TList* keys) {
         if (key->IsFolder()) this->parseFile(((TDirectory*) key->ReadObj())->GetListOfKeys());
         
         // 
+        if (!histogram_substring.empty() 
+                && std::string(key->GetName()).find(histogram_substring) == std::string::npos)
+            continue;
+
+        //std::cout << "Object type: " << key->ReadObj()->ClassName() << std::endl;
         if (std::string(key->ReadObj()->ClassName()).find("1") != std::string::npos) {
             histogram1D_map[key->GetName()].push_back((TH1*) key->ReadObj()); 
         } else if (std::string(key->ReadObj()->ClassName()).find("2") != std::string::npos) {
             histogram2D_map[key->GetName()].push_back((TH1*) key->ReadObj()); 
+        } else if (std::string(key->ReadObj()->ClassName()).find("Graph") != std::string::npos) { 
+            graph_map[key->GetName()].push_back((TGraph*) key->ReadObj());
         }
-        std::cout << "[ RootFileReader ]: Adding file: " << key->GetName() << std::endl;
+        std::cout << "[ RootFileReader ]: Adding " << key->GetName() << std::endl;
     } 
 }
+
+void RootFileReader::parseFile(TFile* root_file, std::string histogram_substring) { 
+    
+    histogram1D_map.clear();
+    histogram2D_map.clear();
+
+    this->setHistogramName(histogram_substring);
+    
+    this->parseFile(root_file);
+}
+
+void RootFileReader::parseFiles(std::list<TFile*> root_files) { 
+
+    // Loop over all of the ROOT files and create the plot maps
+    std::list<TFile*>::iterator root_files_it = root_files.begin();
+    for (root_files_it; root_files_it != root_files.end(); ++root_files_it) { 
+        std::cout << "[ ComparePlots ]: Processing file " << (*root_files_it)->GetName() << std::endl;        
+        this->parseFile(*root_files_it);    
+    }
+} 
+
+void RootFileReader::parseFiles(std::list<TFile*> root_files, std::string histogram_substring) { 
+
+    // Loop over all of the ROOT files and create the plot maps
+    std::list<TFile*>::iterator root_files_it = root_files.begin();
+    for (root_files_it; root_files_it != root_files.end(); ++root_files_it) { 
+        std::cout << "[ ComparePlots ]: Processing file " << (*root_files_it)->GetName() << std::endl;        
+        this->parseFile(*root_files_it, histogram_substring);    
+    }
+} 
 
 std::vector<TH1*> RootFileReader::getMatching1DHistograms(std::string histogram_name) { 
 

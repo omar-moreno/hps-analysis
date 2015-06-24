@@ -14,6 +14,7 @@
 #include <iostream>
 #include <map>
 #include <vector>
+#include <list>
 
 //------------//
 //--- ROOT ---//
@@ -22,6 +23,7 @@
 #include <TKey.h>
 #include <TDirectory.h>
 #include <TH1.h>
+#include <TGraph.h>
 
 class RootFileReader { 
 
@@ -47,9 +49,41 @@ class RootFileReader {
 
         /**
          *
+         */
+        void parseFile(TFile* root_file, std::string histogram_substring);
+
+        /**
+         *
+         */ 
+        void parseFiles(std::list<TFile*> root_files);
+
+        /**
+         *
+         */
+        void parseFiles(std::list<TFile*> root_files, std::string histogram_substring);
+
+
+        /**
+         *
+         */
+        void setHistogramName(std::string histogram_substring) { this->histogram_substring = histogram_substring; };
+
+        /**
+         *
          *
          */
         std::vector<TH1*> getMatching1DHistograms(std::string histogram_name);
+
+    protected: 
+
+        /** Map containing 1D histograms */
+        std::map <std::string, std::vector<TH1*> > histogram1D_map;
+        
+        /** Map containing 2D histograms */
+        std::map <std::string, std::vector<TH1*> > histogram2D_map;
+
+        /** Map containing objects of type TGraph */
+        std::map <std::string, std::vector<TGraph*> > graph_map;
 
     private:
 
@@ -60,11 +94,8 @@ class RootFileReader {
          */
         void parseFile(TList* keys);
 
-        /** Map containing 1D histograms */
-        std::map <std::string, std::vector<TH1*> > histogram1D_map;
-        
-        /** Map containing 2D histograms */
-        std::map <std::string, std::vector<TH1*> > histogram2D_map;
+        /** Name (or part) of the histogram of interest in stored in the file */
+        std::string histogram_substring;
 
 }; // RootFileReader
 
