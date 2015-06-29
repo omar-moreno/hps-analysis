@@ -100,3 +100,37 @@ std::vector<TH1*> RootFileReader::getMatching1DHistograms(std::string histogram_
 
    return histogram_collection; 
 }
+
+std::vector<TH1*> RootFileReader::getMatching2DHistograms(std::string histogram_name) { 
+
+    std::vector<TH1*> histogram_collection;
+
+    // Iterate through the collection of 1D histograms and add those matching
+    // histogram_name to the list
+    std::map<std::string, std::vector<TH1*>>::iterator histogram2D_it = histogram2D_map.begin();
+    for (histogram2D_it; histogram2D_it != histogram2D_map.end(); histogram2D_it++) {
+        
+       if (histogram2D_it->first.find(histogram_name) != std::string::npos) {
+            histogram_collection.insert(histogram_collection.begin(), 
+                    histogram2D_it->second.begin(), histogram2D_it->second.end());
+       }
+    }
+
+   return histogram_collection; 
+}
+
+std::vector<TGraph*> RootFileReader::getMatchingGraphs(std::string graph_name) { 
+
+    std::vector<TGraph*> graph_collection;
+
+    std::map<std::string, std::vector<TGraph*>>::iterator graph_it = graph_map.begin();
+    for (graph_it; graph_it != graph_map.end(); graph_it++) {
+        
+       if (graph_it->first.find(graph_name) != std::string::npos) {
+            graph_collection.insert(graph_collection.begin(), 
+                    graph_it->second.begin(), graph_it->second.end());
+       }
+    }
+
+   return graph_collection; 
+}
