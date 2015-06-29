@@ -35,7 +35,8 @@ void TrackAnalysis::initialize() {
 
 void TrackAnalysis::processEvent(HpsEvent* event) {
 
-    if (!event->isPair1Trigger()) return;
+    //if (!event->isPair1Trigger()) return;
+    if (!event->isSingle1Trigger()) return;
 
     track_plotter->get1DHistogram("Number of tracks")->Fill(event->getNumberOfTracks());
 
@@ -486,11 +487,12 @@ void TrackAnalysis::bookHistograms() {
     bottom_plotter->build1DHistogram("pz", 50, 0, 2.0)->GetXaxis()->SetTitle("p_{z} [GeV]");
     bottom_plotter->build1DHistogram("chi2", 40, 0, 40)->GetXaxis()->SetTitle("Track #chi^{2}");
     bottom_plotter->build1DHistogram("ep", 60, 0, 2)->GetXaxis()->SetTitle("E/p");
-    
+
+    double range = 0.5;    
     for (int module_n = 1; module_n <= 6; ++module_n) {
         std::string top_name = "Top Layer " + std::to_string(module_n);
         std::string bot_name = "Bottom Layer " + std::to_string(module_n);
-        
+
         // Track positions at the target
         track_plotter->build2DHistogram(top_name + " - Hit Positions", 130, -100, 160, 40, -10, 70);
         track_plotter->get2DHistogram(top_name + " - Hit Positions")->GetXaxis()->SetTitle("Top Hit x [mm]"); 
@@ -512,18 +514,19 @@ void TrackAnalysis::bookHistograms() {
         positron_plotter->get2DHistogram(bot_name + " - Hit Positions")->GetYaxis()->SetTitle("Bottom Hit y [mm]"); 
 
         // Residuals in x and y
-        track_plotter->build1DHistogram(top_name + " - x Residuals", 120, -5, 5)->GetXaxis()->SetTitle("Top Layer x Residual"); 
-        track_plotter->build1DHistogram(top_name + " - y Residuals", 120, -5, 5)->GetXaxis()->SetTitle("Top Layer y Residual"); 
-        track_plotter->build1DHistogram(bot_name + " - x Residuals", 120, -5, 5)->GetXaxis()->SetTitle("Bottom Layer x Residual"); 
-        track_plotter->build1DHistogram(bot_name + " - y Residuals", 120, -5, 5)->GetXaxis()->SetTitle("Bottom Layer y Residual"); 
-        electron_plotter->build1DHistogram(top_name + " - x Residuals", 120, -5, 5)->GetXaxis()->SetTitle("Top Layer x Residual"); 
-        electron_plotter->build1DHistogram(top_name + " - y Residuals", 120, -5, 5)->GetXaxis()->SetTitle("Top Layer y Residual"); 
-        electron_plotter->build1DHistogram(bot_name + " - x Residuals", 120, -5, 5)->GetXaxis()->SetTitle("Bottom Layer x Residual"); 
-        electron_plotter->build1DHistogram(bot_name + " - y Residuals", 120, -5, 5)->GetXaxis()->SetTitle("Bottom Layer y Residual"); 
-        positron_plotter->build1DHistogram(top_name + " - x Residuals", 120, -5, 5)->GetXaxis()->SetTitle("Top Layer x Residual"); 
-        positron_plotter->build1DHistogram(top_name + " - y Residuals", 120, -5, 5)->GetXaxis()->SetTitle("Top Layer y Residual"); 
-        positron_plotter->build1DHistogram(bot_name + " - x Residuals", 120, -5, 5)->GetXaxis()->SetTitle("Bottom Layer x Residual"); 
-        positron_plotter->build1DHistogram(bot_name + " - y Residuals", 120, -5, 5)->GetXaxis()->SetTitle("Bottom Layer y Residual"); 
+        
+        track_plotter->build1DHistogram(top_name + " - x Residuals", 200, -module_n*range, module_n*range)->GetXaxis()->SetTitle("Top Layer x Residual"); 
+        track_plotter->build1DHistogram(top_name + " - y Residuals", 200, -module_n*range, module_n*range)->GetXaxis()->SetTitle("Top Layer y Residual"); 
+        track_plotter->build1DHistogram(bot_name + " - x Residuals", 200, -module_n*range, module_n*range)->GetXaxis()->SetTitle("Bottom Layer x Residual"); 
+        track_plotter->build1DHistogram(bot_name + " - y Residuals", 200, -module_n*range, module_n*range)->GetXaxis()->SetTitle("Bottom Layer y Residual"); 
+        electron_plotter->build1DHistogram(top_name + " - x Residuals", 200, -module_n*range, module_n*range)->GetXaxis()->SetTitle("Top Layer x Residual"); 
+        electron_plotter->build1DHistogram(top_name + " - y Residuals", 200, -module_n*range, module_n*range)->GetXaxis()->SetTitle("Top Layer y Residual"); 
+        electron_plotter->build1DHistogram(bot_name + " - x Residuals", 200, -module_n*range, module_n*range)->GetXaxis()->SetTitle("Bottom Layer x Residual"); 
+        electron_plotter->build1DHistogram(bot_name + " - y Residuals", 200, -module_n*range, module_n*range)->GetXaxis()->SetTitle("Bottom Layer y Residual"); 
+        positron_plotter->build1DHistogram(top_name + " - x Residuals", 200, -module_n*range, module_n*range)->GetXaxis()->SetTitle("Top Layer x Residual"); 
+        positron_plotter->build1DHistogram(top_name + " - y Residuals", 200, -module_n*range, module_n*range)->GetXaxis()->SetTitle("Top Layer y Residual"); 
+        positron_plotter->build1DHistogram(bot_name + " - x Residuals", 200, -module_n*range, module_n*range)->GetXaxis()->SetTitle("Bottom Layer x Residual"); 
+        positron_plotter->build1DHistogram(bot_name + " - y Residuals", 200, -module_n*range, module_n*range)->GetXaxis()->SetTitle("Bottom Layer y Residual"); 
     }
     
     track_plotter->build2DHistogram("p[e+] v p[e-]", 50, 0, 2.0, 50, 0, 2.0);

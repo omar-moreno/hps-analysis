@@ -23,6 +23,8 @@ TagProbeAnalysis::~TagProbeAnalysis() {
 
 void TagProbeAnalysis::initialize() { 
     this->bookHistograms();
+    
+    srand(time(0)); 
 }
 
 void TagProbeAnalysis::processEvent(HpsEvent* event) {
@@ -35,7 +37,6 @@ void TagProbeAnalysis::processEvent(HpsEvent* event) {
 
     ecal_plotter->get1DHistogram("Cluster pair dt")->Fill(
             event->getEcalCluster(0)->getClusterTime() - event->getEcalCluster(1)->getClusterTime());
-
 
     ecal_plotter->get1DHistogram("Cluster pair energy sum")->Fill(
             event->getEcalCluster(0)->getEnergy() + event->getEcalCluster(1)->getEnergy());
@@ -54,8 +55,8 @@ void TagProbeAnalysis::processEvent(HpsEvent* event) {
     ++pass_cluster_energy_sum_cut;  
 
     // Randomly choose one of the Ecal clusters.
-    srand(time(0)); 
-    int cluster_index = rand()%2;
+    double cluster_index = rand()%2;
+    ecal_plotter->get1DHistogram("Cluster index")->Fill(cluster_index);
     cluster = event->getEcalCluster(cluster_index);
 
     //std::cout << "[ TagProbeAnalysis ]: Number of tracks: " << event->getNumberOfTracks() << std::endl;
@@ -70,9 +71,18 @@ void TagProbeAnalysis::processEvent(HpsEvent* event) {
          
         ecal_plotter->get1DHistogram("Tag cluster time - track time")->Fill(cluster->getClusterTime() 
                 - track->getTrackTime());
+        std::vector<double> p_vector = track->getMomentum(); 
+        double p = sqrt(p_vector[0]*p_vector[0] + p_vector[1]*p_vector[1] + p_vector[2]*p_vector[2]);
+        ecal_plotter->get1DHistogram("E/p")->Fill(cluster->getEnergy()/p);
 
         if (isMatch(cluster, track)) { 
             matched_tag_track = track;
+            ecal_plotter->get1DHistogram("E/p - Tag")->Fill(cluster->getEnergy()/p);
+            ecal_plotter->get1DHistogram("Tag cluster energy")->Fill(cluster->getEnergy());
+            ecal_plotter->get2DHistogram("Tag cluster energy vs Cluster x index")->Fill(
+                    cluster->getSeed()->getXCrystalIndex(), cluster->getEnergy());
+            ecal_plotter->get2DHistogram("Tag cluster energy vs Cluster y index")->Fill(cluster->getEnergy(), 
+                    cluster->getSeed()->getYCrystalIndex());
             break;
         }
     }
@@ -94,6 +104,11 @@ void TagProbeAnalysis::processEvent(HpsEvent* event) {
     seed_hit = cluster->getSeed();
     ecal_plotter->get2DHistogram("Probe clusters")->Fill(seed_hit->getXCrystalIndex(), 
             seed_hit->getYCrystalIndex(), 1); 
+    ecal_plotter->get1DHistogram("Probe cluster energy")->Fill(cluster->getEnergy());
+         ecal_plotter->get2DHistogram("Probe cluster energy vs Cluster x index")->Fill(
+                 cluster->getSeed()->getXCrystalIndex(), cluster->getEnergy());
+        ecal_plotter->get2DHistogram("Probe cluster energy vs Cluster y index")->Fill(cluster->getEnergy(), 
+                 cluster->getSeed()->getYCrystalIndex());
     
     for (int track_n = 0; track_n < event->getNumberOfTracks(); ++track_n) { 
         
@@ -108,7 +123,6 @@ void TagProbeAnalysis::processEvent(HpsEvent* event) {
         if (isMatch(cluster, track)) { 
             found++;
         
-            seed_hit = cluster->getSeed();
             ecal_plotter->get2DHistogram("Matched clusters")->Fill(seed_hit->getXCrystalIndex(), 
                 seed_hit->getYCrystalIndex(), 1); 
             ecal_plotter->get2DHistogram("Tracking efficiency")->Fill(seed_hit->getXCrystalIndex(), 
@@ -122,6 +136,7 @@ void TagProbeAnalysis::processEvent(HpsEvent* event) {
 
             ecal_plotter->get1DHistogram("Probe cluster time - track time - Pass cuts")->Fill(cluster->getClusterTime()    
                     - track->getTrackTime());
+            break;
         }
     } 
 }
@@ -156,10 +171,20 @@ void TagProbeAnalysis::bookHistograms() {
     ecal_plotter->build1DHistogram("Cluster pair energy sum - Pass Cuts", 50, 0, 2);
     ecal_plotter->build1DHistogram("Cluster pair dt", 100, -50, 50);
     ecal_plotter->build1DHistogram("Cluster pair dt - Pass cuts", 100, -50, 50);
+    ecal_plotter->build1DHistogram("Cluster index", 10, 0, 10);
     ecal_plotter->build1DHistogram("Tag cluster time - track time", 100, -20, 80);
     ecal_plotter->build1DHistogram("Tag cluster time - track time - Pass cuts", 100, -20, 80);
     ecal_plotter->build1DHistogram("Probe cluster time - track time", 100, -20, 80);
     ecal_plotter->build1DHistogram("Probe cluster time - track time - Pass cuts", 100, -20, 80);
+    ecal_plotter->build1DHistogram("E/p", 100, 0, 2);
+    ecal_plotter->build1DHistogram("E/p - Tag", 100, 0, 2);
+    ecal_plotter->build1DHistogram("E/p - Probe", 100, 0, 2);
+    ecal_plotter->build1DHistogram("Tag cluster energy", 50, 0, 1);
+    ecal_plotter->build2DHistogram("Tag cluster energy vs Cluster x index", 47, -23, 24, 50, 0, 1);
+    ecal_plotter->build2DHistogram("Tag cluster energy vs Cluster y index", 50, 0, 1, 12, -6, 6);
+    ecal_plotter->build1DHistogram("Probe cluster energy", 50, 0, 1);
+    ecal_plotter->build2DHistogram("Probe cluster energy vs Cluster x index", 47, -23, 24, 50, 0, 1);
+    ecal_plotter->build2DHistogram("Probe cluster energy vs Cluster y index", 50, 0, 1, 12, -6, 6);
     ecal_plotter->build2DHistogram("Tag clusters", 47, -23, 24, 12, -6, 6);
     ecal_plotter->build2DHistogram("Probe clusters", 47, -23, 24, 12, -6, 6);
     ecal_plotter->build2DHistogram("Matched clusters", 47, -23, 24, 12, -6, 6);
@@ -209,7 +234,7 @@ bool TagProbeAnalysis::passFiducialCut(HpsEvent* event) {
 bool TagProbeAnalysis::passClusterTimeCut(HpsEvent* event) { 
     
     if (abs(event->getEcalCluster(0)->getClusterTime() 
-                - event->getEcalCluster(1)->getClusterTime()) > 8) return false;
+                - event->getEcalCluster(1)->getClusterTime()) > 1) return false;
 
     return true; 
 }
@@ -241,9 +266,14 @@ bool TagProbeAnalysis::isMatch(EcalCluster* cluster, SvtTrack* track) {
    
     // Check that dx and dy between the extrapolated track and cluster
     // positions is reasonable
-    if (abs(cluster_pos[0] - track_pos_at_cluster_shower_max[0]) > 20) return false;
+    if (abs(cluster_pos[0] - track_pos_at_cluster_shower_max[0]) > 80) return false;
     
-    if (abs(cluster_pos[1] - track_pos_at_cluster_shower_max[1]) > 20) return false;
+    if (abs(cluster_pos[1] - track_pos_at_cluster_shower_max[1]) > 80) return false;
+
+    std::vector<double> p_vector = track->getMomentum(); 
+    double p = sqrt(p_vector[0]*p_vector[0] + p_vector[1]*p_vector[1] + p_vector[2]*p_vector[2]);
+
+    if (cluster->getEnergy()/p < .650) return false;
 
     return true;
 }
