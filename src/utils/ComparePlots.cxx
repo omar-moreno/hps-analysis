@@ -19,7 +19,8 @@ ComparePlots::~ComparePlots() {
 void ComparePlots::overlayPlots() { 
 
     TFile* overlay_root_file = new TFile("plot_comparison.root", "RECREATE");
-    TCanvas* canvas = new TCanvas("canvas", "canvas", 500, 500); 
+    TCanvas* canvas = new TCanvas("canvas", "canvas", 800, 800); 
+    TLegend* legend = NULL;
     canvas->Print("plot_comparison.pdf[");
     
     std::string options = ""; 
@@ -48,8 +49,21 @@ void ComparePlots::overlayPlots() {
         }
         histogram1D_it->second[0]->GetYaxis()->SetRangeUser(0, max_xbin_value + .1*max_xbin_value);
         histogram1D_it->second[0]->GetXaxis()->SetRangeUser(2000, 4000);
+
+        if (style.compare("mc") == 0) { 
+            
+            legend = new TLegend(0.79, 0.79, 0.89, 0.89);
+            legend->SetFillColor(0);
+            legend->SetLineColor(0);
+            legend->AddEntry(histogram1D_it->second[0], "Data", "p");
+            legend->AddEntry(histogram1D_it->second[1], "MC", "l");
+            legend->Draw();
+        
+        }
+
         canvas->Write();
         canvas->Print("plot_comparison.pdf(");
+        delete legend; 
     }
 
 
@@ -86,10 +100,10 @@ void ComparePlots::overlayPlots() {
             m_graph->Add(graph_it->second[hist_n]); 
 
             TGraph* comparison_graph = new TGraph();
-            comparison_graph->SetMarkerStyle(20);
+            comparison_graph->SetMarkerStyle(21);
             comparison_graph->SetMarkerColor(color_index);
             comparison_graph->SetLineColor(color_index);
-            comparison_graph->SetMarkerSize(.3); 
+            comparison_graph->SetMarkerSize(.4); 
             color_index++;
             for (int graph_p = 0; graph_p < graph_it->second[hist_n]->GetN(); ++graph_p) { 
                graph_it->second[0]->GetPoint(graph_p, base_x, base_y);
@@ -103,6 +117,7 @@ void ComparePlots::overlayPlots() {
         // TODO: Axi titles should be added through a configuration file
         m_graph->GetXaxis()->SetTitle("Physical Channel");
         m_graph->GetYaxis()->SetTitle("Noise (ADC Counts)");
+        m_graph->GetYaxis()->SetTitleOffset(1.20);
         
         canvas->Write();
         canvas->Print("plot_comparison.pdf(");
@@ -111,6 +126,7 @@ void ComparePlots::overlayPlots() {
         m_comp->Draw("Ap");
         m_comp->GetXaxis()->SetTitle("Physical Channel");
         m_comp->GetYaxis()->SetTitle("Noise (4471) - Noise (ADC Counts)");
+        m_comp->GetYaxis()->SetTitleOffset(1.20);
         canvas->Write();
         canvas->Print("plot_comparison.pdf(");
 
@@ -143,10 +159,10 @@ void ComparePlots::applyBasic1DStyle() {
         int color_index = 1;
         for (int hist_n = 0; hist_n < graph_it->second.size(); hist_n++) { 
 
-            graph_it->second[hist_n]->SetMarkerStyle(20);
+            graph_it->second[hist_n]->SetMarkerStyle(21);
             graph_it->second[hist_n]->SetMarkerColor(color_index);
             graph_it->second[hist_n]->SetLineColor(color_index);
-            graph_it->second[hist_n]->SetMarkerSize(.3); 
+            graph_it->second[hist_n]->SetMarkerSize(.4); 
             color_index++;
         }
     }
@@ -186,7 +202,8 @@ void ComparePlots::applyMCStyle() {
             histogram1D_it->second[hist_n]->SetMarkerSize(.7); 
             histogram1D_it->second[hist_n]->SetFillStyle(3003);
             histogram1D_it->second[hist_n]->SetFillColor(color_index - 1);
-            
+            histogram1D_it->second[hist_n]->SetStats(0);
+
             histogram1D_it->second[hist_n]->Scale(histogram1D_it->second[0]->Integral()/histogram1D_it->second[hist_n]->Integral());
 
         }

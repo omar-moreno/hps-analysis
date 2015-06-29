@@ -26,6 +26,8 @@
 #include <TDirectory.h>
 #include <TH1.h>
 #include <TMultiGraph.h>
+#include <TLegend.h>
+#include <TF1.h>
 
 //--------------------//
 //--- HPS Analysis ---//
