@@ -51,3 +51,11 @@ add_executable(compare_plots compare_plots.cxx)
 target_link_libraries(compare_plots 
     ComparePlots    
 )
+
+add_executable(print_plots print_plots.cxx)
+target_link_libraries(print_plots
+    ${ROOT_CORE_LIB}
+    ${ROOT_HIST_LIB}
+    RootFileReader
+    PlottingUtils
+)
