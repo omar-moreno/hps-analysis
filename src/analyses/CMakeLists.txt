@@ -43,10 +43,18 @@ target_link_libraries(SharedHitAnalysis
 )
 
 add_library(TimingAnalysis TimingAnalysis.cxx)
-target_link_libraries(SimpleTrackingEfficiencyAnalysis
+target_link_libraries(TimingAnalysis
     ${HPS_EVENT_LIBRARY}
     ${ROOT_CORE_LIBRARY}
     ${ROOT_HIST_LIBRARY}
     ${ROOT_GPAD_LIBRARY}
     Plotter
+)
+
+add_library(MollerAnalysis MollerAnalysis.cxx)
+target_link_libraries(MollerAnalysis
+    ${HPS_EVENT_LIBRARY}
+    Plotter
+    AnalysisUtils
+    TrackExtrapolator
 )
