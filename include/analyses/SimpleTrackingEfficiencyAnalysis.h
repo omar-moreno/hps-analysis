@@ -2,6 +2,8 @@
 #ifndef __SIMPLE_TRACKING_EFFICIENCY_ANALYSIS_H__
 #define __SIMPLE_TRACKING_EFFICIENCY_ANALYSIS_H__
 
+#include <TGraphAsymmErrors.h>
+
 //--------------------//
 //--- HPS Analysis ---//
 //--------------------//

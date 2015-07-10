@@ -184,8 +184,18 @@ void SimpleTrackingEfficiencyAnalysis::finalize() {
             plotter->get2DHistogram("cluster count - fee"));
     plotter->get2DHistogram("tracking efficiency - all")->Divide(
             plotter->get2DHistogram("cluster count - all"));
+
+
+
     plotter->get1DHistogram("tracking efficiency - cluster energy")->Divide(
             plotter->get1DHistogram("cluster energy"));
+
+    TGraphAsymmErrors* graph = new TGraphAsymmErrors();
+    graph->Divide(plotter->get1DHistogram("tracking efficiency - cluster energy"),  
+             plotter->get1DHistogram("cluster energy"));
+
+    graph->SaveAs("track_cluster_match_efficiency.root");
+
     plotter->get1DHistogram("tracking efficiency - cluster time")->Divide(
             plotter->get1DHistogram("cluster time"));
     plotter->get1DHistogram("tracking efficiency - cluster energy - no edge")->Divide(
