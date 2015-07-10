@@ -41,3 +41,12 @@ target_link_libraries(SharedHitAnalysis
     ${HPS_EVENT_LIBRARY}
     Plotter
 )
+
+add_library(TimingAnalysis TimingAnalysis.cxx)
+target_link_libraries(SimpleTrackingEfficiencyAnalysis
+    ${HPS_EVENT_LIBRARY}
+    ${ROOT_CORE_LIBRARY}
+    ${ROOT_HIST_LIBRARY}
+    ${ROOT_GPAD_LIBRARY}
+    Plotter
+)
