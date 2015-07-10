@@ -19,6 +19,8 @@
 #include <TH2F.h>
 #include <TH1D.h>
 #include <TH2D.h>
+#include <TGraph.h>
+#include <TGraphErrors.h>
 #include <TFile.h>
 #include <TCanvas.h>
 
@@ -56,6 +58,12 @@ class Plotter {
          */ 
         TH2* build2DHistogram(std::string name, int n_bins_x, double x_min, double x_max,
                 int n_bins_y, double y_min, double y_max);
+    
+        /**
+         *
+         */
+        TGraph* buildGraph(std::string name);
+
         /**
          *
          */
@@ -65,6 +73,11 @@ class Plotter {
          *
          */
         TH2* get2DHistogram(std::string name);
+
+        /**
+         *
+         */
+        TGraph* getGraph(std::string name); 
 
         /**
          *
@@ -82,6 +95,7 @@ class Plotter {
 
         std::map<std::string, TH1*> histogram1D_map;
         std::map<std::string, TH2*> histogram2D_map;
+        std::map<std::string, TGraph*> graph_map; 
 
         std::string type; 
 

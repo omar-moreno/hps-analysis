@@ -55,6 +55,20 @@ TH2* Plotter::build2DHistogram(std::string name, int n_bins_x, double x_min, dou
     return histogram2D_map[name];
 }
 
+TGraph* Plotter::buildGraph(std::string name) { 
+    
+    if (graph_map[name] != NULL) { 
+        throw std::runtime_error("The graph " + name + " already exist!"); 
+    }
+
+    std::string root_name = name + "_" + std::to_string(rand()%10000);
+
+    graph_map[name] = new TGraphErrors();
+    graph_map[name]->SetNameTitle(root_name.c_str(), name.c_str()); 
+    return graph_map[name]; 
+}
+
+
 TH1* Plotter::get1DHistogram(std::string name) { 
     
     if (histogram1D_map[name] == NULL) { 
@@ -73,6 +87,16 @@ TH2* Plotter::get2DHistogram(std::string name) {
     return histogram2D_map[name]; 
 }
 
+TGraph* Plotter::getGraph(std::string name) { 
+
+    if (graph_map[name] == NULL) { 
+        throw std::runtime_error("Graph " + name + " has not be created."); 
+    }
+
+    return graph_map[name]; 
+}
+
+
 void Plotter::saveToRootFile(std::string file_name) { 
 
     TFile* output_file = new TFile(file_name.c_str(), "RECREATE");
@@ -89,7 +113,14 @@ void Plotter::saveToRootFile(std::string file_name) {
         histogram2D_it->second->SetName(histogram2D_it->second->GetTitle());
         histogram2D_it->second->Write();
     }
-    
+
+    std::map<std::string, TGraph*>::iterator graph_it =  graph_map.begin();
+    for (graph_it; graph_it != graph_map.end(); ++graph_it) {
+        graph_it->second->Draw("A*e"); 
+        graph_it->second->SetName(graph_it->second->GetTitle());
+        graph_it->second->Write();
+    }
+
     delete output_file;
 }
 
@@ -108,6 +139,13 @@ void Plotter::saveToPdf(std::string file_name) {
         histogram2D_it->second->Draw("colz"); 
         canvas->Print((file_name + "(").c_str());
     }
+
+    std::map<std::string, TGraph*>::iterator graph_it =  graph_map.begin();
+    for (graph_it; graph_it != graph_map.end(); ++graph_it) {
+        graph_it->second->Draw("A*"); 
+        canvas->Print((file_name + "(").c_str());
+    }
+
     canvas->Print((file_name + "]").c_str());
     delete canvas;
 }
