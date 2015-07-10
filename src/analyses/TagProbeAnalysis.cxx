@@ -266,14 +266,17 @@ bool TagProbeAnalysis::isMatch(EcalCluster* cluster, SvtTrack* track) {
    
     // Check that dx and dy between the extrapolated track and cluster
     // positions is reasonable
-    if (abs(cluster_pos[0] - track_pos_at_cluster_shower_max[0]) > 80) return false;
+    // Check that dx and dy between the extrapolated track and cluster
+    // positions is reasonable
+    if (cluster_pos[0] - track_pos_at_cluster_shower_max[0] > 12 ||
+            cluster_pos[0] - track_pos_at_cluster_shower_max[0] < -18) return false;
     
-    if (abs(cluster_pos[1] - track_pos_at_cluster_shower_max[1]) > 80) return false;
 
+    if (cluster_pos[1] - track_pos_at_cluster_shower_max[1] > 12
+            || cluster_pos[1] - track_pos_at_cluster_shower_max[1] < -18) return false;
+    
     std::vector<double> p_vector = track->getMomentum(); 
     double p = sqrt(p_vector[0]*p_vector[0] + p_vector[1]*p_vector[1] + p_vector[2]*p_vector[2]);
-
-    if (cluster->getEnergy()/p < .650) return false;
 
     return true;
 }
