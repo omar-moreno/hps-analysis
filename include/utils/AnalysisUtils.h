@@ -10,6 +10,12 @@
 #ifndef __ANALYSIS_UTILS_H__
 #define __ANALYSIS_UTILS_H__
 
+//------------------//
+//--- C++ StdLib ---//
+//------------------//
+#include <vector>
+#include <cmath>
+
 namespace AnalysisUtils { 
 
     /**
