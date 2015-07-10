@@ -499,7 +499,7 @@ void TrackAnalysis::bookHistograms() {
         track_plotter->get2DHistogram(top_name + " - Hit Positions")->GetYaxis()->SetTitle("Top Hit y [mm]"); 
         track_plotter->build2DHistogram(bot_name + " - Hit Positions", 130, -100, 160, 40, -70, 10);
         track_plotter->get2DHistogram(bot_name + " - Hit Positions")->GetXaxis()->SetTitle("Bottom Hit x [mm]"); 
-        track_plotter->get2DHistogram(bot_name + " - Hit Positions")->GetYaxis()->SetTitle("Bottom Hit y [mm]"); 
+        track_plotter->get2DHistogram(bot_name + " - Hit Positions")->GetYaxis()->SetTitle("Bottom Hit y [mm]");
         electron_plotter->build2DHistogram(top_name + " - Hit Positions", 130, -100, 160, 40, -10, 70);
         electron_plotter->get2DHistogram(top_name + " - Hit Positions")->GetXaxis()->SetTitle("Top Hit x [mm]"); 
         electron_plotter->get2DHistogram(top_name + " - Hit Positions")->GetYaxis()->SetTitle("Top Hit y [mm]"); 
@@ -519,6 +519,8 @@ void TrackAnalysis::bookHistograms() {
         track_plotter->build1DHistogram(top_name + " - y Residuals", 200, -module_n*range, module_n*range)->GetXaxis()->SetTitle("Top Layer y Residual"); 
         track_plotter->build1DHistogram(bot_name + " - x Residuals", 200, -module_n*range, module_n*range)->GetXaxis()->SetTitle("Bottom Layer x Residual"); 
         track_plotter->build1DHistogram(bot_name + " - y Residuals", 200, -module_n*range, module_n*range)->GetXaxis()->SetTitle("Bottom Layer y Residual"); 
+        track_plotter->build1DHistogram(top_name + " - Number of hits per cluster", 5, 0, 5); 
+        track_plotter->build1DHistogram(top_name + " - Number of hits per cluster", 5, 0, 5); 
         electron_plotter->build1DHistogram(top_name + " - x Residuals", 200, -module_n*range, module_n*range)->GetXaxis()->SetTitle("Top Layer x Residual"); 
         electron_plotter->build1DHistogram(top_name + " - y Residuals", 200, -module_n*range, module_n*range)->GetXaxis()->SetTitle("Top Layer y Residual"); 
         electron_plotter->build1DHistogram(bot_name + " - x Residuals", 200, -module_n*range, module_n*range)->GetXaxis()->SetTitle("Bottom Layer x Residual"); 
