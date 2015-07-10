@@ -39,6 +39,7 @@
 #include <SimpleTrackingEfficiencyAnalysis.h>
 #include <SharedHitAnalysis.h>
 #include <TimingAnalysis.h>
+#include <MollerAnalysis.h>
 
 using namespace std; 
 
@@ -149,8 +150,9 @@ int main(int argc, char **argv) {
     //analyses.push_back(new TimingAnalysis());
     //analyses.push_back(new PairsAnalysis());
     //analyses.push_back(new TagProbeAnalysis());
-    analyses.push_back(new SimpleTrackingEfficiencyAnalysis());
+    //analyses.push_back(new SimpleTrackingEfficiencyAnalysis());
     //analyses.push_back(new SharedHitAnalysis());
+    analyses.push_back(new MollerAnalysis());
 
     // Initialize all analyses
     for (list<HpsAnalysis*>::iterator analysis = analyses.begin();

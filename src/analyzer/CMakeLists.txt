@@ -14,6 +14,7 @@ target_link_libraries(hps_analysis
     SimpleTrackingEfficiencyAnalysis
     SharedHitAnalysis
     TimingAnalysis
+    MollerAnalysis
 )
 
 # Find the necessary LCIO libraries
