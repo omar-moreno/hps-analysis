@@ -27,6 +27,12 @@ target_link_libraries(TrackExtrapolator
     ${HPS_EVENT_LIBRARY}
 )
 
+add_library(TrackClusterMatcher TrackClusterMatcher.cxx)
+target_link_libraries(TrackClusterMatcher
+    ${HPS_EVENT_LIBRARY}
+    TrackExtrapolator
+)
+
 add_library(RootFileReader RootFileReader.cxx)
 target_link_libraries(RootFileReader 
     ${ROOT_CORE_LIB}
