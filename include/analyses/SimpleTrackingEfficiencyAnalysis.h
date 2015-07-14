@@ -2,6 +2,8 @@
 #ifndef __SIMPLE_TRACKING_EFFICIENCY_ANALYSIS_H__
 #define __SIMPLE_TRACKING_EFFICIENCY_ANALYSIS_H__
 
+#include <algorithm>
+
 #include <TGraphAsymmErrors.h>
 
 //--------------------//
@@ -72,6 +74,7 @@ class SimpleTrackingEfficiencyAnalysis : public HpsAnalysis {
         bool isEdgeCrystal(EcalHit* hit);
 
         SvtTrack* track;
+        std::vector<SvtTrack*> matched_tracks; 
         EcalCluster* cluster;
 
         Plotter* plotter;

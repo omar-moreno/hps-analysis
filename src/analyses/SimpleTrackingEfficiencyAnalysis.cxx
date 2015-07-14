@@ -25,6 +25,7 @@ void SimpleTrackingEfficiencyAnalysis::processEvent(HpsEvent* event) {
     if (!event->isSingle1Trigger()) return;
 
     // Loop over all clusters in an event and try to match a track to them
+    matched_tracks.clear();
     for (int cluster_n = 0; cluster_n < event->getNumberOfEcalClusters(); ++cluster_n) {
   
         // Get the cluster from the event 
@@ -49,10 +50,10 @@ void SimpleTrackingEfficiencyAnalysis::processEvent(HpsEvent* event) {
 
         // Make the same plots for the top and bottom Ecal volumes 
         if (seed_hit->getYCrystalIndex() > 0) { 
-            plotter->get1DHistogram("cluster energy - top")->Fill(cluster_energy);
+            plotter->get1DHistogram("cluster energy - top - all")->Fill(cluster_energy);
             plotter->get1DHistogram("cluster time - top")->Fill(cluster_time);
         } else { 
-            plotter->get1DHistogram("cluster energy - bottom")->Fill(cluster_energy);
+            plotter->get1DHistogram("cluster energy - bottom - all")->Fill(cluster_energy);
             plotter->get1DHistogram("cluster time - bottom")->Fill(cluster_time);
         }  
 
@@ -87,6 +88,32 @@ void SimpleTrackingEfficiencyAnalysis::processEvent(HpsEvent* event) {
                     cluster->getEcalHits()->GetEntriesFast());
             plotter->get2DHistogram("cluster count - fee")->Fill(
                     seed_hit->getXCrystalIndex(), seed_hit->getYCrystalIndex(), 1);
+
+            if (seed_hit->getYCrystalIndex() > 0) { 
+                plotter->get1DHistogram("cluster energy - top - FEE")->Fill(cluster_energy);
+            } else { 
+                plotter->get1DHistogram("cluster energy - bottom - FEE")->Fill(cluster_energy);
+            }  
+        }
+
+        for (int track_n = 0; track_n < event->getNumberOfTracks(); ++track_n) { 
+
+            // Get a track from the event
+            track = event->getTrack(track_n);
+
+            if (track->isTopTrack()) { 
+                plotter->get1DHistogram("doca - top - all")->Fill(track->getD0());
+                plotter->get1DHistogram("z0 - top - all")->Fill(track->getZ0());
+                plotter->get1DHistogram("sin(phi0) - top - all")->Fill(sin(track->getPhi0()));
+                plotter->get1DHistogram("curvature - top - all")->Fill(track->getOmega());
+                plotter->get1DHistogram("tan_lambda - top - all")->Fill(track->getTanLambda());
+            } else { 
+                plotter->get1DHistogram("doca - bottom - all")->Fill(track->getD0());
+                plotter->get1DHistogram("z0 - bottom - all")->Fill(track->getZ0());
+                plotter->get1DHistogram("sin(phi0) - bottom - all")->Fill(sin(track->getPhi0()));
+                plotter->get1DHistogram("curvature - bottom - all")->Fill(track->getOmega());
+                plotter->get1DHistogram("tan_lambda - bottom - all")->Fill(track->getTanLambda());
+            }
         }
 
         bool match = false;
@@ -111,17 +138,35 @@ void SimpleTrackingEfficiencyAnalysis::processEvent(HpsEvent* event) {
             }
 
 
-            if (isMatch(cluster, track)) {
+            if (std::find(matched_tracks.begin(), matched_tracks.end(), track) == matched_tracks.end() && isMatch(cluster, track)) {
+
+                matched_tracks.push_back(track);
+
                 plotter->get2DHistogram("tracking efficiency - all")->Fill(seed_hit->getXCrystalIndex(), 
                     seed_hit->getYCrystalIndex(), 1);
                 plotter->get1DHistogram("tracking efficiency - cluster energy")->Fill(cluster->getEnergy(), 1);
                 plotter->get1DHistogram("tracking efficiency - cluster time")->Fill(cluster->getClusterTime(), 1);
-                
-                plotter->get1DHistogram("doca - match")->Fill(track->getD0());
-                plotter->get1DHistogram("z0 - match")->Fill(track->getZ0());
-                plotter->get1DHistogram("sin(phi0) - match")->Fill(sin(track->getPhi0()));
-                plotter->get1DHistogram("curvature - match")->Fill(track->getOmega());
-                plotter->get1DHistogram("tan_lambda - match")->Fill(track->getTanLambda());
+               
+                if (seed_hit->getYCrystalIndex() > 0) { 
+                    plotter->get1DHistogram("cluster energy - top - all - pass cuts")->Fill(cluster_energy);
+                } else { 
+                    plotter->get1DHistogram("cluster energy - bottom - all - pass cuts")->Fill(cluster_energy);
+                }  
+
+
+                if (track->isTopTrack()) { 
+                    plotter->get1DHistogram("doca - top - all - pass cuts")->Fill(track->getD0());
+                    plotter->get1DHistogram("z0 - top - all - pass cuts")->Fill(track->getZ0());
+                    plotter->get1DHistogram("sin(phi0) - top - all - pass cuts")->Fill(sin(track->getPhi0()));
+                    plotter->get1DHistogram("curvature - top - all - pass cuts")->Fill(track->getOmega());
+                    plotter->get1DHistogram("tan_lambda - top - all - pass cuts")->Fill(track->getTanLambda());
+                } else { 
+                    plotter->get1DHistogram("doca - bottom - all - pass cuts")->Fill(track->getD0());
+                    plotter->get1DHistogram("z0 - bottom - all - pass cuts")->Fill(track->getZ0());
+                    plotter->get1DHistogram("sin(phi0) - bottom - all - pass cuts")->Fill(sin(track->getPhi0()));
+                    plotter->get1DHistogram("curvature - bottom - all - pass cuts")->Fill(track->getOmega());
+                    plotter->get1DHistogram("tan_lambda - bottom - all - pass cuts")->Fill(track->getTanLambda());
+                }
 
                 if (track->getCharge() < 0) { 
                     plotter->get1DHistogram("doca - electron - match")->Fill(track->getD0());
@@ -141,6 +186,12 @@ void SimpleTrackingEfficiencyAnalysis::processEvent(HpsEvent* event) {
                     plotter->get2DHistogram("tracking efficiency - fee")->Fill(seed_hit->getXCrystalIndex(), 
                         seed_hit->getYCrystalIndex(), 1);
                     plotter->get1DHistogram("E/p - fee")->Fill(cluster_energy/p_mag);
+               
+                    if (seed_hit->getYCrystalIndex() > 0) { 
+                        plotter->get1DHistogram("cluster energy - top - FEE - pass cuts")->Fill(cluster_energy);
+                    } else { 
+                        plotter->get1DHistogram("cluster energy - bottom - FEE - pass cuts")->Fill(cluster_energy);
+                    }  
                 }
 
                 if (!isEdgeCrystal(seed_hit)) { 
@@ -184,25 +235,79 @@ void SimpleTrackingEfficiencyAnalysis::finalize() {
             plotter->get2DHistogram("cluster count - fee"));
     plotter->get2DHistogram("tracking efficiency - all")->Divide(
             plotter->get2DHistogram("cluster count - all"));
+    
+    plotter->setGraphType("asymm");
+    ((TGraphAsymmErrors*) plotter->buildGraph("tracking efficiency - cluster energy"))->Divide(
+        plotter->get1DHistogram("tracking efficiency - cluster energy"),
+        plotter->get1DHistogram("cluster energy"));
 
+    ((TGraphAsymmErrors*) plotter->buildGraph("tracking efficiency - cluster time"))->Divide(
+        plotter->get1DHistogram("tracking efficiency - cluster time"),
+        plotter->get1DHistogram("cluster time"));
 
+    ((TGraphAsymmErrors*) plotter->buildGraph("tracking efficiency - cluster energy - no edge"))->Divide(
+        plotter->get1DHistogram("tracking efficiency - cluster energy - no edge"),
+        plotter->get1DHistogram("cluster energy - no edge"));
 
-    plotter->get1DHistogram("tracking efficiency - cluster energy")->Divide(
-            plotter->get1DHistogram("cluster energy"));
+    ((TGraphAsymmErrors*) plotter->buildGraph("tracking efficiency - cluster time - no edge"))->Divide(
+        plotter->get1DHistogram("tracking efficiency - cluster time - no edge"),
+        plotter->get1DHistogram("cluster time - no edge"));
 
-    TGraphAsymmErrors* graph = new TGraphAsymmErrors();
-    graph->Divide(plotter->get1DHistogram("tracking efficiency - cluster energy"),  
-             plotter->get1DHistogram("cluster energy"));
+    ((TGraphAsymmErrors*) plotter->buildGraph("tracking efficiency - top cluster energy - all"))->Divide(
+        plotter->get1DHistogram("cluster energy - top - all - pass cuts"),
+        plotter->get1DHistogram("cluster energy - top - all"));
 
-    graph->SaveAs("track_cluster_match_efficiency.root");
+    ((TGraphAsymmErrors*) plotter->buildGraph("tracking efficiency - bottom cluster energy - all"))->Divide(
+        plotter->get1DHistogram("cluster energy - bottom - all - pass cuts"),
+        plotter->get1DHistogram("cluster energy - bottom - all"));
 
-    plotter->get1DHistogram("tracking efficiency - cluster time")->Divide(
-            plotter->get1DHistogram("cluster time"));
-    plotter->get1DHistogram("tracking efficiency - cluster energy - no edge")->Divide(
-            plotter->get1DHistogram("cluster energy - no edge"));
-    plotter->get1DHistogram("tracking efficiency - cluster time - no edge")->Divide(
-            plotter->get1DHistogram("cluster time - no edge"));
+    ((TGraphAsymmErrors*) plotter->buildGraph("tracking efficiency - top cluster energy - FEE"))->Divide(
+        plotter->get1DHistogram("cluster energy - top - FEE - pass cuts"),
+        plotter->get1DHistogram("cluster energy - top - FEE"));
 
+    ((TGraphAsymmErrors*) plotter->buildGraph("tracking efficiency - bottom cluster energy - FEE"))->Divide(
+        plotter->get1DHistogram("cluster energy - bottom - FEE - pass cuts"),
+        plotter->get1DHistogram("cluster energy - bottom - FEE"));
+
+    ((TGraphAsymmErrors*) plotter->buildGraph("tracking efficiency - doca - top - all"))->Divide(
+        plotter->get1DHistogram("doca - top - all - pass cuts"),
+        plotter->get1DHistogram("doca - top - all"));
+    
+    ((TGraphAsymmErrors*) plotter->buildGraph("tracking efficiency - doca - bottom - all"))->Divide(
+        plotter->get1DHistogram("doca - bottom - all - pass cuts"),
+        plotter->get1DHistogram("doca - bottom - all"));
+
+    ((TGraphAsymmErrors*) plotter->buildGraph("tracking efficiency - z0 - top - all"))->Divide(
+        plotter->get1DHistogram("z0 - top - all - pass cuts"),
+        plotter->get1DHistogram("z0 - top - all"));
+    
+    ((TGraphAsymmErrors*) plotter->buildGraph("tracking efficiency - z0 - bottom - all"))->Divide(
+        plotter->get1DHistogram("z0 - bottom - all - pass cuts"),
+        plotter->get1DHistogram("z0 - bottom - all"));
+    
+    ((TGraphAsymmErrors*) plotter->buildGraph("tracking efficiency - sin(phi0) - top - all"))->Divide(
+        plotter->get1DHistogram("sin(phi0) - top - all - pass cuts"),
+        plotter->get1DHistogram("sin(phi0) - top - all"));
+    
+    ((TGraphAsymmErrors*) plotter->buildGraph("tracking efficiency - sin(phi0) - bottom - all"))->Divide(
+        plotter->get1DHistogram("sin(phi0) - bottom - all - pass cuts"),
+        plotter->get1DHistogram("sin(phi0) - bottom - all"));
+
+    ((TGraphAsymmErrors*) plotter->buildGraph("tracking efficiency - curvature - top - all"))->Divide(
+        plotter->get1DHistogram("curvature - top - all - pass cuts"),
+        plotter->get1DHistogram("curvature - top - all"));
+    
+    ((TGraphAsymmErrors*) plotter->buildGraph("tracking efficiency - curvature - bottom - all"))->Divide(
+        plotter->get1DHistogram("curvature - bottom - all - pass cuts"),
+        plotter->get1DHistogram("curvature - bottom - all"));
+
+    ((TGraphAsymmErrors*) plotter->buildGraph("tracking efficiency - tan_lambda - top - all"))->Divide(
+        plotter->get1DHistogram("tan_lambda - top - all - pass cuts"),
+        plotter->get1DHistogram("tan_lambda - top - all"));
+    
+    ((TGraphAsymmErrors*) plotter->buildGraph("tracking efficiency - tan_lambda - bottom - all"))->Divide(
+        plotter->get1DHistogram("tan_lambda - bottom - all - pass cuts"),
+        plotter->get1DHistogram("tan_lambda - bottom - all"));
 
     plotter->saveToPdf("simple_tracking_efficiency.pdf");
     plotter->saveToRootFile("simple_tracking_efficiency.root");
@@ -228,10 +333,16 @@ void SimpleTrackingEfficiencyAnalysis::bookHistograms() {
     plotter->build1DHistogram("tracking efficiency - cluster energy", 50, 0, 1.5);
     plotter->build1DHistogram("tracking efficiency - cluster time", 160, 0, 80);
 
-    plotter->build1DHistogram("cluster energy - top", 50, 0, 1.5);
+    plotter->build1DHistogram("cluster energy - top - all", 50, 0, 1.5);
+    plotter->build1DHistogram("cluster energy - top - all - pass cuts", 50, 0, 1.5);
+    plotter->build1DHistogram("cluster energy - top - FEE", 50, 0, 1.5);
+    plotter->build1DHistogram("cluster energy - top - FEE - pass cuts", 50, 0, 1.5);
     plotter->build1DHistogram("cluster time - top", 160, 0, 80);
 
-    plotter->build1DHistogram("cluster energy - bottom", 50, 0, 1.5);
+    plotter->build1DHistogram("cluster energy - bottom - all", 50, 0, 1.5);
+    plotter->build1DHistogram("cluster energy - bottom - all - pass cuts", 50, 0, 1.5);
+    plotter->build1DHistogram("cluster energy - bottom - FEE", 50, 0, 1.5);
+    plotter->build1DHistogram("cluster energy - bottom - FEE - pass cuts", 50, 0, 1.5);
     plotter->build1DHistogram("cluster time - bottom", 160, 0, 80);
 
     plotter->build1DHistogram("cluster energy - no edge", 50, 0, 1.5);
@@ -268,12 +379,34 @@ void SimpleTrackingEfficiencyAnalysis::bookHistograms() {
     plotter->build1DHistogram("tan_lambda - positron - no match", 100, -0.1, 0.1);
     plotter->build1DHistogram("cos(theta) - positron - no match", 40, -0.1, 0.1);
 
-    plotter->build1DHistogram("doca - match", 80, -10, 10);
-    plotter->build1DHistogram("z0 - match", 80, -2, 2);
-    plotter->build1DHistogram("sin(phi0) - match", 40, -0.2, 0.2);
-    plotter->build1DHistogram("curvature - match", 50, -0.001, 0.001);
-    plotter->build1DHistogram("tan_lambda - match", 100, -0.1, 0.1);
-    plotter->build1DHistogram("cos(theta) - match", 40, -0.1, 0.1);
+    plotter->build1DHistogram("doca - top - all", 80, -10, 10);
+    plotter->build1DHistogram("z0 - top - all", 80, -2, 2);
+    plotter->build1DHistogram("sin(phi0) - top - all", 40, -0.2, 0.2);
+    plotter->build1DHistogram("curvature - top - all", 50, -0.001, 0.001);
+    plotter->build1DHistogram("tan_lambda - top - all", 100, -0.1, 0.1);
+    plotter->build1DHistogram("cos(theta) - top - all", 40, -0.1, 0.1);
+
+    plotter->build1DHistogram("doca - top - all - pass cuts", 80, -10, 10);
+    plotter->build1DHistogram("z0 - top - all - pass cuts", 80, -2, 2);
+    plotter->build1DHistogram("sin(phi0) - top - all - pass cuts", 40, -0.2, 0.2);
+    plotter->build1DHistogram("curvature - top - all - pass cuts", 50, -0.001, 0.001);
+    plotter->build1DHistogram("tan_lambda - top - all - pass cuts", 100, -0.1, 0.1);
+    plotter->build1DHistogram("cos(theta) - top - all - pass cuts", 40, -0.1, 0.1);
+
+    plotter->build1DHistogram("doca - bottom - all", 80, -10, 10);
+    plotter->build1DHistogram("z0 - bottom - all", 80, -2, 2);
+    plotter->build1DHistogram("sin(phi0) - bottom - all", 40, -0.2, 0.2);
+    plotter->build1DHistogram("curvature - bottom - all", 50, -0.001, 0.001);
+    plotter->build1DHistogram("tan_lambda - bottom - all", 100, -0.1, 0.1);
+    plotter->build1DHistogram("cos(theta) - bottom - all", 40, -0.1, 0.1);
+
+    plotter->build1DHistogram("doca - bottom - all - pass cuts", 80, -10, 10);
+    plotter->build1DHistogram("z0 - bottom - all - pass cuts", 80, -2, 2);
+    plotter->build1DHistogram("sin(phi0) - bottom - all - pass cuts", 40, -0.2, 0.2);
+    plotter->build1DHistogram("curvature - bottom - all - pass cuts", 50, -0.001, 0.001);
+    plotter->build1DHistogram("tan_lambda - bottom - all - pass cuts", 100, -0.1, 0.1);
+    plotter->build1DHistogram("cos(theta) - bottom - all - pass cuts", 40, -0.1, 0.1);
+    
     plotter->build1DHistogram("doca - electron - match", 80, -10, 10);
     plotter->build1DHistogram("sin(phi0) - electron - match", 40, -0.2, 0.2);
     plotter->build1DHistogram("z0 - electron - match", 80, -2, 2);
