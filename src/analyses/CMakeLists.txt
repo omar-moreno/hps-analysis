@@ -57,4 +57,5 @@ target_link_libraries(MollerAnalysis
     Plotter
     AnalysisUtils
     TrackExtrapolator
+    TrackClusterMatcher
 )

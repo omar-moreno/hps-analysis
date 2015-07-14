@@ -17,6 +17,7 @@
 #include <Plotter.h>
 #include <AnalysisUtils.h>
 #include <TrackExtrapolator.h>
+#include <TrackClusterMatcher.h>
 
 //---------------//
 //--- HPS DST ---//
@@ -71,6 +72,8 @@ class MollerAnalysis : public HpsAnalysis {
 
         Plotter* plotter;
         
+        TrackClusterMatcher* matcher;
+
         // Name of the class
         std::string class_name;
 
