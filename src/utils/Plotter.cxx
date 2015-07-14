@@ -2,7 +2,8 @@
 #include <Plotter.h>
 
 Plotter::Plotter()
-    : type("float"), 
+    : hist_type("float"),
+      graph_type("graph"), 
       color(kAzure+3) {
 }
 
@@ -17,9 +18,9 @@ TH1* Plotter::build1DHistogram(std::string name, int n_bins, double x_min, doubl
     
     std::string root_name = name + "_" + std::to_string(rand()%10000);
     
-    if (type.compare("float") == 0) {
+    if (hist_type.compare("float") == 0) {
         histogram1D_map[name] = new TH1F(root_name.c_str(), name.c_str(), n_bins, x_min, x_max);
-    } else if (type.compare("double") == 0) { 
+    } else if (hist_type.compare("double") == 0) { 
         histogram1D_map[name] = new TH1D(root_name.c_str(), name.c_str(), n_bins, x_min, x_max);
     }
 
@@ -41,10 +42,10 @@ TH2* Plotter::build2DHistogram(std::string name, int n_bins_x, double x_min, dou
 
     std::string root_name = name + "_" + std::to_string(rand()%10000);
 
-    if (type.compare("float") == 0) {
+    if (hist_type.compare("float") == 0) {
         histogram2D_map[name] = new TH2F(root_name.c_str(), name.c_str(), n_bins_x, x_min, x_max,
                 n_bins_y, y_min, y_max);
-    } else if (type.compare("double") == 0) { 
+    } else if (hist_type.compare("double") == 0) { 
         histogram2D_map[name] = new TH2D(root_name.c_str(), name.c_str(), n_bins_x, x_min, x_max,
                 n_bins_y, y_min, y_max);
     }
@@ -63,7 +64,16 @@ TGraph* Plotter::buildGraph(std::string name) {
 
     std::string root_name = name + "_" + std::to_string(rand()%10000);
 
-    graph_map[name] = new TGraphErrors();
+    if (graph_type.compare("graph") == 0) {
+        graph_map[name] = new TGraph();
+    } else if (graph_type.compare("errors") == 0) {
+       graph_map[name] = new TGraphErrors();  
+    } else if (graph_type.compare("asymm") == 0) { 
+        graph_map[name] = new TGraphAsymmErrors();
+    } else { 
+        throw std::runtime_error("Graph of type " + graph_type + " cannot be created.");
+    }
+
     graph_map[name]->SetNameTitle(root_name.c_str(), name.c_str()); 
     return graph_map[name]; 
 }
@@ -92,7 +102,7 @@ TGraph* Plotter::getGraph(std::string name) {
     if (graph_map[name] == NULL) { 
         throw std::runtime_error("Graph " + name + " has not be created."); 
     }
-
+    
     return graph_map[name]; 
 }
 

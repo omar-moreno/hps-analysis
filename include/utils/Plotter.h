@@ -21,6 +21,7 @@
 #include <TH2D.h>
 #include <TGraph.h>
 #include <TGraphErrors.h>
+#include <TGraphAsymmErrors.h>
 #include <TFile.h>
 #include <TCanvas.h>
 
@@ -41,7 +42,12 @@ class Plotter {
         /**
          *
          */
-        Plotter* setType(std::string type) { this->type = type; return this; };
+        Plotter* setType(std::string hist_type) { this->hist_type = hist_type; return this; };
+        
+        /**
+         *
+         */
+        Plotter* setGraphType(std::string graph_type) { this->graph_type = graph_type; return this; };
 
         /**
          *
@@ -97,7 +103,8 @@ class Plotter {
         std::map<std::string, TH2*> histogram2D_map;
         std::map<std::string, TGraph*> graph_map; 
 
-        std::string type; 
+        std::string hist_type;
+        std::string graph_type; 
 
         int color; 
 
