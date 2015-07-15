@@ -70,6 +70,8 @@ class MollerAnalysis : public HpsAnalysis {
     
     private:
 
+        bool isMatch(EcalCluster* cluster, SvtTrack* track);
+        
         Plotter* plotter;
         
         TrackClusterMatcher* matcher;
