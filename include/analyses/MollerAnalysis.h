@@ -10,6 +10,8 @@
 #ifndef __MOLLER_ANALYSIS_H__
 #define __MOLLER_ANALYSIS_H__
 
+#include <cmath>
+
 //--------------------//
 //--- HPS Analysis ---//
 //--------------------//
