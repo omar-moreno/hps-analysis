@@ -12,7 +12,11 @@
 MollerAnalysis::MollerAnalysis()
     : plotter(new Plotter()),
       matcher(new TrackClusterMatcher()),
-      class_name("MollerAnalysis") {
+      class_name("MollerAnalysis"), 
+      total_events(0),
+      total_pair_trigger_events(0),  
+      total_pair_events(0), 
+      total_two_cluster_events(0) {
 
 }
 
@@ -26,11 +30,17 @@ void MollerAnalysis::initialize() {
 
 void MollerAnalysis::processEvent(HpsEvent* event) { 
 
+    total_events++;
+
     // Only look at pair1 triggers
     if (!event->isPair1Trigger()) return;
+    total_pair_trigger_events++;
+
+    this->getClusterPair(event);
 
     // Only look at events that have two clusters
     if (event->getNumberOfEcalClusters() != 2) return;
+    total_two_cluster_events++; 
 
     EcalCluster* first_cluster = event->getEcalCluster(0);
     EcalCluster* second_cluster = event->getEcalCluster(1);
@@ -88,14 +98,14 @@ void MollerAnalysis::processEvent(HpsEvent* event) {
                 second_track = event->getTrack(second_track_n);
 
                 plotter->get2DHistogram("first v second track time - no match")->Fill(first_track->getTrackTime(), second_track->getTrackTime()); 
-                plotter->get2DHistogram("first v second cos(theta) - no match")->Fill(std::abs(TrackExtrapolator::getCosTheta(first_track)), 
-                        std::abs(TrackExtrapolator::getCosTheta(second_track)));
+                plotter->get2DHistogram("first v second theta - no match")->Fill(std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(first_track))), 
+                        std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(second_track))));
 
                 double p0 = AnalysisUtils::getMagnitude(first_track->getMomentum());
                 double p1 = AnalysisUtils::getMagnitude(second_track->getMomentum()); 
 
-                plotter->get2DHistogram("p v cos(theta) - no match")->Fill(p0, std::abs(TrackExtrapolator::getCosTheta(first_track)));
-                plotter->get2DHistogram("p v cos(theta) - no match")->Fill(p1, std::abs(TrackExtrapolator::getCosTheta(second_track)));
+                plotter->get2DHistogram("p v theta - no match")->Fill(p0, std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(first_track))));
+                plotter->get2DHistogram("p v theta - no match")->Fill(p1, std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(second_track))));
                 plotter->get2DHistogram("p[e] v p[e] - no match")->Fill(p0, p1);
             } 
         }
@@ -111,14 +121,14 @@ void MollerAnalysis::processEvent(HpsEvent* event) {
                 second_track = event->getTrack(second_track_n);
 
                 plotter->get2DHistogram("first v second track time - single match")->Fill(first_track->getTrackTime(), second_track->getTrackTime()); 
-                plotter->get2DHistogram("first v second cos(theta) - single match")->Fill(std::abs(TrackExtrapolator::getCosTheta(first_track)), 
-                        std::abs(TrackExtrapolator::getCosTheta(second_track)));
+                plotter->get2DHistogram("first v second theta - single match")->Fill(std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(first_track))), 
+                        std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(second_track))));
 
                 double p0 = AnalysisUtils::getMagnitude(first_track->getMomentum());
                 double p1 = AnalysisUtils::getMagnitude(second_track->getMomentum()); 
 
-                plotter->get2DHistogram("p v cos(theta) - single match")->Fill(p0, std::abs(TrackExtrapolator::getCosTheta(first_track)));
-                plotter->get2DHistogram("p v cos(theta) - single match")->Fill(p1, std::abs(TrackExtrapolator::getCosTheta(second_track)));
+                plotter->get2DHistogram("p v theta - single match")->Fill(p0, std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(first_track))));
+                plotter->get2DHistogram("p v theta - single match")->Fill(p1, std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(second_track))));
                 plotter->get2DHistogram("p[e] v p[e] - single match")->Fill(p0, p1);
             } 
         }
@@ -139,11 +149,16 @@ void MollerAnalysis::processEvent(HpsEvent* event) {
     plotter->get1DHistogram("delta Track Time - matched")->Fill(first_track->getTrackTime() - second_track->getTrackTime());
     plotter->get2DHistogram("first v second track time - matched")->Fill(first_track->getTrackTime(), second_track->getTrackTime());
 
-    plotter->get2DHistogram("first v second cos(theta) - matched")->Fill(std::abs(TrackExtrapolator::getCosTheta(first_track)), 
-            std::abs(TrackExtrapolator::getCosTheta(second_track)));
+    /*std::cout << "cos(theta): " << TrackExtrapolator::getCosTheta(first_track) 
+              << " theta: " << 3.14159/2 - acos(TrackExtrapolator::getCosTheta(first_track)) 
+              << " pi/2 - theta " << 3.14159/2 - acos(TrackExtrapolator::getCosTheta(first_track)) << std::endl;*/
 
-    plotter->get2DHistogram("p v cos(theta) - matched")->Fill(p0, std::abs(TrackExtrapolator::getCosTheta(first_track)));
-    plotter->get2DHistogram("p v cos(theta) - matched")->Fill(p1, std::abs(TrackExtrapolator::getCosTheta(second_track)));
+    plotter->get2DHistogram("first v second theta - matched")->Fill(std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(first_track))), 
+            std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(second_track))));
+
+
+    plotter->get2DHistogram("p v theta - matched")->Fill(p0, std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(first_track))));
+    plotter->get2DHistogram("p v theta - matched")->Fill(p1, std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(second_track))));
 
     if (std::abs(first_track->getTrackTime() - second_track->getTrackTime()) > 5) return;
 
@@ -174,11 +189,11 @@ void MollerAnalysis::processEvent(HpsEvent* event) {
     plotter->get2DHistogram("p[e-] v p[e-] - matched")->Fill(p0, p1);
     plotter->get2DHistogram("first v second track time - matched, e-e-")->Fill(first_track->getTrackTime(), second_track->getTrackTime());
 
-    plotter->get2DHistogram("first v second cos(theta) - matched, e-e-")->Fill(std::abs(TrackExtrapolator::getCosTheta(first_track)), 
-            std::abs(TrackExtrapolator::getCosTheta(second_track)));
+    plotter->get2DHistogram("first v second theta - matched, e-e-")->Fill(std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(first_track))), 
+            std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(second_track))));
 
-    plotter->get2DHistogram("p v cos(theta) - matched, e-e-")->Fill(p0, std::abs(TrackExtrapolator::getCosTheta(first_track)));
-    plotter->get2DHistogram("p v cos(theta) - matched, e-e-")->Fill(p1, std::abs(TrackExtrapolator::getCosTheta(second_track)));
+    plotter->get2DHistogram("p v theta - matched, e-e-")->Fill(p0, std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(first_track))));
+    plotter->get2DHistogram("p v theta - matched, e-e-")->Fill(p1, std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(second_track))));
 
     plotter->get2DHistogram("first v second cluster energy - matched, e-e-")->Fill(
             first_cluster->getEnergy(), 
@@ -191,7 +206,19 @@ void MollerAnalysis::processEvent(HpsEvent* event) {
 
 }
 
-void MollerAnalysis::finalize() { 
+void MollerAnalysis::finalize() {
+
+    //TF1* p_v_theta = new TF1("p_v_theta", "sqrt(2*(.000510/1.056)*(1.056/x -1 + .000510/x))", 0, 1.2);
+
+    std::cout << "Total number of events: " << total_events << std::endl;
+    std::cout << "Pair trigger events: " << total_pair_trigger_events << " / " << total_events 
+              << " = " << (total_pair_trigger_events/total_events)*100 << " % " << std::endl;  
+    std::cout << "Pair events: " << total_pair_events << " / " << total_events 
+              << " = " << (total_pair_events/total_events)*100 << " % " << std::endl;  
+    std::cout << "Two cluster events: " << total_two_cluster_events << " / " << total_events 
+              << " = " << (total_two_cluster_events/total_events)*100 << " % " << std::endl;  
+
+
     plotter->saveToPdf("moller_analysis.pdf");
     plotter->saveToRootFile("moller_analysis.root");
 }
@@ -208,8 +235,8 @@ void MollerAnalysis::bookHistograms() {
 
     plotter->build1DHistogram("delta Track Time - matched", 100, -10, 10)->GetXaxis()->SetTitle("#Delta Track time [ns]");
 
-    plotter->build1DHistogram("delta cos(theta) - matched", 40, -0.1, 0.1); 
-    plotter->build1DHistogram("delta cos(theta) - matched, e+e-", 40, -0.1, 0.1); 
+    plotter->build1DHistogram("delta theta - matched", 40, -0.1, 0.1); 
+    plotter->build1DHistogram("delta theta - matched, e+e-", 40, -0.1, 0.1); 
 
     plotter->build2DHistogram("first v second track time - no match", 100, -10, 10, 100, -10, 10);
     plotter->get2DHistogram("first v second track time - no match")->GetXaxis()->SetTitle("Track time [ns]");
@@ -223,29 +250,29 @@ void MollerAnalysis::bookHistograms() {
     plotter->get2DHistogram("first v second track time - matched")->GetXaxis()->SetTitle("Track time [ns]");
     plotter->get2DHistogram("first v second track time - matched")->GetYaxis()->SetTitle("Track time [ns]");
     
-    plotter->build2DHistogram("first v second cos(theta) - matched", 40, 0, 0.1, 40, 0, 0.1);
-    plotter->get2DHistogram("first v second cos(theta) - matched")->GetXaxis()->SetTitle("cos #theta");
-    plotter->get2DHistogram("first v second cos(theta) - matched")->GetYaxis()->SetTitle("cos #theta");
+    plotter->build2DHistogram("first v second theta - matched", 40, 0, 0.1, 40, 0, 0.1);
+    plotter->get2DHistogram("first v second theta - matched")->GetXaxis()->SetTitle("#theta");
+    plotter->get2DHistogram("first v second theta - matched")->GetYaxis()->SetTitle("#theta");
 
-    plotter->build2DHistogram("first v second cos(theta) - no match", 40, 0, 0.1, 40, 0, 0.1);
-    plotter->get2DHistogram("first v second cos(theta) - no match")->GetXaxis()->SetTitle("cos #theta");
-    plotter->get2DHistogram("first v second cos(theta) - no match")->GetYaxis()->SetTitle("cos #theta");
+    plotter->build2DHistogram("first v second theta - no match", 40, 0, 0.1, 40, 0, 0.1);
+    plotter->get2DHistogram("first v second theta - no match")->GetXaxis()->SetTitle("#theta");
+    plotter->get2DHistogram("first v second theta - no match")->GetYaxis()->SetTitle("#theta");
 
-    plotter->build2DHistogram("first v second cos(theta) - single match", 40, 0, 0.1, 40, 0, 0.1);
-    plotter->get2DHistogram("first v second cos(theta) - single match")->GetXaxis()->SetTitle("cos #theta");
-    plotter->get2DHistogram("first v second cos(theta) - single match")->GetYaxis()->SetTitle("cos #theta");
+    plotter->build2DHistogram("first v second theta - single match", 40, 0, 0.1, 40, 0, 0.1);
+    plotter->get2DHistogram("first v second theta - single match")->GetXaxis()->SetTitle("#theta");
+    plotter->get2DHistogram("first v second theta - single match")->GetYaxis()->SetTitle("#theta");
 
-    plotter->build2DHistogram("p v cos(theta) - matched", 50, 0, 1.5, 40, 0, 0.1);
-    plotter->get2DHistogram("p v cos(theta) - matched")->GetXaxis()->SetTitle("p (GeV)");
-    plotter->get2DHistogram("p v cos(theta) - matched")->GetYaxis()->SetTitle("cos #theta");
+    plotter->build2DHistogram("p v theta - matched", 50, 0, 1.5, 40, 0, 0.1);
+    plotter->get2DHistogram("p v theta - matched")->GetXaxis()->SetTitle("p (GeV)");
+    plotter->get2DHistogram("p v theta - matched")->GetYaxis()->SetTitle("#theta");
 
-    plotter->build2DHistogram("p v cos(theta) - no match", 50, 0, 1.5, 40, 0, 0.1);
-    plotter->get2DHistogram("p v cos(theta) - no match")->GetXaxis()->SetTitle("p (GeV)");
-    plotter->get2DHistogram("p v cos(theta) - no match")->GetYaxis()->SetTitle("cos #theta");
+    plotter->build2DHistogram("p v theta - no match", 50, 0, 1.5, 40, 0, 0.1);
+    plotter->get2DHistogram("p v theta - no match")->GetXaxis()->SetTitle("p (GeV)");
+    plotter->get2DHistogram("p v theta - no match")->GetYaxis()->SetTitle("#theta");
 
-    plotter->build2DHistogram("p v cos(theta) - single match", 50, 0, 1.5, 40, 0, 0.1);
-    plotter->get2DHistogram("p v cos(theta) - single match")->GetXaxis()->SetTitle("p (GeV)");
-    plotter->get2DHistogram("p v cos(theta) - single match")->GetYaxis()->SetTitle("cos #theta");
+    plotter->build2DHistogram("p v theta - single match", 50, 0, 1.5, 40, 0, 0.1);
+    plotter->get2DHistogram("p v theta - single match")->GetXaxis()->SetTitle("p (GeV)");
+    plotter->get2DHistogram("p v theta - single match")->GetYaxis()->SetTitle("#theta");
 
     plotter->build2DHistogram("p[e] v p[e] - matched", 50, 0, 1.5, 50, 0, 1.5);
     plotter->get2DHistogram("p[e] v p[e] - matched")->GetXaxis()->SetTitle("p[e] [GeV]"); 
@@ -267,13 +294,13 @@ void MollerAnalysis::bookHistograms() {
     plotter->get2DHistogram("first v second track time - matched, e-e-")->GetXaxis()->SetTitle("Track time [ns]");
     plotter->get2DHistogram("first v second track time - matched, e-e-")->GetYaxis()->SetTitle("Track time [ns]");
 
-    plotter->build2DHistogram("p v cos(theta) - matched, e-e-", 50, 0, 1.5, 40, 0, 0.1);
-    plotter->get2DHistogram("p v cos(theta) - matched, e-e-")->GetXaxis()->SetTitle("p (GeV)");
-    plotter->get2DHistogram("p v cos(theta) - matched, e-e-")->GetYaxis()->SetTitle("cos #theta");
+    plotter->build2DHistogram("p v theta - matched, e-e-", 50, 0, 1.5, 40, 0, 0.1);
+    plotter->get2DHistogram("p v theta - matched, e-e-")->GetXaxis()->SetTitle("p (GeV)");
+    plotter->get2DHistogram("p v theta - matched, e-e-")->GetYaxis()->SetTitle("#theta");
 
-    plotter->build2DHistogram("first v second cos(theta) - matched, e-e-", 40, 0, 0.1, 40, 0, 0.1);
-    plotter->get2DHistogram("first v second cos(theta) - matched, e-e-")->GetXaxis()->SetTitle("cos #theta");
-    plotter->get2DHistogram("first v second cos(theta) - matched, e-e-")->GetYaxis()->SetTitle("cos #theta");
+    plotter->build2DHistogram("first v second theta - matched, e-e-", 40, 0, 0.1, 40, 0, 0.1);
+    plotter->get2DHistogram("first v second theta - matched, e-e-")->GetXaxis()->SetTitle("#theta");
+    plotter->get2DHistogram("first v second theta - matched, e-e-")->GetYaxis()->SetTitle("#theta");
 
     plotter->build2DHistogram("first v second cluster time - N clusters == 2", 160, 20, 100, 160, 20, 100);
     plotter->get2DHistogram("first v second cluster time - N clusters == 2")->GetXaxis()->SetTitle("First cluster time (ns)");
@@ -482,4 +509,40 @@ bool MollerAnalysis::isMatch(EcalCluster* cluster, SvtTrack* track) {
 
     //std::cout << "Track and cluster are a match" << std::endl;
     return true;
+}
+
+std::vector<EcalCluster*> MollerAnalysis::getClusterPair(HpsEvent* event) { 
+
+    EcalCluster* first_cluster;
+    EcalCluster* second_cluster;
+
+    // Loop through all clusters in an event
+    for (int first_cluster_n = 0; first_cluster_n < event->getNumberOfEcalClusters(); ++first_cluster_n) { 
+    
+        // Get an Ecal cluster from the event
+        first_cluster = event->getEcalCluster(first_cluster_n);
+
+        // Loop through the rest of the clusters and make pairs
+        for (int second_cluster_n = (first_cluster_n + 1); second_cluster_n < event->getNumberOfEcalClusters();
+                ++second_cluster_n) { 
+            
+            // Get another Ecal cluster from the event
+            second_cluster = event->getEcalCluster(second_cluster_n);
+
+            // Check if the two clusters can be considered a 'good pair'. This is done by requiring 
+            // the clusters to satisfy a series of cuts
+             
+            double delta_cluster_time = first_cluster->getClusterTime() - second_cluster->getClusterTime();
+            if (std::abs(delta_cluster_time) > 2.5) continue;
+
+            total_pair_events++;
+            break;
+        }
+    }
+
+    std::vector<EcalCluster*> pair;
+    pair.push_back(first_cluster);
+    pair.push_back(second_cluster);
+
+    return pair; 
 }

@@ -72,6 +72,9 @@ class MollerAnalysis : public HpsAnalysis {
     
     private:
 
+        // TODO: Move this class to a utility class
+        std::vector<EcalCluster*> getClusterPair(HpsEvent* event);
+
         bool isMatch(EcalCluster* cluster, SvtTrack* track);
         
         Plotter* plotter;
@@ -81,6 +84,10 @@ class MollerAnalysis : public HpsAnalysis {
         // Name of the class
         std::string class_name;
 
+        float total_events;
+        float total_pair_trigger_events;
+        float total_pair_events; 
+        float total_two_cluster_events;
 };
 
 #endif // __MOLLER_ANALYSIS_H__
