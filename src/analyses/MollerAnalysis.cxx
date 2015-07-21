@@ -36,48 +36,184 @@ void MollerAnalysis::processEvent(HpsEvent* event) {
     if (!event->isPair1Trigger()) return;
     total_pair_trigger_events++;
 
-    this->getClusterPair(event);
+    //--- All Events ---//
+    //------------------//
+    std::vector<EcalCluster*> pair = AnalysisUtils::getClusterPair(event);
+
+    if (pair.size() != 2) return;
+    total_pair_events++;
+    plotter->get2DHistogram("cluster pair energy")->Fill(pair[0]->getEnergy(), pair[1]->getEnergy());
+    plotter->get2DHistogram("cluster pair time")->Fill(pair[0]->getClusterTime(), pair[1]->getClusterTime());
+
+    SvtTrack* first_track = NULL;
+    SvtTrack* second_track = NULL; 
+    for (int track_n = 0; track_n < event->getNumberOfTracks(); ++track_n) { 
+        //std::cout << "Trying to find match for track " << track_n << std::endl;
+        if (this->isMatch(pair[0], event->getTrack(track_n))) { 
+            first_track = event->getTrack(track_n);
+            //std::cout << "First track match found" << std::endl;
+        } else if (this->isMatch(pair[1], event->getTrack(track_n))) { 
+            second_track = event->getTrack(track_n);
+            //std::cout << "Second track match found" << std::endl;
+        }
+    }
+
+    if (first_track == NULL && second_track == NULL) {
+        return;
+    } else if (first_track == NULL || second_track == NULL) { 
+        return;
+    }
+
+    plotter->get2DHistogram("cluster pair energy - matched")->Fill(
+            pair[0]->getEnergy(), 
+            pair[1]->getEnergy());
+
+    plotter->get2DHistogram("cluster pair time - matched")->Fill(
+            pair[0]->getClusterTime(), 
+            pair[1]->getClusterTime());
+
+    double p0 = AnalysisUtils::getMagnitude(first_track->getMomentum());
+    double p1 = AnalysisUtils::getMagnitude(second_track->getMomentum()); 
+
+    plotter->get1DHistogram("delta Track Time - matched")->Fill(
+            first_track->getTrackTime() - second_track->getTrackTime());
+    plotter->get2DHistogram("track time - matched")->Fill(first_track->getTrackTime(), second_track->getTrackTime());
+
+    plotter->get2DHistogram("track theta - matched")->Fill(
+            std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(first_track))), 
+            std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(second_track))));
+
+    plotter->get2DHistogram("p v theta - matched")->Fill(
+            p0, std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(first_track))));
+    plotter->get2DHistogram("p v theta - matched")->Fill(
+            p1, std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(second_track))));
+
+
+    plotter->get2DHistogram("p[e] v p[e] - matched")->Fill(p0, p1);
+
+    if (first_track->isTopTrack()) { 
+        plotter->get1DHistogram("p top - matched")->Fill(p0);
+    } else { 
+        plotter->get1DHistogram("p bottom - matched")->Fill(p0);
+    }
+
+    if (second_track->isTopTrack()) { 
+        plotter->get1DHistogram("p top - matched")->Fill(p0);
+    } else { 
+        plotter->get1DHistogram("p bottom - matched")->Fill(p0);
+    }
+   
+    plotter->get2DHistogram("cluster x position - matched")->Fill(pair[0]->getPosition()[0], 
+            pair[1]->getPosition()[0]);
+    plotter->get2DHistogram("cluster y position - matched")->Fill(pair[0]->getPosition()[1], 
+            pair[1]->getPosition()[1]);
+
+    // Require that both tracks are negatively charged
+    if ((first_track->getCharge() + second_track->getCharge()) != -2) return;
+
+    plotter->get2DHistogram("p[e-] v p[e-] - matched")->Fill(p0, p1);
+    plotter->get2DHistogram("track time - matched, e-e-")->Fill(first_track->getTrackTime(),
+            second_track->getTrackTime());
+
+    plotter->get2DHistogram("track theta - matched, e-e-")->Fill(
+            std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(first_track))), 
+            std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(second_track))));
+
+    plotter->get2DHistogram("p v theta - matched, e-e-")->Fill(p0, 
+            std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(first_track))));
+    plotter->get2DHistogram("p v theta - matched, e-e-")->Fill(p1, 
+            std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(second_track))));
+
+    plotter->get2DHistogram("cluster pair energy - matched, e-e-")->Fill(
+            pair[0]->getEnergy(), 
+            pair[1]->getEnergy());
+
+    plotter->get2DHistogram("cluster x position - matched, e-e-")->Fill(pair[0]->getPosition()[0], 
+            pair[1]->getPosition()[0]);
+    plotter->get2DHistogram("cluster y position - matched, e-e-")->Fill(pair[0]->getPosition()[1], 
+            pair[1]->getPosition()[1]);
+
+    if (std::abs(first_track->getTrackTime() - second_track->getTrackTime()) > 4) return;
+
+    plotter->get2DHistogram("p[e-] v p[e-] - matched, time")->Fill(p0, p1);
+    
+    plotter->get2DHistogram("track theta - matched, e-e-, time")->Fill(
+            std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(first_track))), 
+            std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(second_track))));
+
+    plotter->get2DHistogram("p v theta - matched, e-e-, time")->Fill(p0, 
+            std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(first_track))));
+    plotter->get2DHistogram("p v theta - matched, e-e-, time")->Fill(p1, 
+            std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(second_track))));
+    
+    plotter->get2DHistogram("track time - matched, e-e-, time")->Fill(first_track->getTrackTime(),
+            second_track->getTrackTime());
+   
+    //if (p0 > .85 || p1 > .85) return;
+    if (p0+p1 > 1.1*1.056) return;
+    
+    if (p0+p1 < .85*1.056) return;
+
+
+    plotter->get2DHistogram("p[e-] v p[e-] - matched, time, p")->Fill(p0, p1);
+    
+    plotter->get2DHistogram("track theta - matched, e-e-, time, p")->Fill(
+            std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(first_track))), 
+            std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(second_track))));
+
+    plotter->get2DHistogram("p v theta - matched, e-e-, time, p")->Fill(p0, 
+            std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(first_track))));
+    plotter->get2DHistogram("p v theta - matched, e-e-, time, p")->Fill(p1, 
+            std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(second_track))));
+    
+    //double p_expected = sqrt(2*(.000510/1.056)*(1.056/x -1 + .000510/x))
+    //double p_residual = 
+
+    //plotter->get1DHistogram("p residual")->Fill();
+
+    //--- Two cluster events ---//
+    //--------------------------//
 
     // Only look at events that have two clusters
-    if (event->getNumberOfEcalClusters() != 2) return;
+    /*if (event->getNumberOfEcalClusters() != 2) return;
     total_two_cluster_events++; 
 
     EcalCluster* first_cluster = event->getEcalCluster(0);
     EcalCluster* second_cluster = event->getEcalCluster(1);
 
-    plotter->get2DHistogram("first v second cluster energy - N clusters == 2")->Fill(
+    plotter->get2DHistogram("cluster pair energy - N clusters == 2")->Fill(
             first_cluster->getEnergy(), 
             second_cluster->getEnergy());
 
 
-    plotter->get2DHistogram("first v second cluster time - N clusters == 2")->Fill(
+    plotter->get2DHistogram("cluster pair time - N clusters == 2")->Fill(
             first_cluster->getClusterTime(), 
             second_cluster->getClusterTime());
 
-    plotter->get1DHistogram("cluster energy - N clusters == 2")->Fill(first_cluster->getEnergy());
-    plotter->get1DHistogram("cluster energy - N clusters == 2")->Fill(second_cluster->getEnergy());
+    plotter->get1DHistogram("cluster pair energy - N clusters == 2")->Fill(first_cluster->getEnergy());
+    plotter->get1DHistogram("cluster pair energy - N clusters == 2")->Fill(second_cluster->getEnergy());
 
     double delta_cluster_time = first_cluster->getClusterTime() - second_cluster->getClusterTime();
 
     if (std::abs(delta_cluster_time) > 2.5) return;
 
-    plotter->get2DHistogram("first v second cluster energy - N clusters == 2, time cut")->Fill(
+    plotter->get2DHistogram("cluster pair energy - N clusters == 2, time cut")->Fill(
             first_cluster->getEnergy(), 
             second_cluster->getEnergy());
 
-    plotter->get2DHistogram("first v second cluster time - N clusters == 2, time cut")->Fill(
+    plotter->get2DHistogram("cluster pair time - N clusters == 2, time cut")->Fill(
             first_cluster->getClusterTime(), 
             second_cluster->getClusterTime());
 
     // Only look at events that have two tracks 
     if (event->getNumberOfTracks() < 2) return;
 
-    plotter->get1DHistogram("cluster energy - N tracks >= 2")->Fill(first_cluster->getEnergy());
-    plotter->get1DHistogram("cluster energy - N tracks >= 2")->Fill(second_cluster->getEnergy());
+    plotter->get1DHistogram("cluster pair energy - N tracks >= 2")->Fill(first_cluster->getEnergy());
+    plotter->get1DHistogram("cluster pair energy - N tracks >= 2")->Fill(second_cluster->getEnergy());
 
     //std::cout << "Matching " << event->getNumberOfTracks() << " tracks" << std::endl;
-    SvtTrack* first_track = NULL;
-    SvtTrack* second_track = NULL; 
+    first_track = NULL;
+    second_track = NULL; 
     for (int track_n = 0; track_n < event->getNumberOfTracks(); ++track_n) { 
         //std::cout << "Trying to find match for track " << track_n << std::endl;
         if (this->isMatch(first_cluster, event->getTrack(track_n))) { 
@@ -97,8 +233,8 @@ void MollerAnalysis::processEvent(HpsEvent* event) {
                 if (first_track_n == second_track_n) continue;
                 second_track = event->getTrack(second_track_n);
 
-                plotter->get2DHistogram("first v second track time - no match")->Fill(first_track->getTrackTime(), second_track->getTrackTime()); 
-                plotter->get2DHistogram("first v second theta - no match")->Fill(std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(first_track))), 
+                plotter->get2DHistogram("track time - no match")->Fill(first_track->getTrackTime(), second_track->getTrackTime()); 
+                plotter->get2DHistogram("track theta - no match")->Fill(std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(first_track))), 
                         std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(second_track))));
 
                 double p0 = AnalysisUtils::getMagnitude(first_track->getMomentum());
@@ -120,8 +256,8 @@ void MollerAnalysis::processEvent(HpsEvent* event) {
                 if (first_track_n == second_track_n) continue;
                 second_track = event->getTrack(second_track_n);
 
-                plotter->get2DHistogram("first v second track time - single match")->Fill(first_track->getTrackTime(), second_track->getTrackTime()); 
-                plotter->get2DHistogram("first v second theta - single match")->Fill(std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(first_track))), 
+                plotter->get2DHistogram("track time - single match")->Fill(first_track->getTrackTime(), second_track->getTrackTime()); 
+                plotter->get2DHistogram("track theta - single match")->Fill(std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(first_track))), 
                         std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(second_track))));
 
                 double p0 = AnalysisUtils::getMagnitude(first_track->getMomentum());
@@ -134,12 +270,13 @@ void MollerAnalysis::processEvent(HpsEvent* event) {
         }
         return;        
     }
-
-    plotter->get2DHistogram("first v second cluster energy - matched")->Fill(
+*/
+    /*
+    plotter->get2DHistogram("cluster pair energy - matched")->Fill(
             first_cluster->getEnergy(), 
             second_cluster->getEnergy());
 
-    plotter->get2DHistogram("first v second cluster time - matched")->Fill(
+    plotter->get2DHistogram("cluster pair time - matched")->Fill(
             first_cluster->getClusterTime(), 
             second_cluster->getClusterTime());
 
@@ -147,62 +284,20 @@ void MollerAnalysis::processEvent(HpsEvent* event) {
     double p1 = AnalysisUtils::getMagnitude(second_track->getMomentum()); 
 
     plotter->get1DHistogram("delta Track Time - matched")->Fill(first_track->getTrackTime() - second_track->getTrackTime());
-    plotter->get2DHistogram("first v second track time - matched")->Fill(first_track->getTrackTime(), second_track->getTrackTime());
+    plotter->get2DHistogram("track time - matched")->Fill(first_track->getTrackTime(), second_track->getTrackTime());
 
-    /*std::cout << "cos(theta): " << TrackExtrapolator::getCosTheta(first_track) 
-              << " theta: " << 3.14159/2 - acos(TrackExtrapolator::getCosTheta(first_track)) 
-              << " pi/2 - theta " << 3.14159/2 - acos(TrackExtrapolator::getCosTheta(first_track)) << std::endl;*/
-
-    plotter->get2DHistogram("first v second theta - matched")->Fill(std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(first_track))), 
+    plotter->get2DHistogram("track theta - matched")->Fill(std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(first_track))), 
             std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(second_track))));
 
 
     plotter->get2DHistogram("p v theta - matched")->Fill(p0, std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(first_track))));
     plotter->get2DHistogram("p v theta - matched")->Fill(p1, std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(second_track))));
 
-    if (std::abs(first_track->getTrackTime() - second_track->getTrackTime()) > 5) return;
+*/
+    
+    
 
-    plotter->get2DHistogram("p[e] v p[e] - matched")->Fill(p0, p1);
 
-    if (first_track->isTopTrack()) { 
-        plotter->get1DHistogram("p top - matched")->Fill(p0);
-    } else { 
-        plotter->get1DHistogram("p bottom - matched")->Fill(p0);
-    }
-
-    if (second_track->isTopTrack()) { 
-        plotter->get1DHistogram("p top - matched")->Fill(p0);
-    } else { 
-        plotter->get1DHistogram("p bottom - matched")->Fill(p0);
-    }
-   
-    plotter->get2DHistogram("first v second cluster x position - matched")->Fill(first_cluster->getPosition()[0], 
-            second_cluster->getPosition()[0]);
-    plotter->get2DHistogram("first v second cluster y position - matched")->Fill(first_cluster->getPosition()[1], 
-            second_cluster->getPosition()[1]);
-
-    // Require that both tracks are negatively charged
-    if ((first_track->getCharge() + second_track->getCharge()) != -2) return;
-
-    if (p0 > .85 || p1 > .85) return;
-
-    plotter->get2DHistogram("p[e-] v p[e-] - matched")->Fill(p0, p1);
-    plotter->get2DHistogram("first v second track time - matched, e-e-")->Fill(first_track->getTrackTime(), second_track->getTrackTime());
-
-    plotter->get2DHistogram("first v second theta - matched, e-e-")->Fill(std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(first_track))), 
-            std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(second_track))));
-
-    plotter->get2DHistogram("p v theta - matched, e-e-")->Fill(p0, std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(first_track))));
-    plotter->get2DHistogram("p v theta - matched, e-e-")->Fill(p1, std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(second_track))));
-
-    plotter->get2DHistogram("first v second cluster energy - matched, e-e-")->Fill(
-            first_cluster->getEnergy(), 
-            second_cluster->getEnergy());
-
-    plotter->get2DHistogram("first v second cluster x position - matched, e-e-")->Fill(first_cluster->getPosition()[0], 
-            second_cluster->getPosition()[0]);
-    plotter->get2DHistogram("first v second cluster y position - matched, e-e-")->Fill(first_cluster->getPosition()[1], 
-            second_cluster->getPosition()[1]);
 
 }
 
@@ -226,132 +321,192 @@ void MollerAnalysis::finalize() {
 
 void MollerAnalysis::bookHistograms() {
 
+    // Cluster energy //
+
+    plotter->build1DHistogram("cluster pair energy - N clusters == 2", 50, 0, 1.5)->GetXaxis()
+        ->SetTitle("Cluster Energy (GeV)");
+    
+    plotter->build1DHistogram("cluster pair energy - N tracks >= 2", 50, 0, 1.5)->GetXaxis()
+        ->SetTitle("Cluster Energy (GeV)");
+    
+    plotter->build1DHistogram("cluster pair energy - N tracks == 1", 50, 0, 1.5)->GetXaxis()
+        ->SetTitle("Cluster Energy (GeV)");
+
+    plotter->build2DHistogram("cluster pair energy", 50, 0, 1.5, 50, 0, 1.5);
+    plotter->get2DHistogram("cluster pair energy")->GetXaxis()->SetTitle("Cluster energy (GeV)");
+    plotter->get2DHistogram("cluster pair energy")->GetYaxis()->SetTitle("Cluster energy (GeV)");
+
+    plotter->build2DHistogram("cluster pair energy - matched", 50, 0, 1.5, 50, 0, 1.5);
+    plotter->get2DHistogram("cluster pair energy - matched")->GetYaxis()->SetTitle("First cluster pair energy (GeV)");
+    plotter->get2DHistogram("cluster pair energy - matched")->GetYaxis()->SetTitle("Second cluster pair energy (GeV)");
+
+
+    plotter->build2DHistogram("cluster pair energy - N clusters == 2", 50, 0, 1.5, 50, 0, 1.5);
+    plotter->get2DHistogram("cluster pair energy - N clusters == 2")->GetYaxis()->SetTitle(
+            "First cluster pair energy (GeV)");
+    plotter->get2DHistogram("cluster pair energy - N clusters == 2")->GetYaxis()->SetTitle(
+            "Second cluster pair energy (GeV)");
+
+    // Cluster time //
+
+    plotter->build2DHistogram("cluster pair time", 160, 20, 100, 160, 20, 100);
+    plotter->get2DHistogram("cluster pair time")->GetXaxis()->SetTitle("Cluster time (ns)");
+    plotter->get2DHistogram("cluster pair time")->GetYaxis()->SetTitle("Cluster time (ns)");
+
+    plotter->build2DHistogram("cluster pair time - matched", 160, 20, 100, 160, 20, 100);
+    plotter->get2DHistogram("cluster pair time - matched")->GetXaxis()->SetTitle("First cluster time (ns)");
+    plotter->get2DHistogram("cluster pair time - matched")->GetYaxis()->SetTitle("Second cluster time (ns)");
+
+    // Track momentum
+
     plotter->build1DHistogram("p top - matched", 50, 0, 1.5)->GetXaxis()->SetTitle("p (GeV)");
     plotter->build1DHistogram("p bottom - matched", 50, 0, 1.5)->GetXaxis()->SetTitle("p (GeV)");
-
-    plotter->build1DHistogram("cluster energy - N clusters == 2", 50, 0, 1.5)->GetXaxis()->SetTitle("Cluster Energy (GeV)");
-    plotter->build1DHistogram("cluster energy - N tracks >= 2", 50, 0, 1.5)->GetXaxis()->SetTitle("Cluster Energy (GeV)");
-    plotter->build1DHistogram("cluster energy - N tracks == 1", 50, 0, 1.5)->GetXaxis()->SetTitle("Cluster Energy (GeV)");
-
-    plotter->build1DHistogram("delta Track Time - matched", 100, -10, 10)->GetXaxis()->SetTitle("#Delta Track time [ns]");
-
-    plotter->build1DHistogram("delta theta - matched", 40, -0.1, 0.1); 
-    plotter->build1DHistogram("delta theta - matched, e+e-", 40, -0.1, 0.1); 
-
-    plotter->build2DHistogram("first v second track time - no match", 100, -10, 10, 100, -10, 10);
-    plotter->get2DHistogram("first v second track time - no match")->GetXaxis()->SetTitle("Track time [ns]");
-    plotter->get2DHistogram("first v second track time - no match")->GetYaxis()->SetTitle("Track time [ns]");
-
-    plotter->build2DHistogram("first v second track time - single match", 100, -10, 10, 100, -10, 10);
-    plotter->get2DHistogram("first v second track time - single match")->GetXaxis()->SetTitle("Track time [ns]");
-    plotter->get2DHistogram("first v second track time - single match")->GetYaxis()->SetTitle("Track time [ns]");
-
-    plotter->build2DHistogram("first v second track time - matched", 100, -10, 10, 100, -10, 10);
-    plotter->get2DHistogram("first v second track time - matched")->GetXaxis()->SetTitle("Track time [ns]");
-    plotter->get2DHistogram("first v second track time - matched")->GetYaxis()->SetTitle("Track time [ns]");
-    
-    plotter->build2DHistogram("first v second theta - matched", 40, 0, 0.1, 40, 0, 0.1);
-    plotter->get2DHistogram("first v second theta - matched")->GetXaxis()->SetTitle("#theta");
-    plotter->get2DHistogram("first v second theta - matched")->GetYaxis()->SetTitle("#theta");
-
-    plotter->build2DHistogram("first v second theta - no match", 40, 0, 0.1, 40, 0, 0.1);
-    plotter->get2DHistogram("first v second theta - no match")->GetXaxis()->SetTitle("#theta");
-    plotter->get2DHistogram("first v second theta - no match")->GetYaxis()->SetTitle("#theta");
-
-    plotter->build2DHistogram("first v second theta - single match", 40, 0, 0.1, 40, 0, 0.1);
-    plotter->get2DHistogram("first v second theta - single match")->GetXaxis()->SetTitle("#theta");
-    plotter->get2DHistogram("first v second theta - single match")->GetYaxis()->SetTitle("#theta");
-
-    plotter->build2DHistogram("p v theta - matched", 50, 0, 1.5, 40, 0, 0.1);
-    plotter->get2DHistogram("p v theta - matched")->GetXaxis()->SetTitle("p (GeV)");
-    plotter->get2DHistogram("p v theta - matched")->GetYaxis()->SetTitle("#theta");
-
-    plotter->build2DHistogram("p v theta - no match", 50, 0, 1.5, 40, 0, 0.1);
-    plotter->get2DHistogram("p v theta - no match")->GetXaxis()->SetTitle("p (GeV)");
-    plotter->get2DHistogram("p v theta - no match")->GetYaxis()->SetTitle("#theta");
-
-    plotter->build2DHistogram("p v theta - single match", 50, 0, 1.5, 40, 0, 0.1);
-    plotter->get2DHistogram("p v theta - single match")->GetXaxis()->SetTitle("p (GeV)");
-    plotter->get2DHistogram("p v theta - single match")->GetYaxis()->SetTitle("#theta");
 
     plotter->build2DHistogram("p[e] v p[e] - matched", 50, 0, 1.5, 50, 0, 1.5);
     plotter->get2DHistogram("p[e] v p[e] - matched")->GetXaxis()->SetTitle("p[e] [GeV]"); 
     plotter->get2DHistogram("p[e] v p[e] - matched")->GetYaxis()->SetTitle("p[e] [GeV]"); 
 
-    plotter->build2DHistogram("p[e] v p[e] - no match", 50, 0, 1.5, 50, 0, 1.5);
-    plotter->get2DHistogram("p[e] v p[e] - no match")->GetXaxis()->SetTitle("p[e] [GeV]"); 
-    plotter->get2DHistogram("p[e] v p[e] - no match")->GetYaxis()->SetTitle("p[e] [GeV]"); 
-
     plotter->build2DHistogram("p[e] v p[e] - single match", 50, 0, 1.5, 50, 0, 1.5);
     plotter->get2DHistogram("p[e] v p[e] - single match")->GetXaxis()->SetTitle("p[e] [GeV]"); 
     plotter->get2DHistogram("p[e] v p[e] - single match")->GetYaxis()->SetTitle("p[e] [GeV]"); 
+
+    plotter->build2DHistogram("p[e] v p[e] - no match", 50, 0, 1.5, 50, 0, 1.5);
+    plotter->get2DHistogram("p[e] v p[e] - no match")->GetXaxis()->SetTitle("p[e] [GeV]"); 
+    plotter->get2DHistogram("p[e] v p[e] - no match")->GetYaxis()->SetTitle("p[e] [GeV]"); 
 
     plotter->build2DHistogram("p[e-] v p[e-] - matched", 50, 0, 1.5, 50, 0, 1.5);
     plotter->get2DHistogram("p[e-] v p[e-] - matched")->GetXaxis()->SetTitle("p[e-] [GeV]"); 
     plotter->get2DHistogram("p[e-] v p[e-] - matched")->GetYaxis()->SetTitle("p[e-] [GeV]"); 
 
-    plotter->build2DHistogram("first v second track time - matched, e-e-", 100, -10, 10, 100, -10, 10);
-    plotter->get2DHistogram("first v second track time - matched, e-e-")->GetXaxis()->SetTitle("Track time [ns]");
-    plotter->get2DHistogram("first v second track time - matched, e-e-")->GetYaxis()->SetTitle("Track time [ns]");
+    plotter->build2DHistogram("p[e-] v p[e-] - matched, time", 50, 0, 1.5, 50, 0, 1.5);
+    plotter->get2DHistogram("p[e-] v p[e-] - matched, time")->GetXaxis()->SetTitle("p[e-] [GeV]"); 
+    plotter->get2DHistogram("p[e-] v p[e-] - matched, time")->GetYaxis()->SetTitle("p[e-] [GeV]"); 
+
+    plotter->build2DHistogram("p[e-] v p[e-] - matched, time, p", 50, 0, 1.5, 50, 0, 1.5);
+    plotter->get2DHistogram("p[e-] v p[e-] - matched, time, p")->GetXaxis()->SetTitle("p[e-] [GeV]"); 
+    plotter->get2DHistogram("p[e-] v p[e-] - matched, time, p")->GetYaxis()->SetTitle("p[e-] [GeV]");
+
+    plotter->build1DHistogram("p residual", 50, -40, 40); 
+
+    // Track time
+
+    plotter->build1DHistogram("delta Track Time - matched", 100, -10, 10)->GetXaxis()
+        ->SetTitle("#Delta Track time [ns]");
+
+    plotter->build2DHistogram("track time - matched", 100, -10, 10, 100, -10, 10);
+    plotter->get2DHistogram("track time - matched")->GetXaxis()->SetTitle("Track time [ns]");
+    plotter->get2DHistogram("track time - matched")->GetYaxis()->SetTitle("Track time [ns]");
+
+    plotter->build2DHistogram("track time - matched, e-e-", 100, -10, 10, 100, -10, 10);
+    plotter->get2DHistogram("track time - matched, e-e-")->GetXaxis()->SetTitle("Track time [ns]");
+    plotter->get2DHistogram("track time - matched, e-e-")->GetYaxis()->SetTitle("Track time [ns]");
+
+    plotter->build2DHistogram("track time - matched, e-e-, time", 100, -10, 10, 100, -10, 10);
+    plotter->get2DHistogram("track time - matched, e-e-, time")->GetXaxis()->SetTitle("Track time [ns]");
+    plotter->get2DHistogram("track time - matched, e-e-, time")->GetYaxis()->SetTitle("Track time [ns]");
+
+    // Track theta
+
+    plotter->build1DHistogram("delta theta - matched", 40, -0.1, 0.1); 
+    
+    plotter->build1DHistogram("delta theta - matched, e+e-", 40, -0.1, 0.1); 
+
+    plotter->build2DHistogram("track theta - matched", 40, 0, 0.1, 40, 0, 0.1);
+    plotter->get2DHistogram("track theta - matched")->GetXaxis()->SetTitle("#theta");
+    plotter->get2DHistogram("track theta - matched")->GetYaxis()->SetTitle("#theta");
+
+    plotter->build2DHistogram("track theta - matched, e-e-", 40, 0, 0.1, 40, 0, 0.1);
+    plotter->get2DHistogram("track theta - matched, e-e-")->GetXaxis()->SetTitle("#theta");
+    plotter->get2DHistogram("track theta - matched, e-e-")->GetYaxis()->SetTitle("#theta");
+
+    plotter->build2DHistogram("track theta - matched, e-e-, time", 40, 0, 0.1, 40, 0, 0.1);
+    plotter->get2DHistogram("track theta - matched, e-e-, time")->GetXaxis()->SetTitle("#theta");
+    plotter->get2DHistogram("track theta - matched, e-e-, time")->GetYaxis()->SetTitle("#theta");
+
+    plotter->build2DHistogram("track theta - matched, e-e-, time, p", 40, 0, 0.1, 40, 0, 0.1);
+    plotter->get2DHistogram("track theta - matched, e-e-, time, p")->GetXaxis()->SetTitle("#theta");
+    plotter->get2DHistogram("track theta - matched, e-e-, time, p")->GetYaxis()->SetTitle("#theta");
+
+    plotter->build2DHistogram("track theta - single match", 40, 0, 0.1, 40, 0, 0.1);
+    plotter->get2DHistogram("track theta - single match")->GetXaxis()->SetTitle("#theta");
+    plotter->get2DHistogram("track theta - single match")->GetYaxis()->SetTitle("#theta");
+
+    plotter->build2DHistogram("track theta - no match", 40, 0, 0.1, 40, 0, 0.1);
+    plotter->get2DHistogram("track theta - no match")->GetXaxis()->SetTitle("#theta");
+    plotter->get2DHistogram("track theta - no match")->GetYaxis()->SetTitle("#theta");
+
+    plotter->build2DHistogram("p v theta - matched", 50, 0, 1.5, 40, 0, 0.1);
+    plotter->get2DHistogram("p v theta - matched")->GetXaxis()->SetTitle("p (GeV)");
+    plotter->get2DHistogram("p v theta - matched")->GetYaxis()->SetTitle("#theta");
 
     plotter->build2DHistogram("p v theta - matched, e-e-", 50, 0, 1.5, 40, 0, 0.1);
     plotter->get2DHistogram("p v theta - matched, e-e-")->GetXaxis()->SetTitle("p (GeV)");
     plotter->get2DHistogram("p v theta - matched, e-e-")->GetYaxis()->SetTitle("#theta");
 
-    plotter->build2DHistogram("first v second theta - matched, e-e-", 40, 0, 0.1, 40, 0, 0.1);
-    plotter->get2DHistogram("first v second theta - matched, e-e-")->GetXaxis()->SetTitle("#theta");
-    plotter->get2DHistogram("first v second theta - matched, e-e-")->GetYaxis()->SetTitle("#theta");
+    plotter->build2DHistogram("p v theta - matched, e-e-, time", 50, 0, 1.5, 40, 0, 0.1);
+    plotter->get2DHistogram("p v theta - matched, e-e-, time")->GetXaxis()->SetTitle("p (GeV)");
+    plotter->get2DHistogram("p v theta - matched, e-e-, time")->GetYaxis()->SetTitle("#theta");
 
-    plotter->build2DHistogram("first v second cluster time - N clusters == 2", 160, 20, 100, 160, 20, 100);
-    plotter->get2DHistogram("first v second cluster time - N clusters == 2")->GetXaxis()->SetTitle("First cluster time (ns)");
-    plotter->get2DHistogram("first v second cluster time - N clusters == 2")->GetYaxis()->SetTitle("Second cluster time (ns)");
+    plotter->build2DHistogram("p v theta - matched, e-e-, time, p", 50, 0, 1.5, 40, 0, 0.1);
+    plotter->get2DHistogram("p v theta - matched, e-e-, time, p")->GetXaxis()->SetTitle("p (GeV)");
+    plotter->get2DHistogram("p v theta - matched, e-e-, time, p")->GetYaxis()->SetTitle("#theta");
 
-    plotter->build2DHistogram("first v second cluster time - N clusters == 2, time cut", 160, 20, 100, 160, 20, 100);
-    plotter->get2DHistogram("first v second cluster time - N clusters == 2, time cut")->GetXaxis()->SetTitle("First cluster time (ns)");
-    plotter->get2DHistogram("first v second cluster time - N clusters == 2, time cut")->GetYaxis()->SetTitle("Second cluster time (ns)");
+    plotter->build2DHistogram("p v theta - single match", 50, 0, 1.5, 40, 0, 0.1);
+    plotter->get2DHistogram("p v theta - single match")->GetXaxis()->SetTitle("p (GeV)");
+    plotter->get2DHistogram("p v theta - single match")->GetYaxis()->SetTitle("#theta");
+
+    plotter->build2DHistogram("p v theta - no match", 50, 0, 1.5, 40, 0, 0.1);
+    plotter->get2DHistogram("p v theta - no match")->GetXaxis()->SetTitle("p (GeV)");
+    plotter->get2DHistogram("p v theta - no match")->GetYaxis()->SetTitle("#theta");
+
+
+    /*
+    plotter->build2DHistogram("track time - no match", 100, -10, 10, 100, -10, 10);
+    plotter->get2DHistogram("track time - no match")->GetXaxis()->SetTitle("Track time [ns]");
+    plotter->get2DHistogram("track time - no match")->GetYaxis()->SetTitle("Track time [ns]");
+
+    plotter->build2DHistogram("track time - single match", 100, -10, 10, 100, -10, 10);
+    plotter->get2DHistogram("track time - single match")->GetXaxis()->SetTitle("Track time [ns]");
+    plotter->get2DHistogram("track time - single match")->GetYaxis()->SetTitle("Track time [ns]");
+
+    plotter->build2DHistogram("cluster pair time - N clusters == 2", 160, 20, 100, 160, 20, 100);
+    plotter->get2DHistogram("cluster pair time - N clusters == 2")->GetXaxis()->SetTitle("First cluster time (ns)");
+    plotter->get2DHistogram("cluster pair time - N clusters == 2")->GetYaxis()->SetTitle("Second cluster time (ns)");
+
+    plotter->build2DHistogram("cluster pair time - N clusters == 2, time cut", 160, 20, 100, 160, 20, 100);
+    plotter->get2DHistogram("cluster pair time - N clusters == 2, time cut")->GetXaxis()->SetTitle("First cluster time (ns)");
+    plotter->get2DHistogram("cluster pair time - N clusters == 2, time cut")->GetYaxis()->SetTitle("Second cluster time (ns)");
     
-    plotter->build2DHistogram("first v second cluster time - matched", 160, 20, 100, 160, 20, 100);
-    plotter->get2DHistogram("first v second cluster time - matched")->GetXaxis()->SetTitle("First cluster time (ns)");
-    plotter->get2DHistogram("first v second cluster time - matched")->GetYaxis()->SetTitle("Second cluster time (ns)");
+    */
 
-    plotter->build2DHistogram("first v second cluster energy - N clusters == 2", 50, 0, 1.5, 50, 0, 1.5);
-    plotter->get2DHistogram("first v second cluster energy - N clusters == 2")->GetYaxis()->SetTitle("First cluster energy (GeV)");
-    plotter->get2DHistogram("first v second cluster energy - N clusters == 2")->GetYaxis()->SetTitle("Second cluster energy (GeV)");
 
-    plotter->build2DHistogram("first v second cluster energy - N clusters == 2, time cut", 50, 0, 1.5, 50, 0, 1.5);
-    plotter->get2DHistogram("first v second cluster energy - N clusters == 2, time cut")->GetYaxis()->SetTitle("First cluster energy (GeV)");
-    plotter->get2DHistogram("first v second cluster energy - N clusters == 2, time cut")->GetYaxis()->SetTitle("Second cluster energy (GeV)");
 
-    plotter->build2DHistogram("first v second cluster energy - matched", 50, 0, 1.5, 50, 0, 1.5);
-    plotter->get2DHistogram("first v second cluster energy - matched")->GetYaxis()->SetTitle("First cluster energy (GeV)");
-    plotter->get2DHistogram("first v second cluster energy - matched")->GetYaxis()->SetTitle("Second cluster energy (GeV)");
+    plotter->build2DHistogram("cluster x position - matched", 100, -100, 100, 100, -100, 100);
+    plotter->get2DHistogram("cluster x position - matched")->GetYaxis()->SetTitle("First cluster x position (mm)");
+    plotter->get2DHistogram("cluster x position - matched")->GetYaxis()->SetTitle("Second cluster x position (mm)");
 
-    plotter->build2DHistogram("first v second cluster x position - matched", 100, -100, 100, 100, -100, 100);
-    plotter->get2DHistogram("first v second cluster x position - matched")->GetYaxis()->SetTitle("First cluster x position (mm)");
-    plotter->get2DHistogram("first v second cluster x position - matched")->GetYaxis()->SetTitle("Second cluster x position (mm)");
+    plotter->build2DHistogram("cluster y position - matched", 100, -100, 100, 100, -100, 100);
+    plotter->get2DHistogram("cluster y position - matched")->GetYaxis()->SetTitle("First cluster y position (mm)");
+    plotter->get2DHistogram("cluster y position - matched")->GetYaxis()->SetTitle("Second cluster y position (mm)");
 
-    plotter->build2DHistogram("first v second cluster y position - matched", 100, -100, 100, 100, -100, 100);
-    plotter->get2DHistogram("first v second cluster y position - matched")->GetYaxis()->SetTitle("First cluster y position (mm)");
-    plotter->get2DHistogram("first v second cluster y position - matched")->GetYaxis()->SetTitle("Second cluster y position (mm)");
+    plotter->build2DHistogram("cluster pair energy - matched, e-e-", 50, 0, 1.5, 50, 0, 1.5);
+    plotter->get2DHistogram("cluster pair energy - matched, e-e-")->GetYaxis()->SetTitle("First cluster pair energy (GeV)");
+    plotter->get2DHistogram("cluster pair energy - matched, e-e-")->GetYaxis()->SetTitle("Second cluster pair energy (GeV)");
 
-    plotter->build2DHistogram("first v second cluster energy - matched, e-e-", 50, 0, 1.5, 50, 0, 1.5);
-    plotter->get2DHistogram("first v second cluster energy - matched, e-e-")->GetYaxis()->SetTitle("First cluster energy (GeV)");
-    plotter->get2DHistogram("first v second cluster energy - matched, e-e-")->GetYaxis()->SetTitle("Second cluster energy (GeV)");
+    plotter->build2DHistogram("cluster x position - matched, e-e-", 100, -100, 100, 100, -100, 100);
+    plotter->get2DHistogram("cluster x position - matched, e-e-")->GetYaxis()->SetTitle("First cluster x position (mm)");
+    plotter->get2DHistogram("cluster x position - matched, e-e-")->GetYaxis()->SetTitle("Second cluster x position (mm)");
 
-    plotter->build2DHistogram("first v second cluster x position - matched, e-e-", 100, -100, 100, 100, -100, 100);
-    plotter->get2DHistogram("first v second cluster x position - matched, e-e-")->GetYaxis()->SetTitle("First cluster x position (mm)");
-    plotter->get2DHistogram("first v second cluster x position - matched, e-e-")->GetYaxis()->SetTitle("Second cluster x position (mm)");
-
-    plotter->build2DHistogram("first v second cluster y position - matched, e-e-", 100, -100, 100, 100, -100, 100);
-    plotter->get2DHistogram("first v second cluster y position - matched, e-e-")->GetYaxis()->SetTitle("First cluster y position (mm)");
-    plotter->get2DHistogram("first v second cluster y position - matched, e-e-")->GetYaxis()->SetTitle("Second cluster y position (mm)");
+    plotter->build2DHistogram("cluster y position - matched, e-e-", 100, -100, 100, 100, -100, 100);
+    plotter->get2DHistogram("cluster y position - matched, e-e-")->GetYaxis()->SetTitle("First cluster y position (mm)");
+    plotter->get2DHistogram("cluster y position - matched, e-e-")->GetYaxis()->SetTitle("Second cluster y position (mm)");
 
     plotter->build2DHistogram("cluster x v extrapolated track x - top", 100, -100, 100, 100, -100, 100);
     plotter->build2DHistogram("cluster x v extrapolated track x - top - electrons", 100, -100, 100, 100, -100, 100);
     plotter->build2DHistogram("cluster x v extrapolated track x - top - positrons", 100, -100, 100, 100, -100, 100);
     plotter->build2DHistogram("p v extrapolated track x - top", 50, 0, 1.5, 100, -100, 100);
     plotter->build2DHistogram("p v cluster x - top", 50, 0, 1.5, 100, -100, 100);
-    plotter->build2DHistogram("cluster energy v cluster x - top", 50, 0, 1.5, 100, -100, 100);
+    plotter->build2DHistogram("cluster pair energy v cluster x - top", 50, 0, 1.5, 100, -100, 100);
     plotter->build2DHistogram("cluster x - track x v e/p - top", 100, -100, 100, 40, 0, 2);
     plotter->build2DHistogram("cluster x v e/p - top", 100, -100, 100, 40, 0, 2);
     plotter->build2DHistogram("cluster y v e/p - top", 100, -100, 100, 40, 0, 2);
@@ -363,7 +518,7 @@ void MollerAnalysis::bookHistograms() {
     plotter->build2DHistogram("cluster x v extrapolated track x - bottom - positrons", 100, -100, 100, 100, -100, 100);
     plotter->build2DHistogram("p v extrapolated track x - bottom", 50, 0, 1.5, 100, -100, 100);
     plotter->build2DHistogram("p v cluster x - bottom", 50, 0, 1.5, 100, -100, 100);
-    plotter->build2DHistogram("cluster energy v cluster x - bottom", 50, 0, 1.5, 100, -100, 100);
+    plotter->build2DHistogram("cluster pair energy v cluster x - bottom", 50, 0, 1.5, 100, -100, 100);
     plotter->build2DHistogram("cluster x - track x v e/p - bottom", 100, -100, 100, 40, 0, 2);
     plotter->build2DHistogram("cluster x v e/p - bottom", 100, -100, 100, 40, 0, 2);
     plotter->build2DHistogram("cluster y v e/p - bottom", 100, -100, 100, 40, 0, 2);
@@ -427,7 +582,7 @@ bool MollerAnalysis::isMatch(EcalCluster* cluster, SvtTrack* track) {
 
         plotter->get2DHistogram("p v extrapolated track x - top")->Fill(p, track_pos_at_cluster_shower_max[0]);
         plotter->get2DHistogram("p v cluster x - top")->Fill(p, cluster_pos[0]);
-        plotter->get2DHistogram("cluster energy v cluster x - top")->Fill(cluster->getEnergy(), cluster_pos[0]);
+        plotter->get2DHistogram("cluster pair energy v cluster x - top")->Fill(cluster->getEnergy(), cluster_pos[0]);
         plotter->get2DHistogram("cluster x - track x v e/p - top")->Fill(cluster_pos[0] - track_pos_at_cluster_shower_max[0],
                cluster->getEnergy()/p); 
         plotter->get2DHistogram("cluster x v e/p - top")->Fill(cluster_pos[0],
@@ -456,7 +611,7 @@ bool MollerAnalysis::isMatch(EcalCluster* cluster, SvtTrack* track) {
         
         plotter->get2DHistogram("p v extrapolated track x - bottom")->Fill(p, track_pos_at_cluster_shower_max[0]);
         plotter->get2DHistogram("p v cluster x - bottom")->Fill(p, cluster_pos[0]);
-        plotter->get2DHistogram("cluster energy v cluster x - bottom")->Fill(cluster->getEnergy(), cluster_pos[0]);
+        plotter->get2DHistogram("cluster pair energy v cluster x - bottom")->Fill(cluster->getEnergy(), cluster_pos[0]);
         plotter->get2DHistogram("cluster x - track x v e/p - bottom")->Fill(cluster_pos[0] - track_pos_at_cluster_shower_max[0],
                cluster->getEnergy()/p); 
         plotter->get2DHistogram("cluster x v e/p - bottom")->Fill(cluster_pos[0],
@@ -511,38 +666,3 @@ bool MollerAnalysis::isMatch(EcalCluster* cluster, SvtTrack* track) {
     return true;
 }
 
-std::vector<EcalCluster*> MollerAnalysis::getClusterPair(HpsEvent* event) { 
-
-    EcalCluster* first_cluster;
-    EcalCluster* second_cluster;
-
-    // Loop through all clusters in an event
-    for (int first_cluster_n = 0; first_cluster_n < event->getNumberOfEcalClusters(); ++first_cluster_n) { 
-    
-        // Get an Ecal cluster from the event
-        first_cluster = event->getEcalCluster(first_cluster_n);
-
-        // Loop through the rest of the clusters and make pairs
-        for (int second_cluster_n = (first_cluster_n + 1); second_cluster_n < event->getNumberOfEcalClusters();
-                ++second_cluster_n) { 
-            
-            // Get another Ecal cluster from the event
-            second_cluster = event->getEcalCluster(second_cluster_n);
-
-            // Check if the two clusters can be considered a 'good pair'. This is done by requiring 
-            // the clusters to satisfy a series of cuts
-             
-            double delta_cluster_time = first_cluster->getClusterTime() - second_cluster->getClusterTime();
-            if (std::abs(delta_cluster_time) > 2.5) continue;
-
-            total_pair_events++;
-            break;
-        }
-    }
-
-    std::vector<EcalCluster*> pair;
-    pair.push_back(first_cluster);
-    pair.push_back(second_cluster);
-
-    return pair; 
-}
