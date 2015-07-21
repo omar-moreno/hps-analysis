@@ -86,6 +86,10 @@ class SimpleTrackingEfficiencyAnalysis : public HpsAnalysis {
 
         // Name of the class
 		std::string class_name;
+        
+        int total_events;
+        int total_single1_triggers;
+
 };
 
 #endif // __SIMPLE_TRACKING_EFFICIENCY_ANALYSIS_H__
