@@ -16,6 +16,11 @@
 #include <vector>
 #include <cmath>
 
+#include <HpsEvent.h>
+#include <EcalCluster.h>
+
+#include <TrackExtrapolator.h>
+
 namespace AnalysisUtils { 
 
     /**
@@ -26,6 +31,14 @@ namespace AnalysisUtils {
      * @return Magnitude of the vector
      */
     double getMagnitude(std::vector<double> v);
+
+    /**
+     * Get a cluster pair from an event.
+     *
+     * @param event An HpsEvent object
+     * @return a vector containing the pair of clusters
+     */    
+    std::vector<EcalCluster*> getClusterPair(HpsEvent* event);
 
     /**
      *
