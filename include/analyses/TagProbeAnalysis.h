@@ -79,22 +79,12 @@ class TagProbeAnalysis : public HpsAnalysis {
 
         bool isMatch(EcalCluster* cluster, SvtTrack* track);
 
-        SvtTrack* track;
-        SvtTrack* matched_tag_track;
-        
-        EcalCluster* cluster;
+        Plotter* plotter;
 
-        Plotter* ecal_plotter;
-        Plotter* svt_plotter; 
-       
-        double cluster_energy_threshold;
-        double cluster_energy_sum_threshold;  
         double total_events;
-        double pass_fiducial_cut;  
-        double pass_cluster_threshold_cut;
-        double pass_cluster_energy_sum_cut;  
-        double candidates;
-        double found;  
+        double total_pair_trigger_events;
+        double total_pair_events;
+        double total_tag_candidates;
 
         // Name of the class
 		std::string class_name;

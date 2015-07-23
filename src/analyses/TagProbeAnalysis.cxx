@@ -2,19 +2,11 @@
 #include <TagProbeAnalysis.h>
 
 TagProbeAnalysis::TagProbeAnalysis() 
-    : track(NULL),
-      matched_tag_track(NULL),
-      cluster(NULL),
-      ecal_plotter(new Plotter()),
-      svt_plotter(new Plotter()),
-      cluster_energy_threshold(.200),
-      cluster_energy_sum_threshold(.800),
+    : plotter(new Plotter()), 
       total_events(0),
-      pass_fiducial_cut(0),  
-      pass_cluster_threshold_cut(0),
-      pass_cluster_energy_sum_cut(0),  
-      candidates(0),
-      found(0), 
+      total_pair_trigger_events(0), 
+      total_pair_events(0), 
+      total_tag_candidates(0), 
       class_name("TagProbeAnalysis") {       
 }
 
@@ -29,79 +21,59 @@ void TagProbeAnalysis::initialize() {
 
 void TagProbeAnalysis::processEvent(HpsEvent* event) {
 
+    total_events++;
+
+    // Only look at pair1 triggers
     if (!event->isPair1Trigger()) return;
+    total_pair_trigger_events++;
 
-    // Only look at events that have two Ecal clusters
-    if (event->getNumberOfEcalClusters() != 2) return;
-    ++total_events;
+    // Search the event for a pair of clusters.  Only a time requirement is 
+    // required at this point
+    std::vector<EcalCluster*> pair = AnalysisUtils::getClusterPair(event);
 
-    ecal_plotter->get1DHistogram("Cluster pair dt")->Fill(
+    // If there aren't two clusters in the vector i.e. two matching clusters
+    // weren't found, skip the event
+    if (pair.size() != 2) return;
+    total_pair_events++; 
+
+    plotter->get2DHistogram("cluster pair energy")->Fill(pair[0]->getEnergy(), pair[1]->getEnergy());
+    plotter->get2DHistogram("cluster pair time")->Fill(pair[0]->getClusterTime(), pair[1]->getClusterTime());
+    plotter->get1DHistogram("Cluster pair dt")->Fill(
             event->getEcalCluster(0)->getClusterTime() - event->getEcalCluster(1)->getClusterTime());
-
-    ecal_plotter->get1DHistogram("Cluster pair energy sum")->Fill(
+    plotter->get1DHistogram("Cluster pair energy sum")->Fill(
             event->getEcalCluster(0)->getEnergy() + event->getEcalCluster(1)->getEnergy());
 
-    if (!passFiducialCut(event)) return;
-    ++pass_fiducial_cut;
-
-    if (!passClusterTimeCut(event)) return;
-
-    // Check that both clusters pass the cluster energy cut
-    //if (!passClusterEnergyCut(event)) return;
-    //++pass_cluster_threshold_cut;
-
-    // Check that the sum of the cluster energy is less than the beam energy
-    if (!passClusterEnergySumCut(event)) return;
-    ++pass_cluster_energy_sum_cut;  
-
-    // Randomly choose one of the Ecal clusters.
+    // Randomly choose one of the two ECal clusters
     double cluster_index = rand()%2;
-    ecal_plotter->get1DHistogram("Cluster index")->Fill(cluster_index);
-    cluster = event->getEcalCluster(cluster_index);
+    EcalCluster* tag_cluster = pair[cluster_index]; 
 
-    //std::cout << "[ TagProbeAnalysis ]: Number of tracks: " << event->getNumberOfTracks() << std::endl;
-    matched_tag_track = NULL;
-    
     // Try and match a track to the cluster.
+    SvtTrack* tag_track = NULL;
     for (int track_n = 0; track_n < event->getNumberOfTracks(); ++track_n) { 
         
-        // Get a track from the event
-        track = event->getTrack(track_n);
-   
-         
-        ecal_plotter->get1DHistogram("Tag cluster time - track time")->Fill(cluster->getClusterTime() 
-                - track->getTrackTime());
-        std::vector<double> p_vector = track->getMomentum(); 
-        double p = sqrt(p_vector[0]*p_vector[0] + p_vector[1]*p_vector[1] + p_vector[2]*p_vector[2]);
-        ecal_plotter->get1DHistogram("E/p")->Fill(cluster->getEnergy()/p);
-
-        if (isMatch(cluster, track)) { 
-            matched_tag_track = track;
-            ecal_plotter->get1DHistogram("E/p - Tag")->Fill(cluster->getEnergy()/p);
-            ecal_plotter->get1DHistogram("Tag cluster energy")->Fill(cluster->getEnergy());
-            ecal_plotter->get2DHistogram("Tag cluster energy vs Cluster x index")->Fill(
-                    cluster->getSeed()->getXCrystalIndex(), cluster->getEnergy());
-            ecal_plotter->get2DHistogram("Tag cluster energy vs Cluster y index")->Fill(cluster->getEnergy(), 
-                    cluster->getSeed()->getYCrystalIndex());
-            break;
+        if (this->isMatch(tag_cluster, event->getTrack(track_n))) { 
+           tag_track = event->getTrack(track_n); 
+           break;
         }
     }
 
-    if (matched_tag_track == NULL) return; 
+    // If no match was found, skip the event
+    if (tag_track == NULL) return;
+    total_tag_candidates++;
 
-    candidates++;
+    EcalHit* tag_seed_hit = tag_cluster->getSeed();
+    plotter->get2DHistogram("tag clusters")->Fill( tag_seed_hit->getXCrystalIndex(), 
+            tag_seed_hit->getYCrystalIndex(), 1); 
 
-    EcalHit* seed_hit = cluster->getSeed();
-    ecal_plotter->get2DHistogram("Tag clusters")->Fill(seed_hit->getXCrystalIndex(), 
-            seed_hit->getYCrystalIndex(), 1); 
-
+    // Get the probe cluster
+    EcalCluster* probe_cluster = NULL;
     if (cluster_index == 0) { 
-        cluster = event->getEcalCluster(1);
+        probe_cluster = pair[1];
     } else {
-        cluster = event->getEcalCluster(0);
+        probe_cluster = pair[0];
     }
 
-    seed_hit = cluster->getSeed();
+    /*seed_hit = cluster->getSeed();
     ecal_plotter->get2DHistogram("Probe clusters")->Fill(seed_hit->getXCrystalIndex(), 
             seed_hit->getYCrystalIndex(), 1); 
     ecal_plotter->get1DHistogram("Probe cluster energy")->Fill(cluster->getEnergy());
@@ -109,67 +81,62 @@ void TagProbeAnalysis::processEvent(HpsEvent* event) {
                  cluster->getSeed()->getXCrystalIndex(), cluster->getEnergy());
         ecal_plotter->get2DHistogram("Probe cluster energy vs Cluster y index")->Fill(cluster->getEnergy(), 
                  cluster->getSeed()->getYCrystalIndex());
-    
+    */
+   
+    SvtTrack* probe_track = NULL; 
     for (int track_n = 0; track_n < event->getNumberOfTracks(); ++track_n) { 
-        
+       
+        // Don't attempt to match the the tag track
+        if (tag_track == event->getTrack(track_n)) continue;
+
         // Get a track from the event
-        track = event->getTrack(track_n);
-            
+        probe_track = event->getTrack(track_n);
+        
+        /*    
         ecal_plotter->get1DHistogram("Probe cluster time - track time")->Fill(cluster->getClusterTime()    
                 - track->getTrackTime());
+        */
        
-        if (matched_tag_track == track) continue;  
-
-        if (isMatch(cluster, track)) { 
-            found++;
-        
-            ecal_plotter->get2DHistogram("Matched clusters")->Fill(seed_hit->getXCrystalIndex(), 
-                seed_hit->getYCrystalIndex(), 1); 
-            ecal_plotter->get2DHistogram("Tracking efficiency")->Fill(seed_hit->getXCrystalIndex(), 
-                seed_hit->getYCrystalIndex(), 1);
-
-            ecal_plotter->get1DHistogram("Cluster pair dt - Pass cuts")->Fill(
-                    event->getEcalCluster(0)->getClusterTime() - event->getEcalCluster(1)->getClusterTime());
-
-            ecal_plotter->get1DHistogram("Cluster pair energy sum - Pass Cuts")->Fill(
-                    event->getEcalCluster(0)->getEnergy() + event->getEcalCluster(1)->getEnergy());
-
-            ecal_plotter->get1DHistogram("Probe cluster time - track time - Pass cuts")->Fill(cluster->getClusterTime()    
-                    - track->getTrackTime());
+        if (this->isMatch(probe_cluster, probe_track)) { 
             break;
         }
     } 
 }
 
 void TagProbeAnalysis::finalize() { 
-  
-    ecal_plotter->get2DHistogram("Tracking efficiency")->Divide(ecal_plotter->get2DHistogram("Probe clusters"));
-
-    ecal_plotter->saveToRootFile("tracking_efficiency.root");
-    ecal_plotter->saveToPdf("tracking_efficiency.pdf");
 
     std::cout << "//---------------------------------------------------//" << std::endl;
     std::cout << "// Total events: " << total_events << std::endl;
-    std::cout << "// Events passing cluster threshold cut: " 
-        << pass_cluster_threshold_cut/total_events << std::endl;
-    std::cout << "// Events passing cluster energy sum cut: " 
-        << pass_cluster_energy_sum_cut/total_events << std::endl;
-
-    std::cout << "Candidates: " << candidates << std::endl;
-    std::cout << "Found: " << found << std::endl;
-
-    std::cout << "Tracking efficiency: " << (found/candidates)*100 << std::endl;
     std::cout << "//---------------------------------------------------//" << std::endl;
 
     return;
 }
 
 void TagProbeAnalysis::bookHistograms() { 
+ 
+    plotter->setType("float");
+
+    // Cluster energy // 
+    plotter->build2DHistogram("cluster pair energy", 50, 0, 1.5, 50, 0, 1.5);
+    plotter->get2DHistogram("cluster pair energy")->GetXaxis()->SetTitle("Cluster energy (GeV)");
+    plotter->get2DHistogram("cluster pair energy")->GetYaxis()->SetTitle("Cluster energy (GeV)");
+
+    plotter->build1DHistogram("Cluster pair energy sum", 50, 0, 1.5)->GetXaxis()->SetTitle(
+            "Cluster pair energy sum (GeV)");
     
+    plotter->build2DHistogram("tag clusters", 47, -23, 24, 12, -6, 6);
+
+    // Cluster time //
+    plotter->build2DHistogram("cluster pair time", 160, 20, 100, 160, 20, 100);
+    plotter->get2DHistogram("cluster pair time")->GetXaxis()->SetTitle("Cluster time (ns)");
+    plotter->get2DHistogram("cluster pair time")->GetYaxis()->SetTitle("Cluster time (ns)");
+
+    plotter->build1DHistogram("Cluster pair dt", 100, -50, 50)->GetXaxis()->SetTitle(
+            "Cluster pair dt");
+
+    /*
     ecal_plotter->setType("float");
-    ecal_plotter->build1DHistogram("Cluster pair energy sum", 50, 0, 2);
     ecal_plotter->build1DHistogram("Cluster pair energy sum - Pass Cuts", 50, 0, 2);
-    ecal_plotter->build1DHistogram("Cluster pair dt", 100, -50, 50);
     ecal_plotter->build1DHistogram("Cluster pair dt - Pass cuts", 100, -50, 50);
     ecal_plotter->build1DHistogram("Cluster index", 10, 0, 10);
     ecal_plotter->build1DHistogram("Tag cluster time - track time", 100, -20, 80);
@@ -185,7 +152,6 @@ void TagProbeAnalysis::bookHistograms() {
     ecal_plotter->build1DHistogram("Probe cluster energy", 50, 0, 1);
     ecal_plotter->build2DHistogram("Probe cluster energy vs Cluster x index", 47, -23, 24, 50, 0, 1);
     ecal_plotter->build2DHistogram("Probe cluster energy vs Cluster y index", 50, 0, 1, 12, -6, 6);
-    ecal_plotter->build2DHistogram("Tag clusters", 47, -23, 24, 12, -6, 6);
     ecal_plotter->build2DHistogram("Probe clusters", 47, -23, 24, 12, -6, 6);
     ecal_plotter->build2DHistogram("Matched clusters", 47, -23, 24, 12, -6, 6);
     ecal_plotter->build2DHistogram("Tracking efficiency", 47, -23, 24, 12, -6, 6);
@@ -195,7 +161,7 @@ void TagProbeAnalysis::bookHistograms() {
     svt_plotter->build1DHistogram("Track-Cluster dy", 100, -200, 200);
     svt_plotter->build1DHistogram("Track-Cluster dx - Pass cuts", 100, -200, 200);
     svt_plotter->build1DHistogram("Track-Cluster dy - Pass cuts", 100, -200, 200);
-
+    */
     return;
 }
 
@@ -206,20 +172,20 @@ std::string TagProbeAnalysis::toString() {
 
 bool TagProbeAnalysis::passClusterEnergyCut(HpsEvent* event) { 
 
-    for (int cluster_n = 0; cluster_n < event->getNumberOfEcalClusters(); ++cluster_n) { 
+    /*for (int cluster_n = 0; cluster_n < event->getNumberOfEcalClusters(); ++cluster_n) { 
         if (event->getEcalCluster(cluster_n)->getEnergy() < cluster_energy_threshold) return false; 
-    }
+    }*/
     return true;
 }
 
 bool TagProbeAnalysis::passClusterEnergySumCut(HpsEvent* event) {
     
-    double cluster_energy_sum = 0; 
+    /*double cluster_energy_sum = 0; 
     for (int cluster_n = 0; cluster_n < event->getNumberOfEcalClusters(); ++cluster_n) { 
         cluster_energy_sum += event->getEcalCluster(cluster_n)->getEnergy();
     }
 
-    if (cluster_energy_sum > cluster_energy_sum_threshold) return false; 
+    if (cluster_energy_sum > cluster_energy_sum_threshold) return false; */
 
     return true;
 }
@@ -229,14 +195,6 @@ bool TagProbeAnalysis::passFiducialCut(HpsEvent* event) {
     if (event->getEcalCluster(0)->getPosition()[1]*event->getEcalCluster(1)->getPosition()[1] > 0) return false;
 
     return true;
-}
-
-bool TagProbeAnalysis::passClusterTimeCut(HpsEvent* event) { 
-    
-    if (abs(event->getEcalCluster(0)->getClusterTime() 
-                - event->getEcalCluster(1)->getClusterTime()) > 1) return false;
-
-    return true; 
 }
 
 
@@ -260,23 +218,106 @@ bool TagProbeAnalysis::isMatch(EcalCluster* cluster, SvtTrack* track) {
          << std::endl;*/ 
 
 
+    double p = AnalysisUtils::getMagnitude(track->getMomentum());
+
     // If the track and cluster are in opposite volumes, then they can't 
     // be a match
     if (cluster_pos[1]*track_pos_at_cluster_shower_max[1] < 0) return false;
-   
-    // Check that dx and dy between the extrapolated track and cluster
-    // positions is reasonable
-    // Check that dx and dy between the extrapolated track and cluster
-    // positions is reasonable
-    if (cluster_pos[0] - track_pos_at_cluster_shower_max[0] > 12 ||
-            cluster_pos[0] - track_pos_at_cluster_shower_max[0] < -18) return false;
-    
 
-    if (cluster_pos[1] - track_pos_at_cluster_shower_max[1] > 12
-            || cluster_pos[1] - track_pos_at_cluster_shower_max[1] < -18) return false;
+    if (track->isTopTrack()) { 
+        plotter->get2DHistogram("cluster x v extrapolated track x - top")->Fill(cluster_pos[0], 
+                track_pos_at_cluster_shower_max[0]);
+        plotter->get2DHistogram("cluster y v extrapolated track y - top")->Fill(cluster_pos[1], 
+                track_pos_at_cluster_shower_max[1]);
+
+        plotter->get1DHistogram("cluster x - extrapolated track x - top")->Fill(cluster_pos[0] 
+                - track_pos_at_cluster_shower_max[0]);
+        plotter->get1DHistogram("cluster y - extrapolated track y - top")->Fill(cluster_pos[1] 
+                - track_pos_at_cluster_shower_max[1]);
+
+        plotter->get2DHistogram("p v extrapolated track x - top")->Fill(p, track_pos_at_cluster_shower_max[0]);
+        plotter->get2DHistogram("p v cluster x - top")->Fill(p, cluster_pos[0]);
+        plotter->get2DHistogram("cluster pair energy v cluster x - top")->Fill(cluster->getEnergy(), cluster_pos[0]);
+        plotter->get2DHistogram("cluster x - track x v e/p - top")->Fill(cluster_pos[0] - track_pos_at_cluster_shower_max[0],
+               cluster->getEnergy()/p); 
+        plotter->get2DHistogram("cluster x v e/p - top")->Fill(cluster_pos[0],
+               cluster->getEnergy()/p); 
+        plotter->get2DHistogram("cluster y v e/p - top")->Fill(cluster_pos[1],
+               cluster->getEnergy()/p); 
+
+        if (track->getCharge() < 0) { 
+            plotter->get2DHistogram("cluster x v extrapolated track x - top - electrons")->Fill(cluster_pos[0], 
+                    track_pos_at_cluster_shower_max[0]);
+        } else {
+            plotter->get2DHistogram("cluster x v extrapolated track x - top - positrons")->Fill(cluster_pos[0], 
+                    track_pos_at_cluster_shower_max[0]);
+        }
     
-    std::vector<double> p_vector = track->getMomentum(); 
-    double p = sqrt(p_vector[0]*p_vector[0] + p_vector[1]*p_vector[1] + p_vector[2]*p_vector[2]);
+    } else {
+        plotter->get2DHistogram("cluster x v extrapolated track x - bottom")->Fill(cluster_pos[0], 
+                track_pos_at_cluster_shower_max[0]);
+        plotter->get2DHistogram("cluster y v extrapolated track y - bottom")->Fill(cluster_pos[1], 
+                track_pos_at_cluster_shower_max[1]);
+
+        plotter->get1DHistogram("cluster x - extrapolated track x - bottom")->Fill(cluster_pos[0] 
+                - track_pos_at_cluster_shower_max[0]);
+        plotter->get1DHistogram("cluster y - extrapolated track y - bottom")->Fill(cluster_pos[1] 
+                - track_pos_at_cluster_shower_max[1]);
+        
+        plotter->get2DHistogram("p v extrapolated track x - bottom")->Fill(p, track_pos_at_cluster_shower_max[0]);
+        plotter->get2DHistogram("p v cluster x - bottom")->Fill(p, cluster_pos[0]);
+        plotter->get2DHistogram("cluster pair energy v cluster x - bottom")->Fill(cluster->getEnergy(), cluster_pos[0]);
+        plotter->get2DHistogram("cluster x - track x v e/p - bottom")->Fill(cluster_pos[0] - track_pos_at_cluster_shower_max[0],
+               cluster->getEnergy()/p); 
+        plotter->get2DHistogram("cluster x v e/p - bottom")->Fill(cluster_pos[0],
+               cluster->getEnergy()/p); 
+        plotter->get2DHistogram("cluster y v e/p - bottom")->Fill(cluster_pos[1],
+               cluster->getEnergy()/p); 
+        
+        if (track->getCharge() < 0) { 
+            plotter->get2DHistogram("cluster x v extrapolated track x - bottom - electrons")->Fill(cluster_pos[0], 
+                    track_pos_at_cluster_shower_max[0]);
+        } else {
+            plotter->get2DHistogram("cluster x v extrapolated track x - bottom - positrons")->Fill(cluster_pos[0], 
+                    track_pos_at_cluster_shower_max[0]);
+        }
+    }
+    
+    // Check that dx and dy between the extrapolated track and cluster
+    // positions is reasonable
+    if (std::abs(cluster_pos[0] - track_pos_at_cluster_shower_max[0]) > 20) return false;
+
+    if (cluster->getEnergy()/p < .5) return false;
+
+    if (track->isTopTrack()) { 
+        plotter->get2DHistogram("cluster x v extrapolated track x - top - matched")->Fill(cluster_pos[0], 
+                track_pos_at_cluster_shower_max[0]);
+        plotter->get2DHistogram("cluster y v extrapolated track y - top - matched")->Fill(cluster_pos[1], 
+                track_pos_at_cluster_shower_max[1]);
+
+        plotter->get1DHistogram("cluster x - extrapolated track x - top - matched")->Fill(cluster_pos[0] 
+                - track_pos_at_cluster_shower_max[0]);
+        plotter->get1DHistogram("cluster y - extrapolated track y - top - matched")->Fill(cluster_pos[1] 
+                - track_pos_at_cluster_shower_max[1]);
+    } else {
+        plotter->get2DHistogram("cluster x v extrapolated track x - bottom - matched")->Fill(cluster_pos[0], 
+                track_pos_at_cluster_shower_max[0]);
+        plotter->get2DHistogram("cluster y v extrapolated track y - bottom - matched")->Fill(cluster_pos[1], 
+                track_pos_at_cluster_shower_max[1]);
+
+        plotter->get1DHistogram("cluster x - extrapolated track x - bottom - matched")->Fill(cluster_pos[0] 
+                - track_pos_at_cluster_shower_max[0]);
+        plotter->get1DHistogram("cluster y - extrapolated track y - bottom - matched")->Fill(cluster_pos[1] 
+                - track_pos_at_cluster_shower_max[1]);
+    }
+
+    /*if (cluster_pos[0] - track_pos_at_cluster_shower_max[0] > 30 ||
+            cluster_pos[0] - track_pos_at_cluster_shower_max[0] < -30) return false;
+    
+    if (cluster_pos[1] - track_pos_at_cluster_shower_max[1] > 30
+            || cluster_pos[1] - track_pos_at_cluster_shower_max[1] < -30) return false;*/
+
+    //std::cout << "Track and cluster are a match" << std::endl;
 
     return true;
 }
