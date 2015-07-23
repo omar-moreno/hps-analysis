@@ -71,11 +71,9 @@ class TagProbeAnalysis : public HpsAnalysis {
 
         bool passClusterEnergyCut(HpsEvent* event);
 
-        bool passClusterEnergySumCut(HpsEvent* event);
+        bool passClusterEnergySumCut(EcalCluster* first_cluster, EcalCluster* second_cluster);
 
-        bool passFiducialCut(HpsEvent* event); 
-
-        bool passClusterTimeCut(HpsEvent* event);  
+        bool passFiducialCut(EcalCluster* first_cluster, EcalCluster* second_cluster); 
 
         bool isMatch(EcalCluster* cluster, SvtTrack* track);
 
