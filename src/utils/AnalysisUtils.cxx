@@ -24,6 +24,8 @@ std::vector<EcalCluster*> AnalysisUtils::getClusterPair(HpsEvent* event) {
         // Get an Ecal cluster from the event
         EcalCluster* cur_first_cluster = event->getEcalCluster(first_cluster_n);
 
+        if (cur_first_cluster->getClusterTime() > 49 || cur_first_cluster->getClusterTime() < 40) continue;
+
         // Loop through the rest of the clusters and make pairs
         for (int second_cluster_n = (first_cluster_n + 1); second_cluster_n < event->getNumberOfEcalClusters();
                 ++second_cluster_n) { 
@@ -37,6 +39,8 @@ std::vector<EcalCluster*> AnalysisUtils::getClusterPair(HpsEvent* event) {
             double delta_cluster_time = 
                 cur_first_cluster->getClusterTime() - cur_second_cluster->getClusterTime();
             if (std::abs(delta_cluster_time) > 2.5) continue;
+
+            if (cur_second_cluster->getClusterTime() > 50 || cur_second_cluster->getClusterTime() < 39) continue;
 
             first_cluster = cur_first_cluster;
             second_cluster = cur_second_cluster;
