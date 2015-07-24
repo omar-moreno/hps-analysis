@@ -108,6 +108,8 @@ void MollerAnalysis::processEvent(HpsEvent* event) {
     plotter->get2DHistogram("cluster y position - matched")->Fill(pair[0]->getPosition()[1], 
             pair[1]->getPosition()[1]);
 
+    plotter->get1DHistogram("cluster pair dx - matched")->Fill(pair[0]->getPosition()[0] - pair[1]->getPosition()[0]);
+
     // Require that both tracks are negatively charged
     if ((first_track->getCharge() + second_track->getCharge()) != -2) return;
 
@@ -133,6 +135,8 @@ void MollerAnalysis::processEvent(HpsEvent* event) {
     plotter->get2DHistogram("cluster y position - matched, e-e-")->Fill(pair[0]->getPosition()[1], 
             pair[1]->getPosition()[1]);
 
+    plotter->get1DHistogram("cluster pair dx - matched, e-e-")->Fill(pair[0]->getPosition()[0] - pair[1]->getPosition()[0]);
+
     if (std::abs(first_track->getTrackTime() - second_track->getTrackTime()) > 4) return;
 
     plotter->get2DHistogram("p[e-] v p[e-] - matched, time")->Fill(p0, p1);
@@ -148,6 +152,7 @@ void MollerAnalysis::processEvent(HpsEvent* event) {
     
     plotter->get2DHistogram("track time - matched, e-e-, time")->Fill(first_track->getTrackTime(),
             second_track->getTrackTime());
+
    
     //if (p0 > .85 || p1 > .85) return;
     if (p0+p1 > 1.1*1.056) return;
@@ -178,6 +183,14 @@ void MollerAnalysis::processEvent(HpsEvent* event) {
     plotter->get2DHistogram("cluster y position - moller")->Fill(pair[0]->getPosition()[1], 
             pair[1]->getPosition()[1]);
 
+    plotter->get2DHistogram("cluster position - moller")->Fill(pair[0]->getPosition()[0], 
+            pair[0]->getPosition()[1]);
+    plotter->get2DHistogram("cluster position - moller")->Fill(pair[1]->getPosition()[0], 
+            pair[1]->getPosition()[1]);
+
+    plotter->get1DHistogram("cluster pair dx - moller")->Fill(pair[0]->getPosition()[0] - pair[1]->getPosition()[0]);
+
+    //plotter->get1DHistogram("angle between clusters - moller")->Fill(atan(
 
     //double p_expected = sqrt(2*(.000510/1.056)*(1.056/x -1 + .000510/x))
     //double p_residual = 
@@ -485,7 +498,7 @@ void MollerAnalysis::bookHistograms() {
     
     // Cluster positions
 
-    plotter->build2DHistogram("cluster x position - matched", 100, -100, 100, 100, -100, 100);
+    plotter->build2DHistogram("cluster x position - matched", 200, -200, 200, 200, -200, 200);
     plotter->get2DHistogram("cluster x position - matched")->GetYaxis()->SetTitle("First cluster x position (mm)");
     plotter->get2DHistogram("cluster x position - matched")->GetYaxis()->SetTitle("Second cluster x position (mm)");
 
@@ -493,7 +506,9 @@ void MollerAnalysis::bookHistograms() {
     plotter->get2DHistogram("cluster y position - matched")->GetYaxis()->SetTitle("First cluster y position (mm)");
     plotter->get2DHistogram("cluster y position - matched")->GetYaxis()->SetTitle("Second cluster y position (mm)");
 
-    plotter->build2DHistogram("cluster x position - matched, e-e-", 100, -100, 100, 100, -100, 100);
+    plotter->build1DHistogram("cluster pair dx - matched", 50, -150, 150);
+
+    plotter->build2DHistogram("cluster x position - matched, e-e-", 200, -200, 200, 200, -200, 200);
     plotter->get2DHistogram("cluster x position - matched, e-e-")->GetYaxis()->SetTitle("First cluster x position (mm)");
     plotter->get2DHistogram("cluster x position - matched, e-e-")->GetYaxis()->SetTitle("Second cluster x position (mm)");
 
@@ -501,13 +516,19 @@ void MollerAnalysis::bookHistograms() {
     plotter->get2DHistogram("cluster y position - matched, e-e-")->GetYaxis()->SetTitle("First cluster y position (mm)");
     plotter->get2DHistogram("cluster y position - matched, e-e-")->GetYaxis()->SetTitle("Second cluster y position (mm)");
 
-    plotter->build2DHistogram("cluster x position - moller", 100, -100, 100, 100, -100, 100);
+    plotter->build1DHistogram("cluster pair dx - matched, e-e-", 50, -150, 150);
+
+    plotter->build2DHistogram("cluster x position - moller", 200, -200, 200, 200, -200, 200);
     plotter->get2DHistogram("cluster x position - moller")->GetYaxis()->SetTitle("First cluster x position (mm)");
     plotter->get2DHistogram("cluster x position - moller")->GetYaxis()->SetTitle("Second cluster x position (mm)");
 
     plotter->build2DHistogram("cluster y position - moller", 100, -100, 100, 100, -100, 100);
     plotter->get2DHistogram("cluster y position - moller")->GetYaxis()->SetTitle("First cluster y position (mm)");
     plotter->get2DHistogram("cluster y position - moller")->GetYaxis()->SetTitle("Second cluster y position (mm)");
+
+    plotter->build2DHistogram("cluster position - moller", 200, -200, 200, 100, -100, 100);
+
+    plotter->build1DHistogram("cluster pair dx - moller", 50, -150, 150);
 
     // Extrapolated track positions
 
