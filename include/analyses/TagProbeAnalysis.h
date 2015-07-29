@@ -80,8 +80,9 @@ class TagProbeAnalysis : public HpsAnalysis {
         Plotter* plotter;
 
         double total_events;
-        double total_pair_trigger_events;
+        double total_trigger_events;
         double total_pair_events;
+        double total_events_pass_fiducial_cut;
         double total_tag_candidates;
 
         // Name of the class

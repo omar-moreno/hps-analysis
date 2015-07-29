@@ -4,8 +4,9 @@
 TagProbeAnalysis::TagProbeAnalysis() 
     : plotter(new Plotter()), 
       total_events(0),
-      total_pair_trigger_events(0), 
+      total_trigger_events(0), 
       total_pair_events(0), 
+      total_events_pass_fiducial_cut(0),
       total_tag_candidates(0), 
       class_name("TagProbeAnalysis") {       
 }
@@ -24,8 +25,9 @@ void TagProbeAnalysis::processEvent(HpsEvent* event) {
     total_events++;
 
     // Only look at pair1 triggers
-    if (!event->isPair1Trigger()) return;
-    total_pair_trigger_events++;
+    //if (!event->isPair1Trigger()) return;
+    if (!event->isSingle1Trigger()) return;
+    total_trigger_events++;
 
     // Search the event for a pair of clusters.  Only a time requirement is 
     // required at this point
@@ -49,6 +51,7 @@ void TagProbeAnalysis::processEvent(HpsEvent* event) {
    
     // Check that the clusters aren't on the same side of the Ecal
     if (!passFiducialCut(pair[0], pair[1])) return;
+    total_events_pass_fiducial_cut++;
 
     plotter->get1DHistogram("cluster time - cuts: fiducial")->Fill(pair[0]->getClusterTime());
     plotter->get1DHistogram("cluster time - cuts: fiducial")->Fill(pair[1]->getClusterTime());
@@ -65,7 +68,7 @@ void TagProbeAnalysis::processEvent(HpsEvent* event) {
 
 
     // Check if the clusters pass the cluster energy sum cut
-    if (!passClusterEnergySumCut(pair[0], pair[1])) return; 
+    /*if (!passClusterEnergySumCut(pair[0], pair[1])) return; 
 
     plotter->get1DHistogram("cluster time - cuts: fiducial, sum")->Fill(pair[0]->getClusterTime());
     plotter->get1DHistogram("cluster time - cuts: fiducial, sum")->Fill(pair[1]->getClusterTime());
@@ -78,7 +81,7 @@ void TagProbeAnalysis::processEvent(HpsEvent* event) {
             pair[0]->getEnergy() + pair[1]->getEnergy());
 
     plotter->get2DHistogram("cluster x position - cuts: fiducial, sum")->Fill(pair[0]->getPosition()[0], pair[1]->getPosition()[0]);
-    plotter->get2DHistogram("cluster y position - cuts: fiducial, sum")->Fill(pair[0]->getPosition()[1], pair[1]->getPosition()[1]);
+    plotter->get2DHistogram("cluster y position - cuts: fiducial, sum")->Fill(pair[0]->getPosition()[1], pair[1]->getPosition()[1]);*/
 
     // Randomly choose one of the two ECal clusters
     double cluster_index = rand()%2;
@@ -148,7 +151,28 @@ void TagProbeAnalysis::processEvent(HpsEvent* event) {
                 probe_seed_hit->getYCrystalIndex(), 1); 
             break;
         }
-    } 
+    }
+
+    double p0 = AnalysisUtils::getMagnitude(tag_track->getMomentum());
+    double p1 = AnalysisUtils::getMagnitude(probe_track->getMomentum()); 
+
+    // Calculate the invariant mass
+    double energy[2];
+    double electron_mass = 0.000510998928;
+
+    energy[0] = sqrt(p0*p0 + electron_mass*electron_mass);
+    energy[1] = sqrt(p1*p1 + electron_mass*electron_mass);
+
+    double px_sum = tag_track->getMomentum()[0] + probe_track->getMomentum()[0];
+    double py_sum = tag_track->getMomentum()[1] + probe_track->getMomentum()[1];
+    double pz_sum = tag_track->getMomentum()[2] + probe_track->getMomentum()[2];
+
+    double p_sum = sqrt(px_sum*px_sum + py_sum*py_sum + pz_sum*pz_sum);
+
+    double mass = sqrt(pow(energy[0]+energy[1], 2) - pow(p_sum, 2));
+
+    plotter->get1DHistogram("invariant mass - mollers")->Fill(mass);
+
 }
 
 void TagProbeAnalysis::finalize() { 
@@ -265,7 +289,9 @@ void TagProbeAnalysis::bookHistograms() {
     plotter->get2DHistogram("cluster y position - cuts: fiducial, sum")->GetXaxis()->SetTitle("First cluster y position (mm)");
     plotter->get2DHistogram("cluster y position - cuts: fiducial, sum")->GetYaxis()->SetTitle("Second cluster y position (mm)");
 
-    return;
+    // Invariant mass
+    plotter->build1DHistogram("invariant mass - mollers", 50, 0, 0.1)->GetXaxis()->SetTitle("Invariant mass (GeV)");
+
 }
 
 std::string TagProbeAnalysis::toString() { 
@@ -289,17 +315,16 @@ bool TagProbeAnalysis::passFiducialCut(EcalCluster* first_cluster, EcalCluster* 
     // Require that they are on the electron side in x
     if (first_cluster->getPosition()[0] > 0 || second_cluster->getPosition()[0] > 0) return false;
 
-    if (first_cluster->getPosition()[0]+second_cluster->getPosition()[0] > -135) return false;
-    
-    if (first_cluster->getPosition()[0]+second_cluster->getPosition()[0] < -190) return false;
-    
-    if (abs(first_cluster->getPosition()[0]) < 40 || abs(second_cluster->getPosition()[0]) < 40) return false;
-
     return true;
 }
 
 
 bool TagProbeAnalysis::isMatch(EcalCluster* cluster, SvtTrack* track) { 
+
+    // Check that the track and cluster are in the same detector volume.
+    // If not, thre is no way they can match.
+    if (track->isTopTrack() && cluster->getPosition()[1] < 0
+            || track->isBottomTrack() && cluster->getPosition()[1] > 0) return false;
 
     // Get the cluster position
     std::vector<double> cluster_pos = cluster->getPosition();
@@ -310,116 +335,26 @@ bool TagProbeAnalysis::isMatch(EcalCluster* cluster, SvtTrack* track) {
         << std::endl;*/
 
     // Extrapolate the track to the Ecal cluster position 
-    std::vector<double> track_pos_at_cluster_shower_max 
+    std::vector<double> track_pos_at_ecal 
         = TrackExtrapolator::extrapolateTrack(track, cluster_pos[2]);
     /*std::cout << "[ TagProbeAnalysis ]: Track position at shower max: " 
-         << " x: " << track_pos_at_cluster_shower_max[0] 
-         << " y: " << track_pos_at_cluster_shower_max[1] 
-         << " z: " << track_pos_at_cluster_shower_max[2]
+         << " x: " << track_pos_at_ecal[0] 
+         << " y: " << track_pos_at_ecal[1] 
+         << " z: " << track_pos_at_ecal[2]
          << std::endl;*/ 
-
 
     double p = AnalysisUtils::getMagnitude(track->getMomentum());
 
-    // If the track and cluster are in opposite volumes, then they can't 
-    // be a match
-    if (cluster_pos[1]*track_pos_at_cluster_shower_max[1] < 0) return false;
+    double delta_x = cluster_pos[0] - track_pos_at_ecal[0];
+    double delta_y = cluster_pos[1] - track_pos_at_ecal[1];
 
-    if (track->isTopTrack()) { 
-        /*plotter->get2DHistogram("cluster x v extrapolated track x - top")->Fill(cluster_pos[0], 
-                track_pos_at_cluster_shower_max[0]);
-        plotter->get2DHistogram("cluster y v extrapolated track y - top")->Fill(cluster_pos[1], 
-                track_pos_at_cluster_shower_max[1]);
-
-        plotter->get1DHistogram("cluster x - extrapolated track x - top")->Fill(cluster_pos[0] 
-                - track_pos_at_cluster_shower_max[0]);
-        plotter->get1DHistogram("cluster y - extrapolated track y - top")->Fill(cluster_pos[1] 
-                - track_pos_at_cluster_shower_max[1]);
-
-        plotter->get2DHistogram("p v extrapolated track x - top")->Fill(p, track_pos_at_cluster_shower_max[0]);
-        plotter->get2DHistogram("p v cluster x - top")->Fill(p, cluster_pos[0]);
-        plotter->get2DHistogram("cluster pair energy v cluster x - top")->Fill(cluster->getEnergy(), cluster_pos[0]);
-        plotter->get2DHistogram("cluster x - track x v e/p - top")->Fill(cluster_pos[0] - track_pos_at_cluster_shower_max[0],
-               cluster->getEnergy()/p); 
-        plotter->get2DHistogram("cluster x v e/p - top")->Fill(cluster_pos[0],
-               cluster->getEnergy()/p); 
-        plotter->get2DHistogram("cluster y v e/p - top")->Fill(cluster_pos[1],
-               cluster->getEnergy()/p); 
-        */
-        if (track->getCharge() < 0) { 
-          //  plotter->get2DHistogram("cluster x v extrapolated track x - top - electrons")->Fill(cluster_pos[0], 
-          //          track_pos_at_cluster_shower_max[0]);
-        } else {
-          //  plotter->get2DHistogram("cluster x v extrapolated track x - top - positrons")->Fill(cluster_pos[0], 
-          //          track_pos_at_cluster_shower_max[0]);
-        }
-    
-    } else {
-       /* plotter->get2DHistogram("cluster x v extrapolated track x - bottom")->Fill(cluster_pos[0], 
-                track_pos_at_cluster_shower_max[0]);
-        plotter->get2DHistogram("cluster y v extrapolated track y - bottom")->Fill(cluster_pos[1], 
-                track_pos_at_cluster_shower_max[1]);
-
-        plotter->get1DHistogram("cluster x - extrapolated track x - bottom")->Fill(cluster_pos[0] 
-                - track_pos_at_cluster_shower_max[0]);
-        plotter->get1DHistogram("cluster y - extrapolated track y - bottom")->Fill(cluster_pos[1] 
-                - track_pos_at_cluster_shower_max[1]);
-        
-        plotter->get2DHistogram("p v extrapolated track x - bottom")->Fill(p, track_pos_at_cluster_shower_max[0]);
-        plotter->get2DHistogram("p v cluster x - bottom")->Fill(p, cluster_pos[0]);
-        plotter->get2DHistogram("cluster pair energy v cluster x - bottom")->Fill(cluster->getEnergy(), cluster_pos[0]);
-        plotter->get2DHistogram("cluster x - track x v e/p - bottom")->Fill(cluster_pos[0] - track_pos_at_cluster_shower_max[0],
-               cluster->getEnergy()/p); 
-        plotter->get2DHistogram("cluster x v e/p - bottom")->Fill(cluster_pos[0],
-               cluster->getEnergy()/p); 
-        plotter->get2DHistogram("cluster y v e/p - bottom")->Fill(cluster_pos[1],
-               cluster->getEnergy()/p); 
-        
-        if (track->getCharge() < 0) { 
-            plotter->get2DHistogram("cluster x v extrapolated track x - bottom - electrons")->Fill(cluster_pos[0], 
-                    track_pos_at_cluster_shower_max[0]);
-        } else {
-            plotter->get2DHistogram("cluster x v extrapolated track x - bottom - positrons")->Fill(cluster_pos[0], 
-                    track_pos_at_cluster_shower_max[0]);
-        }*/
-    }
-    
     // Check that dx and dy between the extrapolated track and cluster
     // positions is reasonable
-    if (std::abs(cluster_pos[0] - track_pos_at_cluster_shower_max[0]) > 20) return false;
+    if ((track->isTopTrack() && (delta_x > 14 || delta_x < -18)) ||
+        (track->isBottomTrack() && (delta_x > 9 || delta_x < -21))) return false;
 
-    //if (cluster->getEnergy()/p < .5) return false;
-    
-    /*
-    if (track->isTopTrack()) { 
-        plotter->get2DHistogram("cluster x v extrapolated track x - top - matched")->Fill(cluster_pos[0], 
-                track_pos_at_cluster_shower_max[0]);
-        plotter->get2DHistogram("cluster y v extrapolated track y - top - matched")->Fill(cluster_pos[1], 
-                track_pos_at_cluster_shower_max[1]);
-
-        plotter->get1DHistogram("cluster x - extrapolated track x - top - matched")->Fill(cluster_pos[0] 
-                - track_pos_at_cluster_shower_max[0]);
-        plotter->get1DHistogram("cluster y - extrapolated track y - top - matched")->Fill(cluster_pos[1] 
-                - track_pos_at_cluster_shower_max[1]);
-    } else {
-        plotter->get2DHistogram("cluster x v extrapolated track x - bottom - matched")->Fill(cluster_pos[0], 
-                track_pos_at_cluster_shower_max[0]);
-        plotter->get2DHistogram("cluster y v extrapolated track y - bottom - matched")->Fill(cluster_pos[1], 
-                track_pos_at_cluster_shower_max[1]);
-
-        plotter->get1DHistogram("cluster x - extrapolated track x - bottom - matched")->Fill(cluster_pos[0] 
-                - track_pos_at_cluster_shower_max[0]);
-        plotter->get1DHistogram("cluster y - extrapolated track y - bottom - matched")->Fill(cluster_pos[1] 
-                - track_pos_at_cluster_shower_max[1]);
-    }*/
-
-    /*if (cluster_pos[0] - track_pos_at_cluster_shower_max[0] > 30 ||
-            cluster_pos[0] - track_pos_at_cluster_shower_max[0] < -30) return false;
-    
-    if (cluster_pos[1] - track_pos_at_cluster_shower_max[1] > 30
-            || cluster_pos[1] - track_pos_at_cluster_shower_max[1] < -30) return false;*/
-
-    //std::cout << "Track and cluster are a match" << std::endl;
+    if ((track->isTopTrack() && (delta_y > 14 || delta_y < -14)) ||
+        (track->isBottomTrack() && (delta_y > 14 || delta_y < -14))) return false;
 
     return true;
 }
