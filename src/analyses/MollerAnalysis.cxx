@@ -35,7 +35,7 @@ void MollerAnalysis::processEvent(HpsEvent* event) {
     // Only look at pair1 triggers
     //if (!event->isPair1Trigger()) return;
     // Only look at single1 triggers
-    if (!event->isSingle1Trigger()) return;
+    //if (!event->isSingle1Trigger()) return;
     total_pair_trigger_events++;
 
     // Get a "good" pair from the event.  If a good pair isn't found, skip
@@ -56,6 +56,9 @@ void MollerAnalysis::processEvent(HpsEvent* event) {
     // eventually become part of the standard pair requirement.
     if (pair[0]->getPosition()[1]*pair[1]->getPosition()[1] > 0) return;
 
+    // Require that the two clusters are on the electron side
+    if (pair[0]->getPosition()[0] > 0 || pair[1]->getPosition()[0] > 0) return; 
+
     plotter->get2DHistogram("cluster pair energy - cuts: fiducial")->Fill(pair[0]->getEnergy(), pair[1]->getEnergy());
     plotter->get1DHistogram("cluster pair time dt - cuts: fiducial")->Fill(pair[0]->getClusterTime() - pair[1]->getClusterTime());
     plotter->get2DHistogram("cluster pair time - cuts: fiducial")->Fill(pair[0]->getClusterTime(), pair[1]->getClusterTime()); 
@@ -63,7 +66,6 @@ void MollerAnalysis::processEvent(HpsEvent* event) {
             pair[1]->getPosition()[0]);
     plotter->get2DHistogram("cluster y position - cuts: fiducial")->Fill(pair[0]->getPosition()[1], 
             pair[1]->getPosition()[1]);
-
 
     SvtTrack* first_track = NULL;
     SvtTrack* second_track = NULL; 
@@ -92,8 +94,12 @@ void MollerAnalysis::processEvent(HpsEvent* event) {
             pair[0]->getClusterTime(), 
             pair[1]->getClusterTime());
 
-    double p0 = AnalysisUtils::getMagnitude(first_track->getMomentum());
-    double p1 = AnalysisUtils::getMagnitude(second_track->getMomentum()); 
+    plotter->get2DHistogram("cluster x position - matched")->Fill(pair[0]->getPosition()[0], 
+            pair[1]->getPosition()[0]);
+    plotter->get2DHistogram("cluster y position - matched")->Fill(pair[0]->getPosition()[1], 
+            pair[1]->getPosition()[1]);
+
+    plotter->get1DHistogram("cluster pair dx - matched")->Fill(pair[0]->getPosition()[0] - pair[1]->getPosition()[0]);
 
     plotter->get1DHistogram("delta Track Time - matched")->Fill(
             first_track->getTrackTime() - second_track->getTrackTime());
@@ -103,13 +109,21 @@ void MollerAnalysis::processEvent(HpsEvent* event) {
             std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(first_track))), 
             std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(second_track))));
 
+    double p0 = AnalysisUtils::getMagnitude(first_track->getMomentum());
+    double p1 = AnalysisUtils::getMagnitude(second_track->getMomentum()); 
+
     plotter->get2DHistogram("p v theta - matched")->Fill(
             p0, std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(first_track))));
     plotter->get2DHistogram("p v theta - matched")->Fill(
             p1, std::abs(3.14159/2 - acos(TrackExtrapolator::getCosTheta(second_track))));
 
-
     plotter->get2DHistogram("p[e] v p[e] - matched")->Fill(p0, p1);
+
+    plotter->get2DHistogram("cluster x v e/p")->Fill(pair[0]->getPosition()[0], pair[0]->getEnergy()/p0);
+    plotter->get2DHistogram("cluster x v e/p")->Fill(pair[1]->getPosition()[0], pair[1]->getEnergy()/p1);
+
+    plotter->get2DHistogram("cluster y v e/p")->Fill(pair[0]->getEnergy()/p0, pair[0]->getPosition()[1]);
+    plotter->get2DHistogram("cluster y v e/p")->Fill(pair[1]->getEnergy()/p1, pair[1]->getPosition()[1]);
 
     if (first_track->isTopTrack()) { 
         plotter->get1DHistogram("p top - matched")->Fill(p0);
@@ -122,13 +136,6 @@ void MollerAnalysis::processEvent(HpsEvent* event) {
     } else { 
         plotter->get1DHistogram("p bottom - matched")->Fill(p0);
     }
-   
-    plotter->get2DHistogram("cluster x position - matched")->Fill(pair[0]->getPosition()[0], 
-            pair[1]->getPosition()[0]);
-    plotter->get2DHistogram("cluster y position - matched")->Fill(pair[0]->getPosition()[1], 
-            pair[1]->getPosition()[1]);
-
-    plotter->get1DHistogram("cluster pair dx - matched")->Fill(pair[0]->getPosition()[0] - pair[1]->getPosition()[0]);
 
     // Require that both tracks are negatively charged
     if ((first_track->getCharge() + second_track->getCharge()) != -2) return;
@@ -173,12 +180,10 @@ void MollerAnalysis::processEvent(HpsEvent* event) {
     plotter->get2DHistogram("track time - matched, e-e-, time")->Fill(first_track->getTrackTime(),
             second_track->getTrackTime());
 
-   
-    //if (p0 > .85 || p1 > .85) return;
-    if (p0+p1 > 1.1*1.056) return;
-    
-    if (p0+p1 < .85*1.056) return;
+    plotter->get1DHistogram("p sum - matched, e-e-")->Fill(p0+p1);
 
+    if (p0+p1 > 1.2) return;
+    if (p0+p1 < .88) return;
 
     plotter->get2DHistogram("p[e-] v p[e-] - matched, time, p")->Fill(p0, p1);
     
@@ -210,12 +215,24 @@ void MollerAnalysis::processEvent(HpsEvent* event) {
 
     plotter->get1DHistogram("cluster pair dx - moller")->Fill(pair[0]->getPosition()[0] - pair[1]->getPosition()[0]);
 
-    //plotter->get1DHistogram("angle between clusters - moller")->Fill(atan(
+    // Calculate the invariant mass
+    double energy[2];
+    double electron_mass = 0.000510998928;
 
+    energy[0] = sqrt(p0*p0 + electron_mass*electron_mass);
+    energy[1] = sqrt(p1*p1 + electron_mass*electron_mass);
+
+    double px_sum = first_track->getMomentum()[0] + second_track->getMomentum()[0];
+    double py_sum = first_track->getMomentum()[1] + second_track->getMomentum()[1];
+    double pz_sum = first_track->getMomentum()[2] + second_track->getMomentum()[2];
+
+    double p_sum = sqrt(px_sum*px_sum + py_sum*py_sum + pz_sum*pz_sum);
+
+    double mass = sqrt(pow(energy[0]+energy[1], 2) - pow(p_sum, 2));
+
+    plotter->get1DHistogram("invariant mass - mollers")->Fill(mass);
     //double p_expected = sqrt(2*(.000510/1.056)*(1.056/x -1 + .000510/x))
     //double p_residual = 
-
-    //plotter->get1DHistogram("p residual")->Fill();
 
     //--- Two cluster events ---//
     //--------------------------//
@@ -231,10 +248,6 @@ void MollerAnalysis::processEvent(HpsEvent* event) {
             first_cluster->getEnergy(), 
             second_cluster->getEnergy());
 
-
-    plotter->get2DHistogram("cluster pair time - N clusters == 2")->Fill(
-            first_cluster->getClusterTime(), 
-            second_cluster->getClusterTime());
 
     plotter->get1DHistogram("cluster pair energy - N clusters == 2")->Fill(first_cluster->getEnergy());
     plotter->get1DHistogram("cluster pair energy - N clusters == 2")->Fill(second_cluster->getEnergy());
@@ -394,12 +407,6 @@ void MollerAnalysis::bookHistograms() {
     plotter->build1DHistogram("cluster pair energy sum - moller", 50, 0, 1.5);
     plotter->build1DHistogram("cluster pair energy diff - moller", 50, -1, 1);
 
-    plotter->build2DHistogram("cluster pair energy - N clusters == 2", 50, 0, 1.5, 50, 0, 1.5);
-    plotter->get2DHistogram("cluster pair energy - N clusters == 2")->GetYaxis()->SetTitle(
-            "First cluster pair energy (GeV)");
-    plotter->get2DHistogram("cluster pair energy - N clusters == 2")->GetYaxis()->SetTitle(
-            "Second cluster pair energy (GeV)");
-
     // Cluster time //
 
     plotter->build1DHistogram("cluster pair time dt", 40, -10, 10);
@@ -414,16 +421,15 @@ void MollerAnalysis::bookHistograms() {
     plotter->get2DHistogram("cluster pair time - cuts: fiducial")->GetXaxis()->SetTitle("Cluster time (ns)");
     plotter->get2DHistogram("cluster pair time - cuts: fiducial")->GetYaxis()->SetTitle("Cluster time (ns)");
 
-    plotter->build2DHistogram("cluster pair time - n clusters == 2", 250, 0, 125, 250, 0, 125);
-    plotter->get2DHistogram("cluster pair time - n clusters == 2")->GetXaxis()->SetTitle("Cluster time (ns)");
-    plotter->get2DHistogram("cluster pair time - n clusters == 2")->GetYaxis()->SetTitle("Cluster time (ns)");
-
     plotter->build2DHistogram("cluster pair time - matched", 250, 0, 125, 250, 0, 125);
     plotter->get2DHistogram("cluster pair time - matched")->GetXaxis()->SetTitle("First cluster time (ns)");
     plotter->get2DHistogram("cluster pair time - matched")->GetYaxis()->SetTitle("Second cluster time (ns)");
 
-    // Track momentum
+    //--------------//
+    //--- Tracks ---//
+    //--------------//
 
+    // Track momentum
     plotter->build1DHistogram("p top - matched", 50, 0, 1.5)->GetXaxis()->SetTitle("p (GeV)");
     plotter->build1DHistogram("p bottom - matched", 50, 0, 1.5)->GetXaxis()->SetTitle("p (GeV)");
 
@@ -451,10 +457,9 @@ void MollerAnalysis::bookHistograms() {
     plotter->get2DHistogram("p[e-] v p[e-] - matched, time, p")->GetXaxis()->SetTitle("p[e-] [GeV]"); 
     plotter->get2DHistogram("p[e-] v p[e-] - matched, time, p")->GetYaxis()->SetTitle("p[e-] [GeV]");
 
-    plotter->build1DHistogram("p residual", 50, -40, 40); 
-
+    plotter->build1DHistogram("p sum - matched, e-e-", 100, 0, 2.0)->GetXaxis()->SetTitle("p sum (GeV)");
+    
     // Track time
-
     plotter->build1DHistogram("delta Track Time - matched", 100, -10, 10)->GetXaxis()
         ->SetTitle("#Delta Track time [ns]");
 
@@ -471,7 +476,6 @@ void MollerAnalysis::bookHistograms() {
     plotter->get2DHistogram("track time - matched, e-e-, time")->GetYaxis()->SetTitle("Track time [ns]");
 
     // Track theta
-
     plotter->build1DHistogram("delta theta - matched", 40, -0.1, 0.1); 
     
     plotter->build1DHistogram("delta theta - matched, e+e-", 40, -0.1, 0.1); 
@@ -524,6 +528,8 @@ void MollerAnalysis::bookHistograms() {
     plotter->get2DHistogram("p v theta - no match")->GetXaxis()->SetTitle("p (GeV)");
     plotter->get2DHistogram("p v theta - no match")->GetYaxis()->SetTitle("#theta");
 
+    // Invariant mass
+    plotter->build1DHistogram("invariant mass - mollers", 50, 0, 0.1)->GetXaxis()->SetTitle("Invariant mass (GeV)");
     
     //-------------------------//
     //--- Cluster positions ---//
@@ -558,6 +564,7 @@ void MollerAnalysis::bookHistograms() {
 
     plotter->build1DHistogram("cluster pair dx - matched", 50, -150, 150);
 
+    // Clusters matched to tracks with both matched tracks being electrons
     plotter->build2DHistogram("cluster x position - matched, e-e-", 200, -200, 200, 200, -200, 200);
     plotter->get2DHistogram("cluster x position - matched, e-e-")->GetYaxis()->SetTitle("First cluster x position (mm)");
     plotter->get2DHistogram("cluster x position - matched, e-e-")->GetYaxis()->SetTitle("Second cluster x position (mm)");
@@ -568,6 +575,7 @@ void MollerAnalysis::bookHistograms() {
 
     plotter->build1DHistogram("cluster pair dx - matched, e-e-", 50, -150, 150);
 
+    // Clusters which pass the Moller selection
     plotter->build2DHistogram("cluster x position - moller", 200, -200, 200, 200, -200, 200);
     plotter->get2DHistogram("cluster x position - moller")->GetYaxis()->SetTitle("First cluster x position (mm)");
     plotter->get2DHistogram("cluster x position - moller")->GetYaxis()->SetTitle("Second cluster x position (mm)");
@@ -592,11 +600,9 @@ void MollerAnalysis::bookHistograms() {
     plotter->build2DHistogram("p v cluster x - top", 50, 0, 1.5, 200, -200, 200);
     plotter->build2DHistogram("cluster pair energy v cluster x - top", 50, 0, 1.5, 200, -200, 200);
     plotter->build2DHistogram("cluster x - track x v e/p - top", 200, -200, 200, 40, 0, 2);
-    plotter->build2DHistogram("cluster x v e/p - top", 200, -200, 200, 40, 0, 2);
     plotter->build1DHistogram("cluster x - extrapolated track x - top", 200, -200, 200);
    
      plotter->build1DHistogram("cluster y - extrapolated track y - top", 100, -100, 100);
-    plotter->build2DHistogram("cluster y v e/p - top", 100, -100, 100, 40, 0, 2);
     plotter->build2DHistogram("cluster y v extrapolated track y - top", 100, -100, 100, 100, -100, 100);
 
     // Bottom
@@ -605,21 +611,22 @@ void MollerAnalysis::bookHistograms() {
     plotter->build2DHistogram("p v cluster x - bottom", 50, 0, 1.5, 200, -200, 200);
     plotter->build2DHistogram("cluster pair energy v cluster x - bottom", 50, 0, 1.5, 200, -200, 200);
     plotter->build2DHistogram("cluster x - track x v e/p - bottom", 200, -200, 200, 40, 0, 2);
-    plotter->build2DHistogram("cluster x v e/p - bottom", 200, -200, 200, 40, 0, 2);
     plotter->build1DHistogram("cluster x - extrapolated track x - bottom", 200, -200, 200);
 
-    plotter->build2DHistogram("cluster y v e/p - bottom", 100, -100, 100, 40, 0, 2);
     plotter->build2DHistogram("cluster y v extrapolated track y - bottom", 100, -100, 100, 100, -100, 100);
     plotter->build1DHistogram("cluster y - extrapolated track y - bottom", 100, -100, 100);
 
     // Matched tracks
+    
+    plotter->build2DHistogram("cluster x v e/p", 200, -200, 200, 50, 0, 1.5);
+    plotter->build2DHistogram("cluster y v e/p", 50, 0, 1.5, 100, -100, 100);
 
     // Top
     plotter->build2DHistogram("cluster x v extrapolated track x - top - matched", 200, -200, 200, 200, -200, 200);
     plotter->build2DHistogram("cluster y v extrapolated track y - top - matched", 100, -100, 100, 100, -100, 100);
     plotter->build1DHistogram("cluster x - extrapolated track x - top - matched", 50, -25, 25);
     plotter->build1DHistogram("cluster y - extrapolated track y - top - matched", 50, -25, 25);
-    
+   
     // Bottom
     plotter->build2DHistogram("cluster x v extrapolated track x - bottom - matched", 200, -200, 200, 200, -200, 200);
     plotter->build2DHistogram("cluster y v extrapolated track y - bottom - matched", 100, -100, 100, 100, -100, 100);
@@ -666,10 +673,6 @@ bool MollerAnalysis::isMatch(EcalCluster* cluster, SvtTrack* track) {
         plotter->get2DHistogram("p v cluster x - top")->Fill(p, cluster_pos[0]);
         plotter->get2DHistogram("cluster pair energy v cluster x - top")->Fill(cluster->getEnergy(), cluster_pos[0]);
         plotter->get2DHistogram("cluster x - track x v e/p - top")->Fill(delta_x, cluster->getEnergy()/p); 
-        plotter->get2DHistogram("cluster x v e/p - top")->Fill(cluster_pos[0],
-               cluster->getEnergy()/p); 
-        plotter->get2DHistogram("cluster y v e/p - top")->Fill(cluster_pos[1],
-               cluster->getEnergy()/p); 
     
     } else {
         plotter->get2DHistogram("cluster x v extrapolated track x - bottom")->Fill(cluster_pos[0], 
@@ -685,11 +688,6 @@ bool MollerAnalysis::isMatch(EcalCluster* cluster, SvtTrack* track) {
         plotter->get2DHistogram("cluster pair energy v cluster x - bottom")->Fill(cluster->getEnergy(), cluster_pos[0]);
         plotter->get2DHistogram("cluster x - track x v e/p - bottom")->Fill(delta_x,
                cluster->getEnergy()/p); 
-        plotter->get2DHistogram("cluster x v e/p - bottom")->Fill(cluster_pos[0],
-               cluster->getEnergy()/p); 
-        plotter->get2DHistogram("cluster y v e/p - bottom")->Fill(cluster_pos[1],
-               cluster->getEnergy()/p); 
-        
     }
     
     // Check that dx and dy between the extrapolated track and cluster
