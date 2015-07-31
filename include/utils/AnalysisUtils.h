@@ -16,9 +16,16 @@
 #include <vector>
 #include <cmath>
 
+//---------------//
+//--- HPS DST ---//
+//---------------//
 #include <HpsEvent.h>
 #include <EcalCluster.h>
+#include <SvtTrack.h>
 
+//--------------------//
+//--- HPS Analysis ---//
+//--------------------//
 #include <TrackExtrapolator.h>
 
 namespace AnalysisUtils { 
@@ -31,6 +38,15 @@ namespace AnalysisUtils {
      * @return Magnitude of the vector
      */
     double getMagnitude(std::vector<double> v);
+
+    /**
+     * Calculate the invariant mass of a pair of tracks.
+     *
+     * @param track_0 SVT track composing a pair
+     * @param track_1 SVT track composing a pair
+     * @return invariant mass of the track pair
+     */
+    double getInvariantMass(SvtTrack* track_0, SvtTrack* track_1);
 
     /**
      * Get a cluster pair from an event.
