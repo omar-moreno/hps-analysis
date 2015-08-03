@@ -15,6 +15,7 @@ target_link_libraries(hps_analysis
     SharedHitAnalysis
     TimingAnalysis
     MollerAnalysis
+    MuonAnalysis
 )
 
 # Find the necessary LCIO libraries

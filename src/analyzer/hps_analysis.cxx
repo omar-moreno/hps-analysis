@@ -40,6 +40,7 @@
 #include <SharedHitAnalysis.h>
 #include <TimingAnalysis.h>
 #include <MollerAnalysis.h>
+#include <MuonAnalysis.h>
 
 using namespace std; 
 
@@ -152,7 +153,8 @@ int main(int argc, char **argv) {
     //analyses.push_back(new TagProbeAnalysis());
     //analyses.push_back(new SimpleTrackingEfficiencyAnalysis());
     //analyses.push_back(new SharedHitAnalysis());
-    analyses.push_back(new MollerAnalysis());
+    //analyses.push_back(new MollerAnalysis());
+    analyses.push_back(new MuonAnalysis());
 
     // Initialize all analyses
     for (list<HpsAnalysis*>::iterator analysis = analyses.begin();

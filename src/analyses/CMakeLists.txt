@@ -59,3 +59,10 @@ target_link_libraries(MollerAnalysis
     TrackExtrapolator
     TrackClusterMatcher
 )
+
+add_library(MuonAnalysis MuonAnalysis.cxx)
+target_link_libraries(MuonAnalysis
+    ${HPS_EVENT_LIBRARY}
+    Plotter
+    AnalysisUtils
+)
