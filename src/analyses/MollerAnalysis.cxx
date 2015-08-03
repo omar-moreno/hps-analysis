@@ -35,7 +35,7 @@ void MollerAnalysis::processEvent(HpsEvent* event) {
     // Only look at pair1 triggers
     //if (!event->isPair1Trigger()) return;
     // Only look at single1 triggers
-    //if (!event->isSingle1Trigger()) return;
+    if (!event->isSingle1Trigger()) return;
     total_pair_trigger_events++;
 
     // Get a "good" pair from the event.  If a good pair isn't found, skip
@@ -602,7 +602,7 @@ void MollerAnalysis::bookHistograms() {
     plotter->build2DHistogram("cluster x - track x v e/p - top", 200, -200, 200, 40, 0, 2);
     plotter->build1DHistogram("cluster x - extrapolated track x - top", 200, -200, 200);
    
-     plotter->build1DHistogram("cluster y - extrapolated track y - top", 100, -100, 100);
+    plotter->build1DHistogram("cluster y - extrapolated track y - top", 100, -100, 100);
     plotter->build2DHistogram("cluster y v extrapolated track y - top", 100, -100, 100, 100, -100, 100);
 
     // Bottom
