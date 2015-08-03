@@ -67,9 +67,9 @@ void TagProbeAnalysis::processEvent(HpsEvent* event) {
     plotter->get2DHistogram("cluster y position - cuts: fiducial")->Fill(pair[0]->getPosition()[1], pair[1]->getPosition()[1]);
 
 
-    // Check if the clusters pass the cluster energy sum cut
-    /*if (!passClusterEnergySumCut(pair[0], pair[1])) return; 
+    if (!passClusterEnergySumCut(pair[0], pair[1])) return; 
 
+    /*
     plotter->get1DHistogram("cluster time - cuts: fiducial, sum")->Fill(pair[0]->getClusterTime());
     plotter->get1DHistogram("cluster time - cuts: fiducial, sum")->Fill(pair[1]->getClusterTime());
     plotter->get2DHistogram("cluster pair energy - cuts: fiducial, sum")->Fill(pair[0]->getEnergy(), pair[1]->getEnergy());
@@ -81,7 +81,8 @@ void TagProbeAnalysis::processEvent(HpsEvent* event) {
             pair[0]->getEnergy() + pair[1]->getEnergy());
 
     plotter->get2DHistogram("cluster x position - cuts: fiducial, sum")->Fill(pair[0]->getPosition()[0], pair[1]->getPosition()[0]);
-    plotter->get2DHistogram("cluster y position - cuts: fiducial, sum")->Fill(pair[0]->getPosition()[1], pair[1]->getPosition()[1]);*/
+    plotter->get2DHistogram("cluster y position - cuts: fiducial, sum")->Fill(pair[0]->getPosition()[1], pair[1]->getPosition()[1]);
+    */
 
     // Randomly choose one of the two ECal clusters
     double cluster_index = rand()%2;
@@ -135,7 +136,13 @@ void TagProbeAnalysis::processEvent(HpsEvent* event) {
 
     EcalHit* probe_seed_hit = probe_cluster->getSeed();
     plotter->get2DHistogram("probe clusters - candidates")->Fill( probe_seed_hit->getXCrystalIndex(), 
-            probe_seed_hit->getYCrystalIndex(), 1); 
+            probe_seed_hit->getYCrystalIndex(), 1);
+    if (probe_seed_hit->getYCrystalIndex() > 0) { 
+        plotter->get1DHistogram("probe cluster energy - candidates - top")->Fill(probe_cluster->getEnergy());
+    } else { 
+        plotter->get1DHistogram("probe cluster energy - candidates - bottom")->Fill(probe_cluster->getEnergy());
+    } 
+        
 
     SvtTrack* probe_track = NULL; 
     for (int track_n = 0; track_n < event->getNumberOfTracks(); ++track_n) { 
@@ -149,9 +156,12 @@ void TagProbeAnalysis::processEvent(HpsEvent* event) {
         if (this->isMatch(probe_cluster, probe_track)) { 
             plotter->get2DHistogram("probe clusters - matched")->Fill( probe_seed_hit->getXCrystalIndex(), 
                 probe_seed_hit->getYCrystalIndex(), 1); 
-            break;
-        }
-    }
+
+        if (probe_seed_hit->getYCrystalIndex() > 0) { 
+            plotter->get1DHistogram("probe cluster energy - matched - top")->Fill(probe_cluster->getEnergy());
+        } else { 
+            plotter->get1DHistogram("probe cluster energy - matched - bottom")->Fill(probe_cluster->getEnergy());
+        } 
 
     double p0 = AnalysisUtils::getMagnitude(tag_track->getMomentum());
     double p1 = AnalysisUtils::getMagnitude(probe_track->getMomentum()); 
@@ -171,7 +181,12 @@ void TagProbeAnalysis::processEvent(HpsEvent* event) {
 
     double mass = sqrt(pow(energy[0]+energy[1], 2) - pow(p_sum, 2));
 
-    plotter->get1DHistogram("invariant mass - mollers")->Fill(mass);
+    plotter->get1DHistogram("invariant mass - mollers")->Fill(mass); 
+
+            break;
+        }
+    }
+
 
 }
 
@@ -179,6 +194,15 @@ void TagProbeAnalysis::finalize() {
 
     plotter->get2DHistogram("probe clusters - matched")->Divide(
             plotter->get2DHistogram("probe clusters - candidates"));
+
+    plotter->setGraphType("asymm");
+    ((TGraphAsymmErrors*) plotter->buildGraph("tracking efficiency - top"))->Divide(
+        plotter->get1DHistogram("probe cluster energy - matched - top"),
+        plotter->get1DHistogram("probe cluster energy - candidates - top"));
+
+    ((TGraphAsymmErrors*) plotter->buildGraph("tracking efficiency - bottom"))->Divide(
+        plotter->get1DHistogram("probe cluster energy - matched - bottom"),
+        plotter->get1DHistogram("probe cluster energy - candidates - bottom"));
 
     plotter->saveToPdf("tag_probe_efficiency.pdf");
     plotter->saveToRootFile("tag_probe_efficiency.root");
@@ -219,6 +243,13 @@ void TagProbeAnalysis::bookHistograms() {
             "Cluster pair energy sum (GeV)");
     plotter->build1DHistogram("Cluster pair energy sum - candidates", 50, 0, 1.5)->GetXaxis()->SetTitle(
             "Cluster pair energy sum (GeV)");
+
+    plotter->build1DHistogram("probe cluster energy - candidates - top", 50, 0, 1.5)->GetXaxis()->SetTitle("Probe Cluster Energy (GeV)");
+    plotter->build1DHistogram("probe cluster energy - candidates - bottom", 50, 0, 1.5)->GetXaxis()->SetTitle("Probe Cluster Energy (GeV)");
+
+    plotter->build1DHistogram("probe cluster energy - matched - top", 50, 0, 1.5)->GetXaxis()->SetTitle("Probe Cluster Energy (GeV)");
+
+    plotter->build1DHistogram("probe cluster energy - matched - bottom", 50, 0, 1.5)->GetXaxis()->SetTitle("Probe Cluster Energy (GeV)");
 
     plotter->build2DHistogram("tag clusters", 47, -23, 24, 12, -6, 6);
     plotter->build2DHistogram("tag clusters - candidates", 47, -23, 24, 12, -6, 6);
@@ -302,7 +333,7 @@ std::string TagProbeAnalysis::toString() {
 bool TagProbeAnalysis::passClusterEnergySumCut(EcalCluster* first_cluster, EcalCluster* second_cluster) {
     
     double cluster_energy_sum = first_cluster->getEnergy() + second_cluster->getEnergy(); 
-    if (cluster_energy_sum > 1.15 || cluster_energy_sum < .6) return false; 
+    if (cluster_energy_sum > 1.1 || cluster_energy_sum < .85) return false; 
 
     return true;
 }
@@ -314,6 +345,10 @@ bool TagProbeAnalysis::passFiducialCut(EcalCluster* first_cluster, EcalCluster* 
 
     // Require that they are on the electron side in x
     if (first_cluster->getPosition()[0] > 0 || second_cluster->getPosition()[0] > 0) return false;
+
+    if (first_cluster->getPosition()[0]+second_cluster->getPosition()[0] > -135) return false;
+    
+    if (first_cluster->getPosition()[0]+second_cluster->getPosition()[0] < -190) return false;
 
     return true;
 }
