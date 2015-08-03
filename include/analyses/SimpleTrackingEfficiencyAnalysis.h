@@ -89,6 +89,7 @@ class SimpleTrackingEfficiencyAnalysis : public HpsAnalysis {
         
         int total_events;
         int total_single1_triggers;
+        int total_events_with_tracks;
 
 };
 

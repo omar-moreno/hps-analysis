@@ -10,7 +10,8 @@ SimpleTrackingEfficiencyAnalysis::SimpleTrackingEfficiencyAnalysis()
       cuts_enabled(true),
       class_name("SimpleTrackingEfficiencyAnalysis"),
       total_events(0),
-      total_single1_triggers(0) {
+      total_single1_triggers(0),
+      total_events_with_tracks(0) {
 
 }
 
@@ -22,9 +23,17 @@ void SimpleTrackingEfficiencyAnalysis::initialize() {
 }
 
 void SimpleTrackingEfficiencyAnalysis::processEvent(HpsEvent* event) { 
-  
+
+    // Increment the total events counter
+    total_events++; 
+
     // Only look at single 1 triggers
     if (!event->isSingle1Trigger()) return;
+    
+    // Increment the singles1 trigger counter
+    total_single1_triggers++;
+
+    if (event->getNumberOfTracks() != 0) total_events_with_tracks++;
 
     // Loop over all clusters in an event and try to match a track to them
     matched_tracks.clear();
@@ -295,7 +304,15 @@ void SimpleTrackingEfficiencyAnalysis::processEvent(HpsEvent* event) {
 }
 
 void SimpleTrackingEfficiencyAnalysis::finalize() { 
-   
+
+    std::cout << "//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%//" << std::endl;  
+    std::cout << "[ SimpleTrackingEfficiencyAnalysis ] Total number of events: " << total_events << std::endl;
+    std::cout << "[ SimpleTrackingEfficiencyAnalysis ] Total number of singles1 triggers: " 
+              << total_single1_triggers << std::endl;
+    std::cout << "[ SimpleTrackingEfficiencyAnalysis ] Total number of events with tracks: "
+              << total_events_with_tracks << std::endl;
+    std::cout << "//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%//" << std::endl;  
+
     plotter->get2DHistogram("cluster count - matched")->Divide(
             plotter->get2DHistogram("cluster count"));
     plotter->get2DHistogram("cluster count - matched - fee")->Divide(
