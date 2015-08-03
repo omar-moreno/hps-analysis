@@ -26,7 +26,7 @@ void TagProbeAnalysis::processEvent(HpsEvent* event) {
 
     // Only look at pair1 triggers
     //if (!event->isPair1Trigger()) return;
-    if (!event->isSingle1Trigger()) return;
+    //if (!event->isSingle1Trigger()) return;
     total_trigger_events++;
 
     // Search the event for a pair of clusters.  Only a time requirement is 
@@ -157,37 +157,32 @@ void TagProbeAnalysis::processEvent(HpsEvent* event) {
             plotter->get2DHistogram("probe clusters - matched")->Fill( probe_seed_hit->getXCrystalIndex(), 
                 probe_seed_hit->getYCrystalIndex(), 1); 
 
-        if (probe_seed_hit->getYCrystalIndex() > 0) { 
-            plotter->get1DHistogram("probe cluster energy - matched - top")->Fill(probe_cluster->getEnergy());
-        } else { 
-            plotter->get1DHistogram("probe cluster energy - matched - bottom")->Fill(probe_cluster->getEnergy());
-        } 
+            if (probe_seed_hit->getYCrystalIndex() > 0) { 
+                plotter->get1DHistogram("probe cluster energy - matched - top")->Fill(probe_cluster->getEnergy());
+            } else { 
+                plotter->get1DHistogram("probe cluster energy - matched - bottom")->Fill(probe_cluster->getEnergy());
+            } 
 
-    double p0 = AnalysisUtils::getMagnitude(tag_track->getMomentum());
-    double p1 = AnalysisUtils::getMagnitude(probe_track->getMomentum()); 
-
-    // Calculate the invariant mass
-    double energy[2];
-    double electron_mass = 0.000510998928;
-
-    energy[0] = sqrt(p0*p0 + electron_mass*electron_mass);
-    energy[1] = sqrt(p1*p1 + electron_mass*electron_mass);
-
-    double px_sum = tag_track->getMomentum()[0] + probe_track->getMomentum()[0];
-    double py_sum = tag_track->getMomentum()[1] + probe_track->getMomentum()[1];
-    double pz_sum = tag_track->getMomentum()[2] + probe_track->getMomentum()[2];
-
-    double p_sum = sqrt(px_sum*px_sum + py_sum*py_sum + pz_sum*pz_sum);
-
-    double mass = sqrt(pow(energy[0]+energy[1], 2) - pow(p_sum, 2));
-
-    plotter->get1DHistogram("invariant mass - mollers")->Fill(mass); 
-
+            double mass = AnalysisUtils::getInvariantMass(tag_track, probe_track);
+            plotter->get1DHistogram("invariant mass - mollers")->Fill(mass); 
             break;
         }
+
+        std::cout << "No match found" << std::endl;
+        plotter->get2DHistogram("probe clusters - not matched")->Fill( probe_seed_hit->getXCrystalIndex(), 
+                probe_seed_hit->getYCrystalIndex(), 1); 
+        
+        if (probe_seed_hit->getYCrystalIndex() > 0) { 
+            plotter->get1DHistogram("probe cluster energy - not matched - top")->Fill(probe_cluster->getEnergy());
+        } else { 
+            plotter->get1DHistogram("probe cluster energy - not matched - bottom")->Fill(probe_cluster->getEnergy());
+        }
+
+        plotter->get2DHistogram("cluster x position - not matched")->Fill(pair[0]->getPosition()[0], pair[1]->getPosition()[0]);
+        plotter->get2DHistogram("cluster y position - not matched")->Fill(pair[0]->getPosition()[1], pair[1]->getPosition()[1]);
+
+        plotter->get2DHistogram("cluster pair energy - not matched")->Fill(pair[0]->getEnergy(), pair[1]->getEnergy());
     }
-
-
 }
 
 void TagProbeAnalysis::finalize() { 
@@ -235,6 +230,10 @@ void TagProbeAnalysis::bookHistograms() {
     plotter->get2DHistogram("cluster pair energy - candidates")->GetXaxis()->SetTitle("Cluster energy (GeV)");
     plotter->get2DHistogram("cluster pair energy - candidates")->GetYaxis()->SetTitle("Cluster energy (GeV)");
 
+    plotter->build2DHistogram("cluster pair energy - not matched", 50, 0, 1.5, 50, 0, 1.5);
+    plotter->get2DHistogram("cluster pair energy - not matched")->GetXaxis()->SetTitle("Cluster energy (GeV)");
+    plotter->get2DHistogram("cluster pair energy - not matched")->GetYaxis()->SetTitle("Cluster energy (GeV)");
+
     plotter->build1DHistogram("Cluster pair energy sum", 50, 0, 1.5)->GetXaxis()->SetTitle(
             "Cluster pair energy sum (GeV)");
     plotter->build1DHistogram("Cluster pair energy sum - cuts: fiducial", 50, 0, 1.5)->GetXaxis()->SetTitle(
@@ -248,13 +247,17 @@ void TagProbeAnalysis::bookHistograms() {
     plotter->build1DHistogram("probe cluster energy - candidates - bottom", 50, 0, 1.5)->GetXaxis()->SetTitle("Probe Cluster Energy (GeV)");
 
     plotter->build1DHistogram("probe cluster energy - matched - top", 50, 0, 1.5)->GetXaxis()->SetTitle("Probe Cluster Energy (GeV)");
-
     plotter->build1DHistogram("probe cluster energy - matched - bottom", 50, 0, 1.5)->GetXaxis()->SetTitle("Probe Cluster Energy (GeV)");
+    plotter->build1DHistogram("probe cluster energy - not matched - top", 50, 0, 1.5)->GetXaxis()->SetTitle("Probe Cluster Energy (GeV)");
+    plotter->build1DHistogram("probe cluster energy - not matched - bottom", 50, 0, 1.5)->GetXaxis()->SetTitle("Probe Cluster Energy (GeV)");
 
     plotter->build2DHistogram("tag clusters", 47, -23, 24, 12, -6, 6);
     plotter->build2DHistogram("tag clusters - candidates", 47, -23, 24, 12, -6, 6);
     plotter->build2DHistogram("probe clusters - candidates", 47, -23, 24, 12, -6, 6);
     plotter->build2DHistogram("probe clusters - matched", 47, -23, 24, 12, -6, 6);
+    plotter->build2DHistogram("probe clusters - not matched", 47, -23, 24, 12, -6, 6);
+
+
 
     // Cluster time //
     
@@ -319,6 +322,14 @@ void TagProbeAnalysis::bookHistograms() {
     plotter->build2DHistogram("cluster y position - cuts: fiducial, sum", 100, -100, 100, 100, -100, 100);
     plotter->get2DHistogram("cluster y position - cuts: fiducial, sum")->GetXaxis()->SetTitle("First cluster y position (mm)");
     plotter->get2DHistogram("cluster y position - cuts: fiducial, sum")->GetYaxis()->SetTitle("Second cluster y position (mm)");
+
+    plotter->build2DHistogram("cluster x position - not matched", 100, -200, 100, 100, -200, 100);
+    plotter->get2DHistogram("cluster x position - not matched")->GetXaxis()->SetTitle("First cluster x position (mm)");
+    plotter->get2DHistogram("cluster x position - not matched")->GetYaxis()->SetTitle("Second cluster x position (mm)");
+    
+    plotter->build2DHistogram("cluster y position - not matched", 100, -100, 100, 100, -100, 100);
+    plotter->get2DHistogram("cluster y position - not matched")->GetXaxis()->SetTitle("First cluster y position (mm)");
+    plotter->get2DHistogram("cluster y position - not matched")->GetYaxis()->SetTitle("Second cluster y position (mm)");
 
     // Invariant mass
     plotter->build1DHistogram("invariant mass - mollers", 50, 0, 0.1)->GetXaxis()->SetTitle("Invariant mass (GeV)");
