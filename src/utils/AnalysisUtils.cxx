@@ -88,3 +88,85 @@ std::vector<EcalCluster*> AnalysisUtils::getClusterPair(HpsEvent* event) {
 
     return pair; 
 }
+
+bool AnalysisUtils::isMatch(EcalCluster* cluster, SvtTrack* track) { 
+
+    // Check that the track and cluster are in the same detector volume.
+    // If not, thre is no way they can match.
+    if (track->isTopTrack() && cluster->getPosition()[1] < 0
+            || track->isBottomTrack() && cluster->getPosition()[1] > 0) return false;
+    
+    // Get the cluster position
+    std::vector<double> cluster_pos = cluster->getPosition();
+
+    // Extrapolate the track to the Ecal cluster position 
+    std::vector<double> track_pos_at_ecal 
+        = TrackExtrapolator::extrapolateTrack(track, cluster_pos[2]);
+
+    double p = AnalysisUtils::getMagnitude(track->getMomentum());
+
+    double delta_x = cluster_pos[0] - track_pos_at_ecal[0];
+    double delta_y = cluster_pos[1] - track_pos_at_ecal[1];
+
+    /*
+    if (track->isTopTrack()) { 
+        plotter->get2DHistogram("cluster x v extrapolated track x - top")->Fill(cluster_pos[0], 
+                track_pos_at_ecal[0]);
+        plotter->get2DHistogram("cluster y v extrapolated track y - top")->Fill(cluster_pos[1], 
+                track_pos_at_ecal[1]);
+
+        plotter->get1DHistogram("cluster x - extrapolated track x - top")->Fill(delta_x); 
+        plotter->get1DHistogram("cluster y - extrapolated track y - top")->Fill(delta_y); 
+
+        plotter->get2DHistogram("p v extrapolated track x - top")->Fill(p, track_pos_at_ecal[0]);
+        plotter->get2DHistogram("p v cluster x - top")->Fill(p, cluster_pos[0]);
+        plotter->get2DHistogram("cluster pair energy v cluster x - top")->Fill(cluster->getEnergy(), cluster_pos[0]);
+        plotter->get2DHistogram("cluster x - track x v e/p - top")->Fill(delta_x, cluster->getEnergy()/p); 
+    
+    } else {
+        plotter->get2DHistogram("cluster x v extrapolated track x - bottom")->Fill(cluster_pos[0], 
+                track_pos_at_ecal[0]);
+        plotter->get2DHistogram("cluster y v extrapolated track y - bottom")->Fill(cluster_pos[1], 
+                track_pos_at_ecal[1]);
+
+        plotter->get1DHistogram("cluster x - extrapolated track x - bottom")->Fill(delta_x);
+        plotter->get1DHistogram("cluster y - extrapolated track y - bottom")->Fill(delta_y);
+        
+        plotter->get2DHistogram("p v extrapolated track x - bottom")->Fill(p, track_pos_at_ecal[0]);
+        plotter->get2DHistogram("p v cluster x - bottom")->Fill(p, cluster_pos[0]);
+        plotter->get2DHistogram("cluster pair energy v cluster x - bottom")->Fill(cluster->getEnergy(), cluster_pos[0]);
+        plotter->get2DHistogram("cluster x - track x v e/p - bottom")->Fill(delta_x,
+               cluster->getEnergy()/p); 
+    }*/
+    
+    // Check that dx and dy between the extrapolated track and cluster
+    // positions is reasonable
+    if ((track->isTopTrack() && (delta_x > 14 || delta_x < -18)) ||
+        (track->isBottomTrack() && (delta_x > 9 || delta_x < -21))) return false;
+
+    if ((track->isTopTrack() && (delta_y > 14 || delta_y < -14)) ||
+        (track->isBottomTrack() && (delta_y > 14 || delta_y < -14))) return false;
+
+    //if (cluster->getEnergy()/p < .5) return false;
+
+    /*
+    if (track->isTopTrack()) { 
+        plotter->get2DHistogram("cluster x v extrapolated track x - top - matched")->Fill(cluster_pos[0], 
+                track_pos_at_ecal[0]);
+        plotter->get2DHistogram("cluster y v extrapolated track y - top - matched")->Fill(cluster_pos[1], 
+                track_pos_at_ecal[1]);
+        plotter->get1DHistogram("cluster x - extrapolated track x - top - matched")->Fill(delta_x);
+        plotter->get1DHistogram("cluster y - extrapolated track y - top - matched")->Fill(delta_y);
+    } else {
+        plotter->get2DHistogram("cluster x v extrapolated track x - bottom - matched")->Fill(cluster_pos[0], 
+                track_pos_at_ecal[0]);
+        plotter->get2DHistogram("cluster y v extrapolated track y - bottom - matched")->Fill(cluster_pos[1], 
+                track_pos_at_ecal[1]);
+        plotter->get1DHistogram("cluster x - extrapolated track x - bottom - matched")->Fill(delta_x);
+        plotter->get1DHistogram("cluster y - extrapolated track y - bottom - matched")->Fill(delta_y);
+    }*/
+
+    return true;
+
+
+}

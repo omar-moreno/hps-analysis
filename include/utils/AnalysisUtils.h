@@ -57,6 +57,15 @@ namespace AnalysisUtils {
     std::vector<EcalCluster*> getClusterPair(HpsEvent* event);
 
     /**
+     * Check if a track and cluster match up to each other.  
+     *
+     * @param cluster An Ecal cluster
+     * @param track An SVT track
+     * @return true if it's a match, false otherwise
+     */
+    bool isMatch(EcalCluster* cluster, SvtTrack* track);
+
+    /**
      *
      */
     template <typename T> int sgn(T val) {

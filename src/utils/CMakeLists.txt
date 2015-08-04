@@ -10,6 +10,10 @@ find_library(ROOT_GRAF_LIB Graf $ENV{ROOTSYS}/lib)
 find_library(HPS_EVENT_LIBRARY HpsEvent $ENV{HPS_DST_PATH}/build/lib)
 
 add_library(AnalysisUtils AnalysisUtils.cxx)
+target_link_libraries(AnalysisUtils
+    ${HPS_EVENT_LIBRARY}
+    TrackExtrapolator
+)
 
 add_library(Plotter Plotter.cxx) 
 target_link_libraries(Plotter
