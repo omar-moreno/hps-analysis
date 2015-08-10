@@ -66,3 +66,10 @@ target_link_libraries(MuonAnalysis
     Plotter
     AnalysisUtils
 )
+
+add_library(GblTrackAnalysis GblTrackAnalysis.cxx)
+target_link_libraries(GblTrackAnalysis
+    ${HPS_EVENT_LIBRARY}
+    Plotter
+    TrackExtrapolator
+)
