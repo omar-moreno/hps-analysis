@@ -40,6 +40,10 @@ void TrackAnalysis::processEvent(HpsEvent* event) {
 
     track_plotter->get1DHistogram("Number of tracks")->Fill(event->getNumberOfTracks());
 
+    if (event->getNumberOfTracks() == 0) { 
+        std::cout << "Event " << event->getEventNumber() << " doesn't have any tracks." << std::endl;
+    }
+
     // Loop over all of the tracks in the event
     for (int track_n = 0; track_n < event->getNumberOfTracks(); ++track_n) { 
 
@@ -520,7 +524,7 @@ void TrackAnalysis::bookHistograms() {
         track_plotter->build1DHistogram(bot_name + " - x Residuals", 200, -module_n*range, module_n*range)->GetXaxis()->SetTitle("Bottom Layer x Residual"); 
         track_plotter->build1DHistogram(bot_name + " - y Residuals", 200, -module_n*range, module_n*range)->GetXaxis()->SetTitle("Bottom Layer y Residual"); 
         track_plotter->build1DHistogram(top_name + " - Number of hits per cluster", 5, 0, 5); 
-        track_plotter->build1DHistogram(top_name + " - Number of hits per cluster", 5, 0, 5); 
+        track_plotter->build1DHistogram(bot_name + " - Number of hits per cluster", 5, 0, 5); 
         electron_plotter->build1DHistogram(top_name + " - x Residuals", 200, -module_n*range, module_n*range)->GetXaxis()->SetTitle("Top Layer x Residual"); 
         electron_plotter->build1DHistogram(top_name + " - y Residuals", 200, -module_n*range, module_n*range)->GetXaxis()->SetTitle("Top Layer y Residual"); 
         electron_plotter->build1DHistogram(bot_name + " - x Residuals", 200, -module_n*range, module_n*range)->GetXaxis()->SetTitle("Bottom Layer x Residual"); 
