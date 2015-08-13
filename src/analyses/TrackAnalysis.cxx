@@ -16,7 +16,8 @@ TrackAnalysis::TrackAnalysis()
       electron_plotter(new Plotter()),
       positron_plotter(new Plotter()),
       top_plotter(new Plotter()), 
-      bottom_plotter(new Plotter()), 
+      bottom_plotter(new Plotter()),
+      event_counter(0), 
       class_name("TrackAnalysis") {  
 }
 
@@ -34,14 +35,36 @@ void TrackAnalysis::initialize() {
 }
 
 void TrackAnalysis::processEvent(HpsEvent* event) {
-
+    
     //if (!event->isPair1Trigger()) return;
     if (!event->isSingle1Trigger()) return;
+
+    event_counter++; 
 
     track_plotter->get1DHistogram("Number of tracks")->Fill(event->getNumberOfTracks());
 
     if (event->getNumberOfTracks() == 0) { 
         std::cout << "Event " << event->getEventNumber() << " doesn't have any tracks." << std::endl;
+    }
+
+    if (event->getNumberOfTracks() == 1) { 
+        track_plotter->getGraph("Track #chi^{2} vs Event")->SetPoint(event_counter - 1, 
+                event->getEventNumber(), event->getTrack(0)->getChi2());
+
+        track_plotter->getGraph("Track #Omega vs Event")->SetPoint(event_counter - 1, 
+                event->getEventNumber(), event->getTrack(0)->getOmega());
+
+        track_plotter->getGraph("Track sin(#phi_{0}) vs Event")->SetPoint(event_counter - 1, 
+                event->getEventNumber(), sin(event->getTrack(0)->getPhi0()));
+        
+        track_plotter->getGraph("Track cos(#theta) vs Event")->SetPoint(event_counter - 1, 
+                event->getEventNumber(), TrackExtrapolator::getCosTheta(event->getTrack(0))); 
+
+        track_plotter->getGraph("Track d0 vs Event")->SetPoint(event_counter - 1, 
+                event->getEventNumber(), event->getTrack(0)->getD0()); 
+        
+        track_plotter->getGraph("Track z0 vs Event")->SetPoint(event_counter - 1, 
+                event->getEventNumber(), event->getTrack(0)->getZ0()); 
     }
 
     // Loop over all of the tracks in the event
@@ -385,6 +408,25 @@ void TrackAnalysis::bookHistograms() {
     track_plotter->build2DHistogram("track time v d0", 100, -10, 10, 80, -10, 10);
     track_plotter->get2DHistogram("track time v d0")->GetXaxis()->SetTitle("Track time [ns]"); 
     track_plotter->get2DHistogram("track time v d0")->GetYaxis()->SetTitle("D0 [mm]"); 
+
+    track_plotter->buildGraph("Track #chi^{2} vs Event")->GetXaxis()->SetTitle("Event Number");
+    track_plotter->getGraph("Track #chi^{2} vs Event")->GetYaxis()->SetTitle("Track #chi^{2}");
+
+    track_plotter->buildGraph("Track #Omega vs Event")->GetXaxis()->SetTitle("Event Number");
+    track_plotter->getGraph("Track #Omega vs Event")->GetYaxis()->SetTitle("Track #Omega");
+
+    track_plotter->buildGraph("Track sin(#phi_{0}) vs Event")->GetXaxis()->SetTitle("Event Number");
+    track_plotter->getGraph("Track sin(#phi_{0}) vs Event")->GetYaxis()->SetTitle("Track sin(#phi_{0})");
+
+    track_plotter->buildGraph("Track cos(#theta) vs Event")->GetXaxis()->SetTitle("Event Number");
+    track_plotter->getGraph("Track cos(#theta) vs Event")->GetYaxis()->SetTitle("Track cos(#theta)");
+
+    track_plotter->buildGraph("Track d0 vs Event")->GetXaxis()->SetTitle("Event Number");
+    track_plotter->getGraph("Track d0 vs Event")->GetYaxis()->SetTitle("Track D0 (mm)");
+
+    track_plotter->buildGraph("Track z0 vs Event")->GetXaxis()->SetTitle("Event Number");
+    track_plotter->getGraph("Track z0 vs Event")->GetYaxis()->SetTitle("Track Z0 (mm)");
+
 
     electron_plotter->setType("float")->setLineColor(kOrange + 9);
     

@@ -98,6 +98,9 @@ class TrackAnalysis : public HpsAnalysis {
         Plotter* top_plotter;
         Plotter* bottom_plotter;
 
+        int single_track_event_counter;
+        int event_counter;
+
         // Name of the class
 		std::string class_name;
 
