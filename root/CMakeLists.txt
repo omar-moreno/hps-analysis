@@ -20,3 +20,15 @@ target_link_libraries(strategy_analysis
     ${ROOT_GPAD_LIB}
     ${ROOT_HIST_LIB}
 )
+
+add_executable(gbl_analysis gbl_analysis.cxx)
+target_link_libraries(gbl_analysis
+    ${ROO_FIT}
+    ${ROO_FIT_CORE}
+    ${ROOT_CORE_LIBRARY}
+    ${ROOT_RIO_LIBRARY}
+    ${ROOT_TREE_LIBRARY}
+    ${ROOT_PHYSICS_LIB}
+    ${ROOT_GPAD_LIB}
+    ${ROOT_HIST_LIB}
+)
