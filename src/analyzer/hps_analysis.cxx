@@ -36,11 +36,12 @@
 #include <TrackAnalysis.h>
 #include <PairsAnalysis.h>
 #include <TagProbeAnalysis.h>
-#include <SimpleTrackingEfficiencyAnalysis.h>
+#include <TrackClusterMatchingEfficiencyAnalysis.h>
 #include <SharedHitAnalysis.h>
 #include <TimingAnalysis.h>
 #include <MollerAnalysis.h>
 #include <MuonAnalysis.h>
+#include <GblTrackAnalysis.h>
 
 using namespace std; 
 
@@ -148,13 +149,14 @@ int main(int argc, char **argv) {
     list<HpsAnalysis*> analyses;
 
     //analyses.push_back(new TrackAnalysis());
+    analyses.push_back(new GblTrackAnalysis());
     //analyses.push_back(new TimingAnalysis());
     //analyses.push_back(new PairsAnalysis());
     //analyses.push_back(new TagProbeAnalysis());
-    //analyses.push_back(new SimpleTrackingEfficiencyAnalysis());
+    //analyses.push_back(new TrackClusterMatchingEfficiencyAnalysis());
     //analyses.push_back(new SharedHitAnalysis());
     //analyses.push_back(new MollerAnalysis());
-    analyses.push_back(new MuonAnalysis());
+    //analyses.push_back(new MuonAnalysis());
 
     // Initialize all analyses
     for (list<HpsAnalysis*>::iterator analysis = analyses.begin();

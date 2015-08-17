@@ -19,19 +19,19 @@
 #include <SvtTrack.h>
 #include <EcalCluster.h>
 
-class SimpleTrackingEfficiencyAnalysis : public HpsAnalysis {
+class TrackClusterMatchingEfficiencyAnalysis : public HpsAnalysis {
 
     public:
 
         /**
          * Constructor
          */
-        SimpleTrackingEfficiencyAnalysis();
+        TrackClusterMatchingEfficiencyAnalysis();
 
         /**
          * Destructor
          */
-        ~SimpleTrackingEfficiencyAnalysis();
+        ~TrackClusterMatchingEfficiencyAnalysis();
 
         /**
          *  Method used to initialize an HPS analysis.

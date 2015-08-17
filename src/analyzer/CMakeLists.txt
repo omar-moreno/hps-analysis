@@ -11,11 +11,12 @@ target_link_libraries(hps_analysis
     TrackAnalysis
     PairsAnalysis
     TagProbeAnalysis
-    SimpleTrackingEfficiencyAnalysis
+    TrackClusterMatchingEfficiencyAnalysis
     SharedHitAnalysis
     TimingAnalysis
     MollerAnalysis
     MuonAnalysis
+    GblTrackAnalysis
 )
 
 # Find the necessary LCIO libraries

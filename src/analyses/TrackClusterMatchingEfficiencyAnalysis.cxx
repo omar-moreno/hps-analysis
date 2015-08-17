@@ -1,28 +1,28 @@
 
-#include <SimpleTrackingEfficiencyAnalysis.h>
+#include <TrackClusterMatchingEfficiencyAnalysis.h>
 
-SimpleTrackingEfficiencyAnalysis::SimpleTrackingEfficiencyAnalysis() 
+TrackClusterMatchingEfficiencyAnalysis::TrackClusterMatchingEfficiencyAnalysis() 
     : track(NULL),
       cluster(NULL),
       plotter(new Plotter()),
       cluster_energy_low_threshold(.7 /* GeV */),
       cluster_energy_high_threshold(1.15 /* GeV */),
       cuts_enabled(true),
-      class_name("SimpleTrackingEfficiencyAnalysis"),
+      class_name("TrackClusterMatchingEfficiencyAnalysis"),
       total_events(0),
       total_single1_triggers(0),
       total_events_with_tracks(0) {
 
 }
 
-SimpleTrackingEfficiencyAnalysis::~SimpleTrackingEfficiencyAnalysis() {
+TrackClusterMatchingEfficiencyAnalysis::~TrackClusterMatchingEfficiencyAnalysis() {
 }
 
-void SimpleTrackingEfficiencyAnalysis::initialize() { 
+void TrackClusterMatchingEfficiencyAnalysis::initialize() { 
     this->bookHistograms();
 }
 
-void SimpleTrackingEfficiencyAnalysis::processEvent(HpsEvent* event) { 
+void TrackClusterMatchingEfficiencyAnalysis::processEvent(HpsEvent* event) { 
 
     // Increment the total events counter
     total_events++; 
@@ -303,13 +303,13 @@ void SimpleTrackingEfficiencyAnalysis::processEvent(HpsEvent* event) {
     }
 }
 
-void SimpleTrackingEfficiencyAnalysis::finalize() { 
+void TrackClusterMatchingEfficiencyAnalysis::finalize() { 
 
     std::cout << "//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%//" << std::endl;  
-    std::cout << "[ SimpleTrackingEfficiencyAnalysis ] Total number of events: " << total_events << std::endl;
-    std::cout << "[ SimpleTrackingEfficiencyAnalysis ] Total number of singles1 triggers: " 
+    std::cout << "[ TrackClusterMatchingEfficiencyAnalysis ] Total number of events: " << total_events << std::endl;
+    std::cout << "[ TrackClusterMatchingEfficiencyAnalysis ] Total number of singles1 triggers: " 
               << total_single1_triggers << std::endl;
-    std::cout << "[ SimpleTrackingEfficiencyAnalysis ] Total number of events with tracks: "
+    std::cout << "[ TrackClusterMatchingEfficiencyAnalysis ] Total number of events with tracks: "
               << total_events_with_tracks << std::endl;
     std::cout << "//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%//" << std::endl;  
 
@@ -412,7 +412,7 @@ void SimpleTrackingEfficiencyAnalysis::finalize() {
     plotter->saveToRootFile("simple_tracking_efficiency.root");
 }
 
-void SimpleTrackingEfficiencyAnalysis::bookHistograms() { 
+void TrackClusterMatchingEfficiencyAnalysis::bookHistograms() { 
 
     // Plots for all clusters //
     ////////////////////////////
@@ -628,31 +628,31 @@ void SimpleTrackingEfficiencyAnalysis::bookHistograms() {
 
 }
 
-std::string SimpleTrackingEfficiencyAnalysis::toString() { 
+std::string TrackClusterMatchingEfficiencyAnalysis::toString() { 
     std::string string_buffer = "Class Name: " + class_name; 
     return string_buffer;
 }
 
 
-bool SimpleTrackingEfficiencyAnalysis::passEnergyCut(EcalCluster* cluster) { 
+bool TrackClusterMatchingEfficiencyAnalysis::passEnergyCut(EcalCluster* cluster) { 
     if (cluster->getEnergy() < cluster_energy_low_threshold
             || cluster->getEnergy() > cluster_energy_high_threshold) return false;
 
     return true;
 }
 
-bool SimpleTrackingEfficiencyAnalysis::passClusterTimeCut(EcalCluster* cluster) {   
+bool TrackClusterMatchingEfficiencyAnalysis::passClusterTimeCut(EcalCluster* cluster) {   
     if (cluster->getClusterTime() < 41 || cluster->getClusterTime() > 50) return false;
 
     return true;   
 }
 
-bool SimpleTrackingEfficiencyAnalysis::passClusterSizeCut(EcalCluster* cluster) { 
+bool TrackClusterMatchingEfficiencyAnalysis::passClusterSizeCut(EcalCluster* cluster) { 
     if (cluster->getEcalHits()->GetEntriesFast() < 3) return false;
     return true;
 }
 
-bool SimpleTrackingEfficiencyAnalysis::isEdgeCrystal(EcalHit* hit) { 
+bool TrackClusterMatchingEfficiencyAnalysis::isEdgeCrystal(EcalHit* hit) { 
     
     int y_crystal_index = hit->getYCrystalIndex();
 
@@ -661,7 +661,7 @@ bool SimpleTrackingEfficiencyAnalysis::isEdgeCrystal(EcalHit* hit) {
 }
 
 
-bool SimpleTrackingEfficiencyAnalysis::isMatch(EcalCluster* cluster, SvtTrack* track) { 
+bool TrackClusterMatchingEfficiencyAnalysis::isMatch(EcalCluster* cluster, SvtTrack* track) { 
 
     // Get the cluster position
     std::vector<double> cluster_pos = cluster->getPosition();
