@@ -46,7 +46,7 @@ void TrackClusterMatchingEfficiencyAnalysis::processEvent(HpsEvent* event) {
         bool pass_time_cut = false;
         bool pass_cluster_size_cut = false;
         bool edge_crystal_cut = false;
-        bool pass_energy_cut = false;
+        bool pass_energy_cut = false; 
 
         // Fill the cluster information for all events
         double cluster_energy = cluster->getEnergy();
@@ -60,9 +60,6 @@ void TrackClusterMatchingEfficiencyAnalysis::processEvent(HpsEvent* event) {
         // Get the seed hit of the cluster
         EcalHit* seed_hit = cluster->getSeed();
 
-        plotter->get2DHistogram("cluster energy v cluster seed energy")->Fill(cluster_energy, 
-                seed_hit->getEnergy());
-
         // Make the same plots for the top and bottom Ecal volumes 
         if (seed_hit->getYCrystalIndex() > 0) { 
             plotter->get1DHistogram("cluster energy - top")->Fill(cluster_energy);
@@ -72,15 +69,17 @@ void TrackClusterMatchingEfficiencyAnalysis::processEvent(HpsEvent* event) {
             plotter->get1DHistogram("cluster time - bottom")->Fill(cluster_time);
         }  
 
+        plotter->get2DHistogram("cluster energy v cluster seed energy")->Fill(cluster_energy, 
+                seed_hit->getEnergy());
+
         plotter->get2DHistogram("cluster count")->Fill(
                 seed_hit->getXCrystalIndex(), seed_hit->getYCrystalIndex(), 1);
 
         plotter->get2DHistogram("cluster position")->Fill(
                 cluster->getPosition()[0], cluster->getPosition()[1]);
 
-        plotter->get2DHistogram("cluster energy v cluster y")->Fill(cluster_energy, cluster->getPosition()[1]);
-        plotter->get2DHistogram("cluster energy v crystal index - y")->Fill(cluster_energy, seed_hit->getYCrystalIndex());
-
+        /*plotter->get2DHistogram("cluster energy v cluster y")->Fill(cluster_energy, cluster->getPosition()[1]);
+        plotter->get2DHistogram("cluster energy v crystal index - y")->Fill(cluster_energy, seed_hit->getYCrystalIndex());*/
 
         if (!isEdgeCrystal(seed_hit)) { 
             plotter->get1DHistogram("cluster energy - no edge")->Fill(cluster_energy);
@@ -88,14 +87,29 @@ void TrackClusterMatchingEfficiencyAnalysis::processEvent(HpsEvent* event) {
         }
  
         // Check that the cluster passes the time requirement
-        if (passClusterTimeCut(cluster)) {
-            pass_time_cut = true;
-        }
+        if (!passClusterTimeCut(cluster)) return;
+
+        plotter->get1DHistogram("cluster time - cuts: time")->Fill(cluster_time);
+
+        plotter->get2DHistogram("cluster energy v cluster time - cuts: time")->Fill(cluster_energy, cluster_time);
+        plotter->get2DHistogram("cluster energy v cluster y - cuts: time")->Fill(cluster_energy, 
+                cluster->getPosition()[1]);
+        plotter->get2DHistogram("cluster energy v crystal index - y - cuts: time")->Fill(cluster_energy,
+                seed_hit->getYCrystalIndex());
+        plotter->get2DHistogram("cluster energy v cluster size - cuts: time")->Fill(cluster_energy, 
+                    cluster->getEcalHits()->GetEntriesFast());
+
+        plotter->get2DHistogram("cluster energy v cluster seed energy - cuts: time")->Fill(cluster_energy, 
+                seed_hit->getEnergy());
 
         // Check that the cluster passes the size requirement
-        if (passClusterSizeCut(cluster)) {
-            pass_cluster_size_cut = true; 
-        }
+        if (!passClusterSizeCut(cluster)) return; 
+
+        plotter->get2DHistogram("cluster energy v cluster time - cuts: time, size")->Fill(cluster_energy, cluster_time);
+        plotter->get2DHistogram("cluster energy v cluster y - cuts: time, size")->Fill(cluster_energy, cluster->getPosition()[1]);
+        plotter->get2DHistogram("cluster energy v crystal index - y - cuts: time, size")->Fill(cluster_energy, seed_hit->getYCrystalIndex());
+        plotter->get2DHistogram("cluster energy v cluster size - cuts: time, size")->Fill(cluster_energy, 
+                cluster->getEcalHits()->GetEntriesFast());
 
         // Check that the cluster seed is not at the edge of the Ecal
         if (!isEdgeCrystal(seed_hit)) { 
@@ -105,30 +119,6 @@ void TrackClusterMatchingEfficiencyAnalysis::processEvent(HpsEvent* event) {
         // Check that the cluster passes the energy requirement
         if (passEnergyCut(cluster)) {
            pass_energy_cut = true; 
-        }
-
-        if (pass_time_cut) { 
-
-
-            plotter->get2DHistogram("cluster energy v cluster seed energy - cuts: time")->Fill(cluster_energy, 
-                seed_hit->getEnergy());
-            if ((cluster->getEnergy() - seed_hit->getEnergy()) < .3) {
-            
-            }
-
-            plotter->get2DHistogram("cluster energy v cluster time - time")->Fill(cluster_energy, cluster_time);
-            plotter->get2DHistogram("cluster energy v cluster y - time")->Fill(cluster_energy, cluster->getPosition()[1]);
-            plotter->get2DHistogram("cluster energy v crystal index - y - time")->Fill(cluster_energy, seed_hit->getYCrystalIndex());
-            plotter->get2DHistogram("cluster energy v cluster size - time")->Fill(cluster_energy, 
-                    cluster->getEcalHits()->GetEntriesFast());
-        } 
-        
-        if (pass_time_cut && pass_cluster_size_cut) { 
-            plotter->get2DHistogram("cluster energy v cluster time - time, size")->Fill(cluster_energy, cluster_time);
-            plotter->get2DHistogram("cluster energy v cluster y - time, size")->Fill(cluster_energy, cluster->getPosition()[1]);
-            plotter->get2DHistogram("cluster energy v crystal index - y - time, size")->Fill(cluster_energy, seed_hit->getYCrystalIndex());
-            plotter->get2DHistogram("cluster energy v cluster size - time, size")->Fill(cluster_energy, 
-                    cluster->getEcalHits()->GetEntriesFast());
         }
 
         if (pass_time_cut && pass_cluster_size_cut && edge_crystal_cut) { 
@@ -470,6 +460,8 @@ void TrackClusterMatchingEfficiencyAnalysis::bookHistograms() {
     plotter->build1DHistogram("cluster time - bottom", 160, 0, 80);
 
     // Time cut
+    plotter->build1DHistogram("cluster time - cuts: time", 160, 0, 80)->GetXaxis()->SetTitle("Cluster time (ns)");
+    
     plotter->build2DHistogram("cluster energy v cluster seed energy - cuts: time", 50, 0, 1.5, 50, 0, 1.5);
     plotter->get2DHistogram("cluster energy v cluster seed energy - cuts: time")->GetXaxis()->SetTitle("Cluster energy (GeV)");
     plotter->get2DHistogram("cluster energy v cluster seed energy - cuts: time")->GetYaxis()->SetTitle("Cluster seed energy (GeV)");
@@ -479,26 +471,26 @@ void TrackClusterMatchingEfficiencyAnalysis::bookHistograms() {
     plotter->get2DHistogram("cluster energy v cluster seed energy - cuts: time, seed")->GetYaxis()->SetTitle("Cluster seed energy (GeV)");
 
 
-    plotter->build2DHistogram("cluster energy v cluster time - time", 50, 0, 1.5, 160, 0, 80);
+    plotter->build2DHistogram("cluster energy v cluster time - cuts: time", 50, 0, 1.5, 160, 0, 80);
 
-    plotter->build2DHistogram("cluster energy v cluster y - time", 50, 0, 1.5, 50, -100, 100);
+    plotter->build2DHistogram("cluster energy v cluster y - cuts: time", 50, 0, 1.5, 50, -100, 100);
 
-    plotter->build2DHistogram("cluster energy v crystal index - y - time", 50, 0, 1.5, 12, -6, 6);
+    plotter->build2DHistogram("cluster energy v crystal index - y - cuts: time", 50, 0, 1.5, 12, -6, 6);
 
-    plotter->build2DHistogram("cluster energy v cluster size - time", 50, 0, 1.5, 10, 0, 10);
-    plotter->get2DHistogram("cluster energy v cluster size - time")->GetXaxis()->SetTitle("Cluster energy (GeV)");
-    plotter->get2DHistogram("cluster energy v cluster size - time")->GetYaxis()->SetTitle("Cluster size");
+    plotter->build2DHistogram("cluster energy v cluster size - cuts: time", 50, 0, 1.5, 10, 0, 10);
+    plotter->get2DHistogram("cluster energy v cluster size - cuts: time")->GetXaxis()->SetTitle("Cluster energy (GeV)");
+    plotter->get2DHistogram("cluster energy v cluster size - cuts: time")->GetYaxis()->SetTitle("Cluster size");
 
     // Time + cluster size cut
-    plotter->build2DHistogram("cluster energy v cluster time - time, size", 50, 0, 1.5, 160, 0, 80);
+    plotter->build2DHistogram("cluster energy v cluster time - cuts: time, size", 50, 0, 1.5, 160, 0, 80);
 
-    plotter->build2DHistogram("cluster energy v cluster y - time, size", 50, 0, 1.5, 50, -100, 100);
+    plotter->build2DHistogram("cluster energy v cluster y - cuts: time, size", 50, 0, 1.5, 50, -100, 100);
 
-    plotter->build2DHistogram("cluster energy v crystal index - y - time, size", 50, 0, 1.5, 12, -6, 6);
+    plotter->build2DHistogram("cluster energy v crystal index - y - cuts: time, size", 50, 0, 1.5, 12, -6, 6);
 
-    plotter->build2DHistogram("cluster energy v cluster size - time, size", 50, 0, 1.5, 10, 0, 10);
-    plotter->get2DHistogram("cluster energy v cluster size - time, size")->GetXaxis()->SetTitle("Cluster energy (GeV)");
-    plotter->get2DHistogram("cluster energy v cluster size - time, size")->GetYaxis()->SetTitle("Cluster size");
+    plotter->build2DHistogram("cluster energy v cluster size - cuts: time, size", 50, 0, 1.5, 10, 0, 10);
+    plotter->get2DHistogram("cluster energy v cluster size - cuts: time, size")->GetXaxis()->SetTitle("Cluster energy (GeV)");
+    plotter->get2DHistogram("cluster energy v cluster size - cuts: time, size")->GetYaxis()->SetTitle("Cluster size");
 
     // Time + cluster size + no edge
     plotter->build2DHistogram("cluster energy v cluster time - time, size, no edge", 50, 0, 1.5, 160, 0, 80);
@@ -711,7 +703,7 @@ bool TrackClusterMatchingEfficiencyAnalysis::passEnergyCut(EcalCluster* cluster)
 }
 
 bool TrackClusterMatchingEfficiencyAnalysis::passClusterTimeCut(EcalCluster* cluster) {   
-    if (cluster->getClusterTime() < 41.25 || cluster->getClusterTime() > 49.75) return false;
+    if (cluster->getClusterTime() < 41.5 || cluster->getClusterTime() > 49.67) return false;
 
     return true;   
 }
@@ -780,8 +772,8 @@ bool TrackClusterMatchingEfficiencyAnalysis::isMatch(EcalCluster* cluster, SvtTr
     
     // Check that dx and dy between the extrapolated track and cluster
     // positions is reasonable
-    if ((track->isTopTrack() && (delta_x > 14 || delta_x < -18)) ||
-        (track->isBottomTrack() && (delta_x > 9 || delta_x < -21))) return false;
+    if ((track->isTopTrack() && (delta_x > 12. || delta_x < -7.61)) ||
+        (track->isBottomTrack() && (delta_x > 6.0 || delta_x < -13.75))) return false;
 
     if ((track->isTopTrack() && (delta_y > 14 || delta_y < -14)) ||
         (track->isBottomTrack() && (delta_y > 14 || delta_y < -14))) return false;
