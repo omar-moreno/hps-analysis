@@ -5,6 +5,7 @@ TrackClusterMatchingEfficiencyAnalysis::TrackClusterMatchingEfficiencyAnalysis()
     : track(NULL),
       cluster(NULL),
       plotter(new Plotter()),
+      matcher(new TrackClusterMatcher()),
       cluster_energy_low_threshold(.7 /* GeV */),
       cluster_energy_high_threshold(1.15 /* GeV */),
       cuts_enabled(true),
@@ -16,10 +17,14 @@ TrackClusterMatchingEfficiencyAnalysis::TrackClusterMatchingEfficiencyAnalysis()
 }
 
 TrackClusterMatchingEfficiencyAnalysis::~TrackClusterMatchingEfficiencyAnalysis() {
+    delete plotter;
+    delete matcher;
 }
 
 void TrackClusterMatchingEfficiencyAnalysis::initialize() { 
     this->bookHistograms();
+    
+    matcher->enablePlots(true);
 }
 
 void TrackClusterMatchingEfficiencyAnalysis::processEvent(HpsEvent* event) { 
@@ -34,40 +39,35 @@ void TrackClusterMatchingEfficiencyAnalysis::processEvent(HpsEvent* event) {
     total_single1_triggers++;
 
     if (event->getNumberOfTracks() != 0) total_events_with_tracks++;
+    
+    // Find all track-cluster matches in the event
+    matcher->findAllMatches(event);
 
-    // Loop over all clusters in an event and try to match a track to them
     matched_tracks.clear();
+    // Loop over all clusters and apply cuts to try and isolate FEE's using
+    // just Ecal information 
     for (int cluster_n = 0; cluster_n < event->getNumberOfEcalClusters(); ++cluster_n) {
   
         // Get the cluster from the event 
         cluster = event->getEcalCluster(cluster_n);
-    
-        // Reset the cut flags
-        bool pass_time_cut = false;
-        bool pass_cluster_size_cut = false;
-        bool edge_crystal_cut = false;
-        bool pass_energy_cut = false; 
+  
+        // Get the energy associated with this cluster 
+        double cluster_energy = cluster->getEnergy();
+
+        //  Get the time associated with the cluster
+        double cluster_time = cluster->getClusterTime();
 
         // Fill the cluster information for all events
-        double cluster_energy = cluster->getEnergy();
-        double cluster_time = cluster->getClusterTime();
         plotter->get1DHistogram("cluster energy")->Fill(cluster_energy);
         plotter->get1DHistogram("cluster time")->Fill(cluster_time);
         plotter->get2DHistogram("cluster energy v cluster time")->Fill(cluster_energy, cluster_time);
         plotter->get2DHistogram("cluster energy v cluster size")->Fill(cluster_energy, 
                 cluster->getEcalHits()->GetEntriesFast());
+        plotter->get2DHistogram("cluster position")->Fill(
+                cluster->getPosition()[0], cluster->getPosition()[1]);
 
         // Get the seed hit of the cluster
         EcalHit* seed_hit = cluster->getSeed();
-
-        // Make the same plots for the top and bottom Ecal volumes 
-        if (seed_hit->getYCrystalIndex() > 0) { 
-            plotter->get1DHistogram("cluster energy - top")->Fill(cluster_energy);
-            plotter->get1DHistogram("cluster time - top")->Fill(cluster_time);
-        } else { 
-            plotter->get1DHistogram("cluster energy - bottom")->Fill(cluster_energy);
-            plotter->get1DHistogram("cluster time - bottom")->Fill(cluster_time);
-        }  
 
         plotter->get2DHistogram("cluster energy v cluster seed energy")->Fill(cluster_energy, 
                 seed_hit->getEnergy());
@@ -75,8 +75,37 @@ void TrackClusterMatchingEfficiencyAnalysis::processEvent(HpsEvent* event) {
         plotter->get2DHistogram("cluster count")->Fill(
                 seed_hit->getXCrystalIndex(), seed_hit->getYCrystalIndex(), 1);
 
-        plotter->get2DHistogram("cluster position")->Fill(
-                cluster->getPosition()[0], cluster->getPosition()[1]);
+        // Make the same plots for the top and bottom Ecal volumes. Use the
+        // seed crystal index to distinguish between cluster that are in the top
+        // or bottom Ecal volume 
+        if (seed_hit->getYCrystalIndex() > 0) { 
+            plotter->get1DHistogram("cluster energy - top")->Fill(cluster_energy);
+            plotter->get1DHistogram("cluster time - top")->Fill(cluster_time);
+        } else { 
+            plotter->get1DHistogram("cluster energy - bottom")->Fill(cluster_energy);
+            plotter->get1DHistogram("cluster time - bottom")->Fill(cluster_time);
+        }  
+    
+        // Before applying any cuts, check if the cluster is matched to a track.  This will
+        // allow calculation of the track-cluster matching efficiencies as a function
+        // of energy and time.
+        if (matcher->getMatchingTrack(cluster) != NULL) { 
+        
+            plotter->get2DHistogram("cluster count - matched")->Fill(
+                    seed_hit->getXCrystalIndex(), 
+                    seed_hit->getYCrystalIndex(), 1);
+       
+            plotter->get1DHistogram("cluster energy - matched")->Fill(cluster->getEnergy(), 1);
+            plotter->get1DHistogram("cluster time - matched")->Fill(cluster->getClusterTime(), 1);
+
+            if (seed_hit->getYCrystalIndex() > 0) { 
+                plotter->get1DHistogram("cluster energy - matched - top")->Fill(cluster->getEnergy(), 1);
+                plotter->get1DHistogram("cluster time - matched - top")->Fill(cluster->getClusterTime(), 1);
+            } else { 
+                plotter->get1DHistogram("cluster energy - matched - bottom")->Fill(cluster->getEnergy(), 1);
+                plotter->get1DHistogram("cluster time - matched - bottom")->Fill(cluster->getClusterTime(), 1);
+            }  
+        }
 
         /*plotter->get2DHistogram("cluster energy v cluster y")->Fill(cluster_energy, cluster->getPosition()[1]);
         plotter->get2DHistogram("cluster energy v crystal index - y")->Fill(cluster_energy, seed_hit->getYCrystalIndex());*/
@@ -90,7 +119,6 @@ void TrackClusterMatchingEfficiencyAnalysis::processEvent(HpsEvent* event) {
         if (!passClusterTimeCut(cluster)) return;
 
         plotter->get1DHistogram("cluster time - cuts: time")->Fill(cluster_time);
-
         plotter->get2DHistogram("cluster energy v cluster time - cuts: time")->Fill(cluster_energy, cluster_time);
         plotter->get2DHistogram("cluster energy v cluster y - cuts: time")->Fill(cluster_energy, 
                 cluster->getPosition()[1]);
@@ -98,7 +126,6 @@ void TrackClusterMatchingEfficiencyAnalysis::processEvent(HpsEvent* event) {
                 seed_hit->getYCrystalIndex());
         plotter->get2DHistogram("cluster energy v cluster size - cuts: time")->Fill(cluster_energy, 
                     cluster->getEcalHits()->GetEntriesFast());
-
         plotter->get2DHistogram("cluster energy v cluster seed energy - cuts: time")->Fill(cluster_energy, 
                 seed_hit->getEnergy());
 
@@ -110,18 +137,68 @@ void TrackClusterMatchingEfficiencyAnalysis::processEvent(HpsEvent* event) {
         plotter->get2DHistogram("cluster energy v crystal index - y - cuts: time, size")->Fill(cluster_energy, seed_hit->getYCrystalIndex());
         plotter->get2DHistogram("cluster energy v cluster size - cuts: time, size")->Fill(cluster_energy, 
                 cluster->getEcalHits()->GetEntriesFast());
-
-        // Check that the cluster seed is not at the edge of the Ecal
-        if (!isEdgeCrystal(seed_hit)) { 
-            edge_crystal_cut = true; 
-        } 
+        plotter->get2DHistogram("cluster energy v cluster seed energy - cuts: time, size")->Fill(cluster_energy, 
+                seed_hit->getEnergy());
 
         // Check that the cluster passes the energy requirement
-        if (passEnergyCut(cluster)) {
-           pass_energy_cut = true; 
+        if (!passEnergyCut(cluster)) return;
+
+            plotter->get2DHistogram("cluster energy v cluster time - cuts: fee")->Fill(cluster_energy, cluster_time);
+            plotter->get2DHistogram("cluster energy v cluster size - cuts: fee")->Fill(cluster_energy, 
+                    cluster->getEcalHits()->GetEntriesFast());
+            plotter->get2DHistogram("cluster count - cuts: fee")->Fill(
+                    seed_hit->getXCrystalIndex(), seed_hit->getYCrystalIndex(), 1);
+            plotter->get2DHistogram("cluster energy v cluster seed energy - cuts: fee")->Fill(cluster_energy, 
+                    seed_hit->getEnergy());
+
+            if (seed_hit->getYCrystalIndex() > 0) { 
+                plotter->get1DHistogram("cluster energy - top - cuts: fee")->Fill(cluster_energy);
+            } else { 
+                plotter->get1DHistogram("cluster energy - bottom - cuts: fee")->Fill(cluster_energy);
+            } 
+
+        // Check if the cluster has a matching track
+        if (matcher->getMatchingTrack(cluster) != NULL) { 
+            
+            track = matcher->getMatchingTrack(cluster); 
+
+            // Calculate the momentum magnitude 
+            std::vector<double> p = track->getMomentum();
+            double p_mag = sqrt(p[0]*p[0] + p[1]*p[1] + p[2]*p[2]);
+            double pt = sqrt(p[0]*p[0] + p[1]*p[1]);
+
+            plotter->get2DHistogram("cluster count - matched - cuts: fee")->Fill(
+                    seed_hit->getXCrystalIndex(), 
+                    seed_hit->getYCrystalIndex(), 1);
+            /*plotter->get1DHistogram("E/p - matched - cuts: fee")->Fill(cluster_energy/p_mag);*/
+
+            if (seed_hit->getYCrystalIndex() > 0) { 
+                plotter->get1DHistogram("cluster energy - matched - top - cuts: fee")->Fill(cluster_energy);
+            } else { 
+                plotter->get1DHistogram("cluster energy - matched - bottom - cuts: fee")->Fill(cluster_energy);
+            } 
+        
+            if (track->isTopTrack()) { 
+                plotter->get1DHistogram("p - matched - top - cuts: fee")->Fill(p_mag);
+                plotter->get1DHistogram("pt - matched - top - cuts: fee")->Fill(pt);
+                plotter->get1DHistogram("px - matched - top - cuts: fee")->Fill(p[0]);
+                plotter->get1DHistogram("py - matched - top - cuts: fee")->Fill(p[1]);
+                plotter->get1DHistogram("pz - matched - top - cuts: fee")->Fill(p[2]);
+            } else if (track->isBottomTrack()) { 
+                plotter->get1DHistogram("p - matched - bottom - cuts: fee")->Fill(p_mag);
+                plotter->get1DHistogram("pt - matched - bottom - cuts: fee")->Fill(pt);
+                plotter->get1DHistogram("px - matched - bottom - cuts: fee")->Fill(p[0]);
+                plotter->get1DHistogram("py - matched - bottom - cuts: fee")->Fill(p[1]);
+                plotter->get1DHistogram("pz - matched - bottom - cuts: fee")->Fill(p[2]);
+            }
+        
+        } else { 
+            
+            plotter->get2DHistogram("cluster count - no match")->Fill(
+                    seed_hit->getXCrystalIndex(), seed_hit->getYCrystalIndex(), 1);
         }
 
-        if (pass_time_cut && pass_cluster_size_cut && edge_crystal_cut) { 
+        /*if (pass_time_cut && pass_cluster_size_cut && edge_crystal_cut) { 
             plotter->get2DHistogram("cluster energy v cluster time - time, size, no edge")->Fill(cluster_energy, cluster_time);
             plotter->get2DHistogram("cluster energy v cluster y - time, size, no edge")->Fill(cluster_energy, cluster->getPosition()[1]);
             plotter->get2DHistogram("cluster energy v crystal index - y - time, size, no edge")->Fill(
@@ -129,38 +206,26 @@ void TrackClusterMatchingEfficiencyAnalysis::processEvent(HpsEvent* event) {
             plotter->get2DHistogram("cluster energy v cluster size - time, size, no edge")->Fill(cluster_energy, 
                     cluster->getEcalHits()->GetEntriesFast());
         
-        } 
+        } */
         
-        if (pass_time_cut && pass_cluster_size_cut && pass_energy_cut) { 
+        /*if (pass_time_cut && pass_cluster_size_cut && pass_energy_cut) { 
         
-            plotter->get2DHistogram("cluster energy v cluster seed energy - cuts: time, seed")->Fill(cluster_energy, 
-                seed_hit->getEnergy());
         
-            plotter->get2DHistogram("cluster energy v cluster time - fee")->Fill(cluster_energy, cluster_time);
-            plotter->get2DHistogram("cluster energy v cluster size - fee")->Fill(cluster_energy, 
-                    cluster->getEcalHits()->GetEntriesFast());
-            plotter->get2DHistogram("cluster count - fee")->Fill(
-                    seed_hit->getXCrystalIndex(), seed_hit->getYCrystalIndex(), 1);
 
-            if (seed_hit->getYCrystalIndex() > 0) { 
-                plotter->get1DHistogram("cluster energy - top - fee")->Fill(cluster_energy);
-
-            } else { 
-                plotter->get1DHistogram("cluster energy - bottom - fee")->Fill(cluster_energy);
-            } 
 
             if (edge_crystal_cut) { 
                 int crystal_index = (int) abs(seed_hit->getYCrystalIndex());
                 if (seed_hit->getYCrystalIndex() > 0) { 
-                    plotter->get1DHistogram("cluster energy - top - no edge - fee")->Fill(cluster_energy);
-                    plotter->get1DHistogram("cluster count - top - fee - crystal index = " + std::to_string(crystal_index))->Fill(seed_hit->getXCrystalIndex(), 1);
+                    plotter->get1DHistogram("cluster energy - top - no edge - cuts: fee")->Fill(cluster_energy);
+                    plotter->get1DHistogram("cluster count - top - cuts: fee - crystal index = " + std::to_string(crystal_index))->Fill(seed_hit->getXCrystalIndex(), 1);
                 } else { 
-                    plotter->get1DHistogram("cluster energy - bottom - no edge - fee")->Fill(cluster_energy);
-                    plotter->get1DHistogram("cluster count - bottom - fee - crystal index = " + std::to_string(crystal_index))->Fill(seed_hit->getXCrystalIndex(), 1);
+                    plotter->get1DHistogram("cluster energy - bottom - no edge - cuts: fee")->Fill(cluster_energy);
+                    plotter->get1DHistogram("cluster count - bottom - cuts: fee - crystal index = " + std::to_string(crystal_index))->Fill(seed_hit->getXCrystalIndex(), 1);
                 }
             } 
-        }
+        }*/
 
+        /*
         for (int track_n = 0; track_n < event->getNumberOfTracks(); ++track_n) { 
 
             // Get a track from the event
@@ -179,7 +244,7 @@ void TrackClusterMatchingEfficiencyAnalysis::processEvent(HpsEvent* event) {
                 plotter->get1DHistogram("curvature - bottom")->Fill(track->getOmega());
                 plotter->get1DHistogram("tan_lambda - bottom")->Fill(track->getTanLambda());
             }
-        }
+        }*/
 
         bool match = false;
         for (int track_n = 0; track_n < event->getNumberOfTracks(); ++track_n) { 
@@ -187,20 +252,14 @@ void TrackClusterMatchingEfficiencyAnalysis::processEvent(HpsEvent* event) {
             // Get a track from the event
             track = event->getTrack(track_n);
 
+            /*
             plotter->get1DHistogram("track time")->Fill(track->getTrackTime());
             plotter->get1DHistogram("cluster time - track time")->Fill(
                     cluster->getClusterTime() - track->getTrackTime());
+            */
 
-            // Calculate the momentum magnitude 
-            std::vector<double> p = track->getMomentum();
-            double p_mag = sqrt(p[0]*p[0] + p[1]*p[1] + p[2]*p[2]);
-
-            plotter->get1DHistogram("E/p")->Fill(cluster_energy/p_mag);
+            /*plotter->get1DHistogram("E/p")->Fill(cluster_energy/p_mag);*/
         
-            if (!isEdgeCrystal(seed_hit)) { 
-                plotter->get1DHistogram("E/p - no edge")->Fill(cluster_energy/p_mag);
-            }
-
             // Check if the track has already been matched to a cluster.  If it has, 
             // skip the track.  Otherwise, try and match the track to the cluster.
             if (std::find(matched_tracks.begin(), matched_tracks.end(), track) == matched_tracks.end() 
@@ -208,23 +267,9 @@ void TrackClusterMatchingEfficiencyAnalysis::processEvent(HpsEvent* event) {
 
                 matched_tracks.push_back(track);
 
-                plotter->get2DHistogram("cluster count - matched")->Fill(
-                        seed_hit->getXCrystalIndex(), 
-                        seed_hit->getYCrystalIndex(), 1);
-                
-                plotter->get1DHistogram("cluster energy - matched")->Fill(cluster->getEnergy(), 1);
-                plotter->get1DHistogram("cluster time - matched")->Fill(cluster->getClusterTime(), 1);
-
-                plotter->get1DHistogram("E/p - matched - fee")->Fill(cluster_energy/p_mag);
-               
-                if (seed_hit->getYCrystalIndex() > 0) { 
-                    plotter->get1DHistogram("cluster energy - matched - top")->Fill(cluster->getEnergy(), 1);
-                    plotter->get1DHistogram("cluster time - matched - top")->Fill(cluster->getClusterTime(), 1);
-                } else { 
-                    plotter->get1DHistogram("cluster energy - matched - bottom")->Fill(cluster->getEnergy(), 1);
-                    plotter->get1DHistogram("cluster time - matched - bottom")->Fill(cluster->getClusterTime(), 1);
-                }  
-
+                /*plotter->get1DHistogram("E/p - matched - cuts: fee")->Fill(cluster_energy/p_mag);*/
+              
+                /* 
                 if (track->isTopTrack()) { 
                     plotter->get1DHistogram("doca - top - pass cuts")->Fill(track->getD0());
                     plotter->get1DHistogram("z0 - top - pass cuts")->Fill(track->getZ0());
@@ -251,31 +296,21 @@ void TrackClusterMatchingEfficiencyAnalysis::processEvent(HpsEvent* event) {
                     plotter->get1DHistogram("sin(phi0) - positron - match")->Fill(sin(track->getPhi0()));
                     plotter->get1DHistogram("curvature - positron - match")->Fill(track->getOmega());
                     plotter->get1DHistogram("tan_lambda - positron - match")->Fill(track->getTanLambda());
-                }
+                }*/
 
-                if (pass_time_cut && pass_cluster_size_cut && pass_energy_cut) { 
-                    plotter->get2DHistogram("cluster count - matched - fee")->Fill(
-                            seed_hit->getXCrystalIndex(), 
-                            seed_hit->getYCrystalIndex(), 1);
-                    plotter->get1DHistogram("E/p - matched - fee")->Fill(cluster_energy/p_mag);
-               
-                    if (seed_hit->getYCrystalIndex() > 0) { 
-                        plotter->get1DHistogram("cluster energy - matched - top - fee")->Fill(cluster_energy);
-                    } else { 
-                        plotter->get1DHistogram("cluster energy - matched - bottom - fee")->Fill(cluster_energy);
-                    } 
+                /*if (pass_time_cut && pass_cluster_size_cut && pass_energy_cut) { 
 
                     if (edge_crystal_cut) { 
                         int crystal_index = (int) abs(seed_hit->getYCrystalIndex());
                         if (seed_hit->getYCrystalIndex() > 0) { 
-                            plotter->get1DHistogram("cluster energy - matched - top - no edge - fee")->Fill(cluster_energy);
-                            plotter->get1DHistogram("cluster count - matched - top - fee - crystal index = " + std::to_string(crystal_index))->Fill(seed_hit->getXCrystalIndex(), 1);
+                            plotter->get1DHistogram("cluster energy - matched - top - no edge - cuts: fee")->Fill(cluster_energy);
+                            plotter->get1DHistogram("cluster count - matched - top - cuts: fee - crystal index = " + std::to_string(crystal_index))->Fill(seed_hit->getXCrystalIndex(), 1);
                         } else { 
-                            plotter->get1DHistogram("cluster energy - matched - bottom - no edge - fee")->Fill(cluster_energy);
-                            plotter->get1DHistogram("cluster count - matched - bottom - fee - crystal index = " + std::to_string(crystal_index))->Fill(seed_hit->getXCrystalIndex(), 1);
+                            plotter->get1DHistogram("cluster energy - matched - bottom - no edge - cuts: fee")->Fill(cluster_energy);
+                            plotter->get1DHistogram("cluster count - matched - bottom - cuts: fee - crystal index = " + std::to_string(crystal_index))->Fill(seed_hit->getXCrystalIndex(), 1);
                         } 
                     }
-                }
+                } */
 
                 match = true;
                 break; 
@@ -301,10 +336,6 @@ void TrackClusterMatchingEfficiencyAnalysis::processEvent(HpsEvent* event) {
                 }
             } 
         }
-        if (pass_time_cut && pass_cluster_size_cut && pass_energy_cut && !match) { 
-            plotter->get2DHistogram("cluster count - no match")->Fill(
-                    seed_hit->getXCrystalIndex(), seed_hit->getYCrystalIndex(), 1);
-        }
     }
 }
 
@@ -320,8 +351,8 @@ void TrackClusterMatchingEfficiencyAnalysis::finalize() {
 
     plotter->get2DHistogram("cluster count - matched")->Divide(
             plotter->get2DHistogram("cluster count"));
-    plotter->get2DHistogram("cluster count - matched - fee")->Divide(
-            plotter->get2DHistogram("cluster count - fee"));
+    plotter->get2DHistogram("cluster count - matched - cuts: fee")->Divide(
+            plotter->get2DHistogram("cluster count - cuts: fee"));
 
     // Cluster energy 
     plotter->setGraphType("asymm");
@@ -337,31 +368,31 @@ void TrackClusterMatchingEfficiencyAnalysis::finalize() {
         plotter->get1DHistogram("cluster energy - matched - bottom"),
         plotter->get1DHistogram("cluster energy - bottom"));
 
-    ((TGraphAsymmErrors*) plotter->buildGraph("cluster-track match efficiency - top - fee"))->Divide(
-        plotter->get1DHistogram("cluster energy - matched - top - fee"),
-        plotter->get1DHistogram("cluster energy - top - fee"));
+    ((TGraphAsymmErrors*) plotter->buildGraph("cluster-track match efficiency - top - cuts: fee"))->Divide(
+        plotter->get1DHistogram("cluster energy - matched - top - cuts: fee"),
+        plotter->get1DHistogram("cluster energy - top - cuts: fee"));
 
-    ((TGraphAsymmErrors*) plotter->buildGraph("cluster-track match efficiency - bottom - fee"))->Divide(
-        plotter->get1DHistogram("cluster energy - matched - bottom - fee"),
-        plotter->get1DHistogram("cluster energy - bottom - fee"));
+    ((TGraphAsymmErrors*) plotter->buildGraph("cluster-track match efficiency - bottom - cuts: fee"))->Divide(
+        plotter->get1DHistogram("cluster energy - matched - bottom - cuts: fee"),
+        plotter->get1DHistogram("cluster energy - bottom - cuts: fee"));
 
-    ((TGraphAsymmErrors*) plotter->buildGraph("cluster-track match efficiency - top - no edge - fee"))->Divide(
-        plotter->get1DHistogram("cluster energy - matched - top - no edge - fee"),
-        plotter->get1DHistogram("cluster energy - top - no edge - fee"));
+    ((TGraphAsymmErrors*) plotter->buildGraph("cluster-track match efficiency - top - no edge - cuts: fee"))->Divide(
+        plotter->get1DHistogram("cluster energy - matched - top - no edge - cuts: fee"),
+        plotter->get1DHistogram("cluster energy - top - no edge - cuts: fee"));
 
-    ((TGraphAsymmErrors*) plotter->buildGraph("cluster-track match efficiency - bottom - no edge - fee"))->Divide(
-        plotter->get1DHistogram("cluster energy - matched - bottom - no edge - fee"),
-        plotter->get1DHistogram("cluster energy - bottom - no edge - fee"));
+    ((TGraphAsymmErrors*) plotter->buildGraph("cluster-track match efficiency - bottom - no edge - cuts: fee"))->Divide(
+        plotter->get1DHistogram("cluster energy - matched - bottom - no edge - cuts: fee"),
+        plotter->get1DHistogram("cluster energy - bottom - no edge - cuts: fee"));
 
     for (int crystal_index = 2; crystal_index <= 6; ++crystal_index) { 
         
-        ((TGraphAsymmErrors*) plotter->buildGraph("cluster-track match efficiency - bottom - fee - crystal index = " + std::to_string(crystal_index)))->Divide(
-            plotter->get1DHistogram("cluster count - matched - bottom - fee - crystal index = " + std::to_string(crystal_index)),
-            plotter->get1DHistogram("cluster count - bottom - fee - crystal index = " + std::to_string(crystal_index)));
+        ((TGraphAsymmErrors*) plotter->buildGraph("cluster-track match efficiency - bottom - cuts: fee - crystal index = " + std::to_string(crystal_index)))->Divide(
+            plotter->get1DHistogram("cluster count - matched - bottom - cuts: fee - crystal index = " + std::to_string(crystal_index)),
+            plotter->get1DHistogram("cluster count - bottom - cuts: fee - crystal index = " + std::to_string(crystal_index)));
         
-        ((TGraphAsymmErrors*) plotter->buildGraph("cluster-track match efficiency - top - fee - crystal index = " + std::to_string(crystal_index)))->Divide(
-            plotter->get1DHistogram("cluster count - matched - top - fee - crystal index = " + std::to_string(crystal_index)),
-            plotter->get1DHistogram("cluster count - top - fee - crystal index = " + std::to_string(crystal_index)));
+        ((TGraphAsymmErrors*) plotter->buildGraph("cluster-track match efficiency - top - cuts: fee - crystal index = " + std::to_string(crystal_index)))->Divide(
+            plotter->get1DHistogram("cluster count - matched - top - cuts: fee - crystal index = " + std::to_string(crystal_index)),
+            plotter->get1DHistogram("cluster count - top - cuts: fee - crystal index = " + std::to_string(crystal_index)));
     }
 
 
@@ -415,6 +446,8 @@ void TrackClusterMatchingEfficiencyAnalysis::finalize() {
 
     plotter->saveToPdf("simple_tracking_efficiency.pdf");
     plotter->saveToRootFile("simple_tracking_efficiency.root");
+
+    matcher->saveHistograms();
 }
 
 void TrackClusterMatchingEfficiencyAnalysis::bookHistograms() { 
@@ -452,11 +485,11 @@ void TrackClusterMatchingEfficiencyAnalysis::bookHistograms() {
     
     // Plots of clusters split between top and bottom with no cuts
     plotter->build1DHistogram("cluster energy - top", 50, 0, 1.5);
-    plotter->build1DHistogram("cluster energy - top - fee", 50, 0, 1.5);
+    plotter->build1DHistogram("cluster energy - top - cuts: fee", 50, 0, 1.5);
     plotter->build1DHistogram("cluster time - top", 160, 0, 80);
   
     plotter->build1DHistogram("cluster energy - bottom", 50, 0, 1.5);
-    plotter->build1DHistogram("cluster energy - bottom - fee", 50, 0, 1.5);
+    plotter->build1DHistogram("cluster energy - bottom - cuts: fee", 50, 0, 1.5);
     plotter->build1DHistogram("cluster time - bottom", 160, 0, 80);
 
     // Time cut
@@ -465,11 +498,6 @@ void TrackClusterMatchingEfficiencyAnalysis::bookHistograms() {
     plotter->build2DHistogram("cluster energy v cluster seed energy - cuts: time", 50, 0, 1.5, 50, 0, 1.5);
     plotter->get2DHistogram("cluster energy v cluster seed energy - cuts: time")->GetXaxis()->SetTitle("Cluster energy (GeV)");
     plotter->get2DHistogram("cluster energy v cluster seed energy - cuts: time")->GetYaxis()->SetTitle("Cluster seed energy (GeV)");
-
-    plotter->build2DHistogram("cluster energy v cluster seed energy - cuts: time, seed", 50, 0, 1.5, 50, 0, 1.5);
-    plotter->get2DHistogram("cluster energy v cluster seed energy - cuts: time, seed")->GetXaxis()->SetTitle("Cluster energy (GeV)");
-    plotter->get2DHistogram("cluster energy v cluster seed energy - cuts: time, seed")->GetYaxis()->SetTitle("Cluster seed energy (GeV)");
-
 
     plotter->build2DHistogram("cluster energy v cluster time - cuts: time", 50, 0, 1.5, 160, 0, 80);
 
@@ -487,6 +515,10 @@ void TrackClusterMatchingEfficiencyAnalysis::bookHistograms() {
     plotter->build2DHistogram("cluster energy v cluster y - cuts: time, size", 50, 0, 1.5, 50, -100, 100);
 
     plotter->build2DHistogram("cluster energy v crystal index - y - cuts: time, size", 50, 0, 1.5, 12, -6, 6);
+
+    plotter->build2DHistogram("cluster energy v cluster seed energy - cuts: time, size", 50, 0, 1.5, 50, 0, 1.5);
+    plotter->get2DHistogram("cluster energy v cluster seed energy - cuts: time, size")->GetXaxis()->SetTitle("Cluster energy (GeV)");
+    plotter->get2DHistogram("cluster energy v cluster seed energy - cuts: time, size")->GetYaxis()->SetTitle("Cluster seed energy (GeV)");
 
     plotter->build2DHistogram("cluster energy v cluster size - cuts: time, size", 50, 0, 1.5, 10, 0, 10);
     plotter->get2DHistogram("cluster energy v cluster size - cuts: time, size")->GetXaxis()->SetTitle("Cluster energy (GeV)");
@@ -512,15 +544,6 @@ void TrackClusterMatchingEfficiencyAnalysis::bookHistograms() {
     plotter->build1DHistogram("E/p", 40, 0, 1.5)->GetXaxis()->SetTitle("E/p");
     plotter->build1DHistogram("E/p - no edge", 40, 0, 1.5)->GetXaxis()->SetTitle("E/p");
 
-    // Track cluster matching plots //
-    //////////////////////////////////
-
-    plotter->build1DHistogram("cluster time - track time", 100, -20, 80);
-    plotter->build2DHistogram("cluster x v extrapolated track x", 100, -100, 100, 100, -100, 100);
-    plotter->build2DHistogram("cluster y v extrapolated track y", 100, -100, 100, 100, -100, 100);
-    plotter->build1DHistogram("cluster x - extrapolated track x", 50, -25, 25);
-    plotter->build1DHistogram("cluster y - extrapolated track y", 50, -25, 25);
-
     // Plots of tracks matched to clusters
 
     plotter->build2DHistogram("cluster count - matched", 47, -23, 24, 12, -6, 6);
@@ -541,90 +564,66 @@ void TrackClusterMatchingEfficiencyAnalysis::bookHistograms() {
     // Plots of FEE //
     //////////////////
 
-    plotter->build2DHistogram("cluster count - fee", 47, -23, 24, 12, -6, 6);
-    plotter->get2DHistogram("cluster count - fee")->GetXaxis()->SetTitle("Crystal Index - x");
-    plotter->get2DHistogram("cluster count - fee")->GetYaxis()->SetTitle("Crystal Index - y");
-    
-    plotter->build2DHistogram("cluster count - matched - fee", 47, -23, 24, 12, -6, 6);
-    plotter->get2DHistogram("cluster count - matched - fee")->GetXaxis()->SetTitle("Crystal Index - x");
-    plotter->get2DHistogram("cluster count - matched - fee")->GetYaxis()->SetTitle("Crystal Index - y");
-    
-    plotter->build1DHistogram("E/p - matched - fee", 40, 0, 1.5);
-    plotter->build1DHistogram("cluster energy - matched - fee", 50, 0, 1.5)->GetXaxis()->SetTitle("Cluster energy (GeV)");
- 
-    plotter->build2DHistogram("cluster energy v cluster time - fee", 50, 0, 1.5, 160, 0, 80);
-    plotter->get2DHistogram("cluster energy v cluster time - fee")->GetXaxis()->SetTitle("Cluster energy (GeV)");
-    plotter->get2DHistogram("cluster energy v cluster time - fee")->GetYaxis()->SetTitle("Cluster time (ns)");
+    plotter->build2DHistogram("cluster energy v cluster time - cuts: fee", 50, 0, 1.5, 160, 0, 80);
+    plotter->get2DHistogram("cluster energy v cluster time - cuts: fee")->GetXaxis()->SetTitle("Cluster energy (GeV)");
+    plotter->get2DHistogram("cluster energy v cluster time - cuts: fee")->GetYaxis()->SetTitle("Cluster time (ns)");
 
-    plotter->build2DHistogram("cluster energy v cluster size - fee", 50, 0, 1.5, 10, 0, 10);
-    plotter->get2DHistogram("cluster energy v cluster size - fee")->GetXaxis()->SetTitle("Cluster energy (GeV)");
-    plotter->get2DHistogram("cluster energy v cluster size - fee")->GetYaxis()->SetTitle("Cluster size");
+    plotter->build2DHistogram("cluster energy v cluster size - cuts: fee", 50, 0, 1.5, 10, 0, 10);
+    plotter->get2DHistogram("cluster energy v cluster size - cuts: fee")->GetXaxis()->SetTitle("Cluster energy (GeV)");
+    plotter->get2DHistogram("cluster energy v cluster size - cuts: fee")->GetYaxis()->SetTitle("Cluster size");
+
+    plotter->build2DHistogram("cluster count - cuts: fee", 47, -23, 24, 12, -6, 6);
+    plotter->get2DHistogram("cluster count - cuts: fee")->GetXaxis()->SetTitle("Crystal Index - x");
+    plotter->get2DHistogram("cluster count - cuts: fee")->GetYaxis()->SetTitle("Crystal Index - y");
+   
+    plotter->build2DHistogram("cluster energy v cluster seed energy - cuts: fee", 50, 0, 1.5, 50, 0, 1.5);
+    plotter->get2DHistogram("cluster energy v cluster seed energy - cuts: fee")->GetXaxis()->SetTitle("Cluster energy (GeV)");
+    plotter->get2DHistogram("cluster energy v cluster seed energy - cuts: fee")->GetYaxis()->SetTitle("Cluster seed energy (GeV)");
+
+    // 
+    plotter->build2DHistogram("cluster count - matched - cuts: fee", 47, -23, 24, 12, -6, 6);
+    plotter->get2DHistogram("cluster count - matched - cuts: fee")->GetXaxis()->SetTitle("Crystal Index - x");
+    plotter->get2DHistogram("cluster count - matched - cuts: fee")->GetYaxis()->SetTitle("Crystal Index - y");
+    
+    plotter->build1DHistogram("E/p - matched - cuts: fee", 40, 0, 1.5);
+    plotter->build1DHistogram("cluster energy - matched - cuts: fee", 50, 0, 1.5)->GetXaxis()->SetTitle("Cluster energy (GeV)");
 
     // FEE plots split into top and bottom
-    plotter->build1DHistogram("cluster energy - matched - top - fee", 50, 0, 1.5);
-    plotter->build1DHistogram("cluster energy - matched - bottom - fee", 50, 0, 1.5);
+    plotter->build1DHistogram("cluster energy - matched - top - cuts: fee", 50, 0, 1.5);
+    plotter->build1DHistogram("cluster energy - matched - bottom - cuts: fee", 50, 0, 1.5);
     
-    plotter->build1DHistogram("cluster energy - top - no edge - fee", 50, 0, 1.5);
-    plotter->build1DHistogram("cluster energy - bottom - no edge - fee", 50, 0, 1.5);
+    plotter->build1DHistogram("cluster energy - top - no edge - cuts: fee", 50, 0, 1.5);
+    plotter->build1DHistogram("cluster energy - bottom - no edge - cuts: fee", 50, 0, 1.5);
     
     for (int crystal_index = 2; crystal_index <= 6; ++crystal_index) { 
-        plotter->build1DHistogram("cluster count - top - fee - crystal index = " + std::to_string(crystal_index),
+        plotter->build1DHistogram("cluster count - top - cuts: fee - crystal index = " + std::to_string(crystal_index),
                 47, -23, 24)->GetXaxis()->SetTitle("Crystal Index - x");
         
-        plotter->build1DHistogram("cluster count - bottom - fee - crystal index = " + std::to_string(crystal_index),
+        plotter->build1DHistogram("cluster count - bottom - cuts: fee - crystal index = " + std::to_string(crystal_index),
                 47, -23, 24)->GetXaxis()->SetTitle("Crystal Index - x");
 
-        plotter->build1DHistogram("cluster count - matched - top - fee - crystal index = " + std::to_string(crystal_index),
+        plotter->build1DHistogram("cluster count - matched - top - cuts: fee - crystal index = " + std::to_string(crystal_index),
                 47, -23, 24)->GetXaxis()->SetTitle("Crystal Index - x");
         
-        plotter->build1DHistogram("cluster count - matched - bottom - fee - crystal index = " + std::to_string(crystal_index),
+        plotter->build1DHistogram("cluster count - matched - bottom - cuts: fee - crystal index = " + std::to_string(crystal_index),
                 47, -23, 24)->GetXaxis()->SetTitle("Crystal Index - x");
 
     }
 
-    //------------------------------------//
-    //--- Extrapolated track positions ---//
-    //------------------------------------//
+    plotter->build1DHistogram("cluster energy - matched - top - no edge - cuts: fee", 50, 0, 1.5);
+    plotter->build1DHistogram("cluster energy - matched - bottom - no edge - cuts: fee", 50, 0, 1.5);
 
-    // All tracks and clusters
-    
-    // Top
-    plotter->build2DHistogram("cluster x v extrapolated track x - top", 200, -200, 200, 200, -200, 200);
-    plotter->build2DHistogram("p v extrapolated track x - top", 50, 0, 1.5, 200, -200, 200);
-    plotter->build2DHistogram("p v cluster x - top", 50, 0, 1.5, 200, -200, 200);
-    plotter->build2DHistogram("cluster pair energy v cluster x - top", 50, 0, 1.5, 200, -200, 200);
-    plotter->build2DHistogram("cluster x - track x v e/p - top", 200, -200, 200, 40, 0, 2);
-    plotter->build1DHistogram("cluster x - extrapolated track x - top", 200, -200, 200);
-   
-    plotter->build1DHistogram("cluster y - extrapolated track y - top", 100, -100, 100);
-    plotter->build2DHistogram("cluster y v extrapolated track y - top", 100, -100, 100, 100, -100, 100);
+    plotter->build1DHistogram("p - matched - top - cuts: fee", 50, 0, 2.0)->GetXaxis()->SetTitle("p [GeV]");
+    plotter->build1DHistogram("pt - matched - top - cuts: fee", 50, -0.1, 0.2)->GetXaxis()->SetTitle("p_{t} [GeV]");
+    plotter->build1DHistogram("px - matched - top - cuts: fee", 50, -0.1, 0.2)->GetXaxis()->SetTitle("p_{x} [GeV]"); 
+    plotter->build1DHistogram("py - matched - top - cuts: fee", 50, -0.15, 0.15)->GetXaxis()->SetTitle("p_{y} [GeV]"); 
+    plotter->build1DHistogram("pz - matched - top - cuts: fee", 50, 0, 2.0)->GetXaxis()->SetTitle("p_{z} [GeV]");
 
-    // Bottom
-    plotter->build2DHistogram("cluster x v extrapolated track x - bottom", 200, -200, 200, 200, -200, 200);
-    plotter->build2DHistogram("p v extrapolated track x - bottom", 50, 0, 1.5, 200, -200, 200);
-    plotter->build2DHistogram("p v cluster x - bottom", 50, 0, 1.5, 200, -200, 200);
-    plotter->build2DHistogram("cluster pair energy v cluster x - bottom", 50, 0, 1.5, 200, -200, 200);
-    plotter->build2DHistogram("cluster x - track x v e/p - bottom", 200, -200, 200, 40, 0, 2);
-    plotter->build1DHistogram("cluster x - extrapolated track x - bottom", 200, -200, 200);
-
-    plotter->build2DHistogram("cluster y v extrapolated track y - bottom", 100, -100, 100, 100, -100, 100);
-    plotter->build1DHistogram("cluster y - extrapolated track y - bottom", 100, -100, 100);
-
-    // Top
-    plotter->build2DHistogram("cluster x v extrapolated track x - top - matched", 200, -200, 200, 200, -200, 200);
-    plotter->build2DHistogram("cluster y v extrapolated track y - top - matched", 100, -100, 100, 100, -100, 100);
-    plotter->build1DHistogram("cluster x - extrapolated track x - top - matched", 50, -25, 25);
-    plotter->build1DHistogram("cluster y - extrapolated track y - top - matched", 50, -25, 25);
-   
-    // Bottom
-    plotter->build2DHistogram("cluster x v extrapolated track x - bottom - matched", 200, -200, 200, 200, -200, 200);
-    plotter->build2DHistogram("cluster y v extrapolated track y - bottom - matched", 100, -100, 100, 100, -100, 100);
-    plotter->build1DHistogram("cluster x - extrapolated track x - bottom - matched", 50, -25, 25);
-    plotter->build1DHistogram("cluster y - extrapolated track y - bottom - matched", 50, -25, 25);
-
-
-    plotter->build1DHistogram("cluster energy - matched - top - no edge - fee", 50, 0, 1.5);
-    plotter->build1DHistogram("cluster energy - matched - bottom - no edge - fee", 50, 0, 1.5);
+    plotter->build1DHistogram("p - matched - bottom - cuts: fee", 50, 0, 2.0)->GetXaxis()->SetTitle("p [GeV]");
+    plotter->build1DHistogram("pt - matched - bottom - cuts: fee", 50, -0.1, 0.2)->GetXaxis()->SetTitle("p_{t} [GeV]");
+    plotter->build1DHistogram("px - matched - bottom - cuts: fee", 50, -0.1, 0.2)->GetXaxis()->SetTitle("p_{x} [GeV]"); 
+    plotter->build1DHistogram("py - matched - bottom - cuts: fee", 50, -0.15, 0.15)->GetXaxis()->SetTitle("p_{y} [GeV]"); 
+    plotter->build1DHistogram("pz - matched - bottom - cuts: fee", 50, 0, 2.0)->GetXaxis()->SetTitle("p_{z} [GeV]");
 
     plotter->build2DHistogram("cluster count - no match", 47, -23, 24, 12, -6, 6);
     plotter->build1DHistogram("doca - no match", 80, -10, 10);
@@ -740,36 +739,7 @@ bool TrackClusterMatchingEfficiencyAnalysis::isMatch(EcalCluster* cluster, SvtTr
     double delta_x = cluster_pos[0] - track_pos_at_ecal[0];
     double delta_y = cluster_pos[1] - track_pos_at_ecal[1];
 
-    if (track->isTopTrack()) { 
-        plotter->get2DHistogram("cluster x v extrapolated track x - top")->Fill(cluster_pos[0], 
-                track_pos_at_ecal[0]);
-        plotter->get2DHistogram("cluster y v extrapolated track y - top")->Fill(cluster_pos[1], 
-                track_pos_at_ecal[1]);
-
-        plotter->get1DHistogram("cluster x - extrapolated track x - top")->Fill(delta_x); 
-        plotter->get1DHistogram("cluster y - extrapolated track y - top")->Fill(delta_y); 
-
-        plotter->get2DHistogram("p v extrapolated track x - top")->Fill(p, track_pos_at_ecal[0]);
-        plotter->get2DHistogram("p v cluster x - top")->Fill(p, cluster_pos[0]);
-        plotter->get2DHistogram("cluster pair energy v cluster x - top")->Fill(cluster->getEnergy(), cluster_pos[0]);
-        plotter->get2DHistogram("cluster x - track x v e/p - top")->Fill(delta_x, cluster->getEnergy()/p); 
-    
-    } else {
-        plotter->get2DHistogram("cluster x v extrapolated track x - bottom")->Fill(cluster_pos[0], 
-                track_pos_at_ecal[0]);
-        plotter->get2DHistogram("cluster y v extrapolated track y - bottom")->Fill(cluster_pos[1], 
-                track_pos_at_ecal[1]);
-
-        plotter->get1DHistogram("cluster x - extrapolated track x - bottom")->Fill(delta_x);
-        plotter->get1DHistogram("cluster y - extrapolated track y - bottom")->Fill(delta_y);
-        
-        plotter->get2DHistogram("p v extrapolated track x - bottom")->Fill(p, track_pos_at_ecal[0]);
-        plotter->get2DHistogram("p v cluster x - bottom")->Fill(p, cluster_pos[0]);
-        plotter->get2DHistogram("cluster pair energy v cluster x - bottom")->Fill(cluster->getEnergy(), cluster_pos[0]);
-        plotter->get2DHistogram("cluster x - track x v e/p - bottom")->Fill(delta_x,
-               cluster->getEnergy()/p); 
-    }
-    
+ 
     // Check that dx and dy between the extrapolated track and cluster
     // positions is reasonable
     if ((track->isTopTrack() && (delta_x > 12. || delta_x < -7.61)) ||
@@ -779,22 +749,6 @@ bool TrackClusterMatchingEfficiencyAnalysis::isMatch(EcalCluster* cluster, SvtTr
         (track->isBottomTrack() && (delta_y > 14 || delta_y < -14))) return false;
 
     //if (cluster->getEnergy()/p < .5) return false;
-
-    if (track->isTopTrack()) { 
-        plotter->get2DHistogram("cluster x v extrapolated track x - top - matched")->Fill(cluster_pos[0], 
-                track_pos_at_ecal[0]);
-        plotter->get2DHistogram("cluster y v extrapolated track y - top - matched")->Fill(cluster_pos[1], 
-                track_pos_at_ecal[1]);
-        plotter->get1DHistogram("cluster x - extrapolated track x - top - matched")->Fill(delta_x);
-        plotter->get1DHistogram("cluster y - extrapolated track y - top - matched")->Fill(delta_y);
-    } else {
-        plotter->get2DHistogram("cluster x v extrapolated track x - bottom - matched")->Fill(cluster_pos[0], 
-                track_pos_at_ecal[0]);
-        plotter->get2DHistogram("cluster y v extrapolated track y - bottom - matched")->Fill(cluster_pos[1], 
-                track_pos_at_ecal[1]);
-        plotter->get1DHistogram("cluster x - extrapolated track x - bottom - matched")->Fill(delta_x);
-        plotter->get1DHistogram("cluster y - extrapolated track y - bottom - matched")->Fill(delta_y);
-    }
 
     return true;
 }

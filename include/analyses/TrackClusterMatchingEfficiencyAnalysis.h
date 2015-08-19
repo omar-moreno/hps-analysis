@@ -12,6 +12,7 @@
 #include <HpsAnalysis.h>
 #include <TrackExtrapolator.h>
 #include <Plotter.h>
+#include <TrackClusterMatcher.h>
 
 //---------------//
 //--- HPS DST ---//
@@ -76,6 +77,8 @@ class TrackClusterMatchingEfficiencyAnalysis : public HpsAnalysis {
         SvtTrack* track;
         std::vector<SvtTrack*> matched_tracks; 
         EcalCluster* cluster;
+
+        TrackClusterMatcher* matcher; 
 
         Plotter* plotter;
         
