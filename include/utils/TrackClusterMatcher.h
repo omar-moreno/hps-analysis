@@ -20,6 +20,7 @@
 //--- HPS Analysis ---//
 //--------------------//
 #include <TrackExtrapolator.h>
+#include <Plotter.h>
 
 //-----------------//
 //--- HPS Event ---//
@@ -64,6 +65,18 @@ class TrackClusterMatcher {
          */
         EcalCluster* getMatchingCluster(SvtTrack* track) { return track_map[track]; };
 
+        /**
+         * Enable/disable booking, filling and saving of plots.
+         *
+         * @param enable_plots : true to enable, false to disable
+         */
+        void enablePlots(bool enable_plots) { this->enable_plots = enable_plots; }; 
+
+        /**
+         * Save the histograms to a ROOT file.
+         */
+        void saveHistograms(); 
+
     private:
 
         /**
@@ -74,6 +87,11 @@ class TrackClusterMatcher {
          */
         bool isMatch(EcalCluster* cluster, SvtTrack* track);
 
+        /**
+         * Book histograms.
+         */
+        void bookHistograms(); 
+
         /** Map from an Ecal cluster to a track matched to it */
         std::map <EcalCluster*, SvtTrack*> cluster_map;
 
@@ -81,6 +99,7 @@ class TrackClusterMatcher {
         std::map <SvtTrack*, EcalCluster*> track_map;
 
         /** Plotter */
+        Plotter* plotter; 
 
         double top_cluster_track_match_delta_x_low; 
         double bottom_cluster_track_match_delta_x_low; 
@@ -90,7 +109,9 @@ class TrackClusterMatcher {
         double top_cluster_track_match_delta_y_low; 
         double bottom_cluster_track_match_delta_y_low; 
         double top_cluster_track_match_delta_y_high; 
-        double bottom_cluster_track_match_delta_y_high; 
+        double bottom_cluster_track_match_delta_y_high;
+
+        bool enable_plots; 
 };
 
 #endif // __TRACK_CLUSTER_MATCHER_H__
