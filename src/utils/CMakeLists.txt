@@ -72,3 +72,10 @@ target_link_libraries(print_plots
     RootFileReader
     PlottingUtils
 )
+
+add_library(RooFitter RooFitter.cxx)
+target_link_libraries(RooFitter
+    ${ROO_FIT}
+    ${ROO_FIT_CORE}
+    ${ROOT_HIST_LIB}
+)
