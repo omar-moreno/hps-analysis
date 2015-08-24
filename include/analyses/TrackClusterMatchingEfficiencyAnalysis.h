@@ -13,12 +13,19 @@
 #include <TrackExtrapolator.h>
 #include <Plotter.h>
 #include <TrackClusterMatcher.h>
+#include <RooFitter.h>
 
 //---------------//
 //--- HPS DST ---//
 //---------------//
 #include <SvtTrack.h>
 #include <EcalCluster.h>
+#include <GblTrack.h>
+
+#include <RooRealVar.h>
+#include <RooPlot.h>
+
+#include <TFile.h>
 
 class TrackClusterMatchingEfficiencyAnalysis : public HpsAnalysis {
 
