@@ -33,7 +33,7 @@ void TrackClusterMatchingEfficiencyAnalysis::processEvent(HpsEvent* event) {
     total_events++; 
 
     // Only look at single 1 triggers
-    if (!event->isSingle1Trigger()) return;
+    //if (!event->isSingle1Trigger()) return;
     
     // Increment the singles1 trigger counter
     total_single1_triggers++;
@@ -179,20 +179,21 @@ void TrackClusterMatchingEfficiencyAnalysis::processEvent(HpsEvent* event) {
             plotter->get2DHistogram("cluster count - matched - cuts: fee")->Fill(
                     seed_hit->getXCrystalIndex(), 
                     seed_hit->getYCrystalIndex(), 1);
+            plotter->get1DHistogram("cluster energy - matched - cuts: fee")->Fill(cluster_energy);
 
             int crystal_index = (int) abs(seed_hit->getYCrystalIndex());
             if (seed_hit->getYCrystalIndex() > 0) { 
                 plotter->get1DHistogram("cluster energy - matched - top - cuts: fee")->Fill(cluster_energy);
                 plotter->get1DHistogram("cluster count - matched - top - cuts: fee - crystal index = " + std::to_string(crystal_index))->Fill(seed_hit->getXCrystalIndex(), 1);
                 if (!isEdgeCrystal(seed_hit)) {   
-                    plotter->get1DHistogram("cluster energy - matched - top - cuts: fee, no edge")->Fill(cluster_energy);
+                    plotter->get1DHistogram("cluster energy - matched - top - no edge - cuts: fee")->Fill(cluster_energy);
                     plotter->get1DHistogram("cluster count - matched - top - no edge - cuts: fee - crystal index = " + std::to_string(crystal_index))->Fill(seed_hit->getXCrystalIndex(), 1);
                 }  
             } else { 
                 plotter->get1DHistogram("cluster energy - matched - bottom - cuts: fee")->Fill(cluster_energy);
                 plotter->get1DHistogram("cluster count - matched - bottom - cuts: fee - crystal index = " + std::to_string(crystal_index))->Fill(seed_hit->getXCrystalIndex(), 1);
                 if (!isEdgeCrystal(seed_hit)) {   
-                    plotter->get1DHistogram("cluster energy - matched - bottom - cuts: fee")->Fill(cluster_energy);
+                    plotter->get1DHistogram("cluster energy - matched - bottom - no edge - cuts: fee")->Fill(cluster_energy);
                     plotter->get1DHistogram("cluster count - matched - bottom - no edge - cuts: fee - crystal index = " + std::to_string(crystal_index))->Fill(seed_hit->getXCrystalIndex(), 1);
                 }  
             }
@@ -228,8 +229,22 @@ void TrackClusterMatchingEfficiencyAnalysis::processEvent(HpsEvent* event) {
                 plotter->get1DHistogram("py - matched - top - cuts: fee")->Fill(p[1]);
                 plotter->get1DHistogram("pz - matched - top - cuts: fee")->Fill(p[2]);
 
+                plotter->get1DHistogram("doca - matched - top")->Fill(track->getD0());
+                plotter->get1DHistogram("z0 - matched - top")->Fill(track->getZ0());
+                plotter->get1DHistogram("sin(phi0) - matched - top")->Fill(sin(track->getPhi0()));
+                plotter->get1DHistogram("curvature - matched - top")->Fill(track->getOmega());
+                plotter->get1DHistogram("tan_lambda - matched - top")->Fill(track->getTanLambda()); 
+                plotter->get1DHistogram("cos(theta) - matched - top")->Fill(TrackExtrapolator::getCosTheta(track));
+
                 if (gbl_track != NULL) { 
                     plotter->get1DHistogram("p - matched - gbl - top - cuts: fee")->Fill(gbl_p_mag);
+                
+                    plotter->get1DHistogram("doca - matched - gbl - top")->Fill(gbl_track->getD0());
+                    plotter->get1DHistogram("z0 - matched - gbl - top")->Fill(gbl_track->getZ0());
+                    plotter->get1DHistogram("sin(phi0) - matched - gbl - top")->Fill(sin(gbl_track->getPhi0()));
+                    plotter->get1DHistogram("curvature - matched - gbl - top")->Fill(gbl_track->getKappa());
+                    plotter->get1DHistogram("cos(theta) - matched - gbl - top")->Fill(cos(gbl_track->getTheta()));
+                
                 }
 
             } else if (track->isBottomTrack()) { 
@@ -238,8 +253,22 @@ void TrackClusterMatchingEfficiencyAnalysis::processEvent(HpsEvent* event) {
                 plotter->get1DHistogram("px - matched - bottom - cuts: fee")->Fill(p[0]);
                 plotter->get1DHistogram("py - matched - bottom - cuts: fee")->Fill(p[1]);
                 plotter->get1DHistogram("pz - matched - bottom - cuts: fee")->Fill(p[2]);
+
+                plotter->get1DHistogram("doca - matched - bottom")->Fill(track->getD0());
+                plotter->get1DHistogram("z0 - matched - bottom")->Fill(track->getZ0());
+                plotter->get1DHistogram("sin(phi0) - matched - bottom")->Fill(sin(track->getPhi0()));
+                plotter->get1DHistogram("curvature - matched - bottom")->Fill(track->getOmega());
+                plotter->get1DHistogram("tan_lambda - matched - bottom")->Fill(track->getTanLambda()); 
+                plotter->get1DHistogram("cos(theta) - matched - bottom")->Fill(TrackExtrapolator::getCosTheta(track));
+
                 if (gbl_track != NULL) { 
                     plotter->get1DHistogram("p - matched - gbl - bottom - cuts: fee")->Fill(gbl_p_mag);
+                    
+                    plotter->get1DHistogram("doca - matched - gbl - bottom")->Fill(gbl_track->getD0());
+                    plotter->get1DHistogram("z0 - matched - gbl - bottom")->Fill(gbl_track->getZ0());
+                    plotter->get1DHistogram("sin(phi0) - matched - gbl - bottom")->Fill(sin(gbl_track->getPhi0()));
+                    plotter->get1DHistogram("curvature - matched - gbl - bottom")->Fill(gbl_track->getKappa());
+                    plotter->get1DHistogram("cos(theta) - matched - gbl - bottom")->Fill(cos(gbl_track->getTheta()));
                 }
             }
         }
@@ -323,25 +352,26 @@ void TrackClusterMatchingEfficiencyAnalysis::finalize() {
     TFile* roo_fits_file = new TFile("fits.root", "RECREATE"); 
     RooPlot* plot = NULL;
 
-    RooRealVar p_var("p_var", "FEE Momentum (GeV)", .2, 2.0); 
-    plot = RooFitter::fitToGaussian(plotter->get1DHistogram("p - matched - top - cuts: fee"), p_var);
+    RooRealVar p_var_top("p_var_top", "Top Track FEE Momentum (GeV)", .2, 2.0); 
+    plot = RooFitter::fitToGaussian(plotter->get1DHistogram("p - matched - top - cuts: fee"), p_var_top);
     //plot = RooFitter::fitToDoubleGaussian(plotter->get1DHistogram("p - matched - top - cuts: fee"), p_var);
     plot->Draw(); 
     plot->Write();
     //plot->pullHist() 
 
-    plot = RooFitter::fitToGaussian(plotter->get1DHistogram("p - matched - bottom - cuts: fee"), p_var);
+    RooRealVar p_var_bot("p_var_bot", "Bottom Track FEE Momentum (GeV)", .2, 2.0); 
+    plot = RooFitter::fitToGaussian(plotter->get1DHistogram("p - matched - bottom - cuts: fee"), p_var_bot);
     //plot = RooFitter::fitToDoubleGaussian(plotter->get1DHistogram("p - matched - bottom - cuts: fee"), p_var);
     plot->Draw(); 
     plot->Write(); 
 
-    plot = RooFitter::fitToGaussian(plotter->get1DHistogram("p - matched - gbl - top - cuts: fee"), p_var);
+    //plot = RooFitter::fitToGaussian(plotter->get1DHistogram("p - matched - gbl - top - cuts: fee"), p_var);
     //plot = RooFitter::fitToDoubleGaussian(plotter->get1DHistogram("p - matched - gbl - top - cuts: fee"), p_var);
     plot->Draw(); 
     plot->Write();
     //plot->pullHist() 
 
-    plot = RooFitter::fitToGaussian(plotter->get1DHistogram("p - matched - gbl - bottom - cuts: fee"), p_var);
+    //plot = RooFitter::fitToGaussian(plotter->get1DHistogram("p - matched - gbl - bottom - cuts: fee"), p_var);
     //plot = RooFitter::fitToDoubleGaussian(plotter->get1DHistogram("p - matched - gbl - bottom - cuts: fee"), p_var);
     plot->Draw(); 
     plot->Write(); 
@@ -438,11 +468,8 @@ void TrackClusterMatchingEfficiencyAnalysis::bookHistograms() {
     plotter->build1DHistogram("cluster energy - no edge", 50, 0, 1.5);
     plotter->build1DHistogram("cluster time - no edge", 160, 0, 80);
 
-    // Plots of tracks //
-    /////////////////////
-    plotter->build1DHistogram("track time", 40, -20, 20)->GetXaxis()->SetTitle("Track time (ns)");
-
-    // Plots of tracks matched to clusters
+    // Plots of clusters matched to tracks //
+    /////////////////////////////////////////
 
     plotter->build2DHistogram("cluster count - matched", 47, -23, 24, 12, -6, 6);
     plotter->get2DHistogram("cluster count - matched")->GetXaxis()->SetTitle("Crystal Index - x");
@@ -451,7 +478,7 @@ void TrackClusterMatchingEfficiencyAnalysis::bookHistograms() {
     plotter->build1DHistogram("cluster energy - matched", 50, 0, 1.5)->GetXaxis()->SetTitle("Cluster energy (GeV)");
     plotter->build1DHistogram("cluster time - matched", 160, 0, 80)->GetXaxis()->SetTitle("Cluster time (ns)");
 
-    // Plots of tracks matched to clusters split into top and bottom tracks
+    // Split into top and bottom
     plotter->build1DHistogram("cluster energy - matched - top", 50, 0, 1.5)->GetXaxis()->SetTitle("Cluster energy (GeV)");
     plotter->build1DHistogram("cluster time - matched - top", 160, 0, 80)->GetXaxis()->SetTitle("Cluster time (ns)");
 
@@ -516,25 +543,60 @@ void TrackClusterMatchingEfficiencyAnalysis::bookHistograms() {
 
     }
 
-    plotter->build1DHistogram("cluster energy - matched - top - cuts: fee, no edge", 50, 0, 1.5);
-    plotter->build1DHistogram("cluster energy - matched - bottom - cuts: fee, no edge", 50, 0, 1.5);
+    // Plots of tracks //
+    /////////////////////
 
+    // Plots of tracks matched to clusters
+    
+    // Top
     plotter->build1DHistogram("p - matched - top - cuts: fee", 50, 0, 2.0)->GetXaxis()->SetTitle("p [GeV]");
     plotter->build1DHistogram("pt - matched - top - cuts: fee", 50, -0.1, 0.2)->GetXaxis()->SetTitle("p_{t} [GeV]");
     plotter->build1DHistogram("px - matched - top - cuts: fee", 50, -0.1, 0.2)->GetXaxis()->SetTitle("p_{x} [GeV]"); 
     plotter->build1DHistogram("py - matched - top - cuts: fee", 50, -0.15, 0.15)->GetXaxis()->SetTitle("p_{y} [GeV]"); 
     plotter->build1DHistogram("pz - matched - top - cuts: fee", 50, 0, 2.0)->GetXaxis()->SetTitle("p_{z} [GeV]");
 
+    plotter->build1DHistogram("doca - matched - top", 80, -10, 10)->GetXaxis()->SetTitle("D0 [mm]");
+    plotter->build1DHistogram("z0 - matched - top", 80, -2, 2)->GetXaxis()->SetTitle("Z0 [mm]");
+    plotter->build1DHistogram("sin(phi0) - matched - top", 40, -0.2, 0.2)->GetXaxis()->SetTitle("sin(#phi_{0})");
+    plotter->build1DHistogram("curvature - matched - top", 50, -0.001, 0.001)->GetXaxis()->SetTitle("#Omega");
+    plotter->build1DHistogram("tan_lambda - matched - top", 100, -0.1, 0.1)->GetXaxis()->SetTitle("tan #lambda");
+    plotter->build1DHistogram("cos(theta) - matched - top", 40, -0.1, 0.1)->GetXaxis()->SetTitle("cos #theta");
+
+    // Bottom
     plotter->build1DHistogram("p - matched - bottom - cuts: fee", 50, 0, 2.0)->GetXaxis()->SetTitle("p [GeV]");
     plotter->build1DHistogram("pt - matched - bottom - cuts: fee", 50, -0.1, 0.2)->GetXaxis()->SetTitle("p_{t} [GeV]");
     plotter->build1DHistogram("px - matched - bottom - cuts: fee", 50, -0.1, 0.2)->GetXaxis()->SetTitle("p_{x} [GeV]"); 
     plotter->build1DHistogram("py - matched - bottom - cuts: fee", 50, -0.15, 0.15)->GetXaxis()->SetTitle("p_{y} [GeV]"); 
     plotter->build1DHistogram("pz - matched - bottom - cuts: fee", 50, 0, 2.0)->GetXaxis()->SetTitle("p_{z} [GeV]");
 
+    plotter->build1DHistogram("doca - matched - bottom", 80, -10, 10)->GetXaxis()->SetTitle("D0 [mm]");
+    plotter->build1DHistogram("z0 - matched - bottom", 80, -2, 2)->GetXaxis()->SetTitle("Z0 [mm]");
+    plotter->build1DHistogram("sin(phi0) - matched - bottom", 40, -0.2, 0.2)->GetXaxis()->SetTitle("sin(#phi_{0})");
+    plotter->build1DHistogram("curvature - matched - bottom", 50, -0.001, 0.001)->GetXaxis()->SetTitle("#Omega");
+    plotter->build1DHistogram("tan_lambda - matched - bottom", 100, -0.1, 0.1)->GetXaxis()->SetTitle("tan #lambda");
+    plotter->build1DHistogram("cos(theta) - matched - bottom", 40, -0.1, 0.1)->GetXaxis()->SetTitle("cos #theta");
+
+    // Plots of GBL tracks matched to clusters
+    
+    // Top
     plotter->build1DHistogram("p - matched - gbl - top - cuts: fee", 50, 0, 2.0)->GetXaxis()->SetTitle("p [GeV]");
+    
+    plotter->build1DHistogram("doca - matched - gbl - top", 80, -10, 10)->GetXaxis()->SetTitle("D0 [mm]");
+    plotter->build1DHistogram("z0 - matched - gbl - top", 80, -2, 2)->GetXaxis()->SetTitle("Z0 [mm]");
+    plotter->build1DHistogram("sin(phi0) - matched - gbl - top", 40, -0.2, 0.2)->GetXaxis()->SetTitle("sin(#phi_{0})");
+    plotter->build1DHistogram("curvature - matched - gbl - top", 50, -0.001, 0.001)->GetXaxis()->SetTitle("#Omega");
+    plotter->build1DHistogram("cos(theta) - matched - gbl - top", 40, -0.1, 0.1)->GetXaxis()->SetTitle("cos #theta");
+
+    // Bottom
     plotter->build1DHistogram("p - matched - gbl - bottom - cuts: fee", 50, 0, 2.0)->GetXaxis()->SetTitle("p [GeV]");
 
+    plotter->build1DHistogram("doca - matched - gbl - bottom", 80, -10, 10)->GetXaxis()->SetTitle("D0 [mm]");
+    plotter->build1DHistogram("z0 - matched - gbl - bottom", 80, -2, 2)->GetXaxis()->SetTitle("Z0 [mm]");
+    plotter->build1DHistogram("sin(phi0) - matched - gbl - bottom", 40, -0.2, 0.2)->GetXaxis()->SetTitle("sin(#phi_{0})");
+    plotter->build1DHistogram("curvature - matched - gbl - bottom", 50, -0.001, 0.001)->GetXaxis()->SetTitle("#Omega");
+    plotter->build1DHistogram("cos(theta) - matched - gbl - bottom", 40, -0.1, 0.1)->GetXaxis()->SetTitle("cos #theta");
 
+    // Plots of clusters not matched to tracks
     plotter->build2DHistogram("cluster count - no match", 47, -23, 24, 12, -6, 6);
 
 }
