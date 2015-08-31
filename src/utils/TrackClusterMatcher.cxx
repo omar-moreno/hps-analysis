@@ -86,12 +86,14 @@ bool TrackClusterMatcher::isMatch(EcalCluster* cluster, SvtTrack* track) {
 
     double delta_x = cluster_pos[0] - track_pos_at_ecal[0];
     double delta_y = cluster_pos[1] - track_pos_at_ecal[1];
+    double r = sqrt(delta_x*delta_x + delta_y*delta_y); 
 
     if (enable_plots) { 
         if (track->isTopTrack()) { 
            
             plotter->get1DHistogram("cluster x - track x @ Ecal - top - all")->Fill(delta_x); 
             plotter->get1DHistogram("cluster y - track y @ Ecal - top - all")->Fill(delta_y); 
+            plotter->get1DHistogram("r - top - all")->Fill(r); 
 
             plotter->get2DHistogram("cluster x v track x @ Ecal - top - all")->Fill(cluster_pos[0], 
                     track_pos_at_ecal[0]);
@@ -99,14 +101,15 @@ bool TrackClusterMatcher::isMatch(EcalCluster* cluster, SvtTrack* track) {
                     track_pos_at_ecal[1]); 
 
         } else if (track->isBottomTrack()) { 
-            
+        
+            plotter->get1DHistogram("cluster x - track x @ Ecal - bottom - all")->Fill(delta_x);
+            plotter->get1DHistogram("cluster y - track y @ Ecal - bottom - all")->Fill(delta_y);
+            plotter->get1DHistogram("r - bottom - all")->Fill(r); 
+
             plotter->get2DHistogram("cluster x v track x @ Ecal - bottom - all")->Fill(cluster_pos[0], 
                     track_pos_at_ecal[0]);
             plotter->get2DHistogram("cluster y v track y @ Ecal - bottom - all")->Fill(cluster_pos[1], 
                     track_pos_at_ecal[1]);
-
-            plotter->get1DHistogram("cluster x - track x @ Ecal - bottom - all")->Fill(delta_x);
-            plotter->get1DHistogram("cluster y - track y @ Ecal - bottom - all")->Fill(delta_y);
         }
     }
 
@@ -133,6 +136,8 @@ bool TrackClusterMatcher::isMatch(EcalCluster* cluster, SvtTrack* track) {
             plotter->get2DHistogram("cluster y v track y @ Ecal - top - matched")->Fill(cluster_pos[1], 
                     track_pos_at_ecal[1]); 
 
+            plotter->get1DHistogram("r - top - matched")->Fill(r); 
+
         } else if (track->isBottomTrack()) { 
             
             plotter->get2DHistogram("cluster x v track x @ Ecal - bottom - matched")->Fill(cluster_pos[0], 
@@ -142,6 +147,8 @@ bool TrackClusterMatcher::isMatch(EcalCluster* cluster, SvtTrack* track) {
 
             plotter->get1DHistogram("cluster x - track x @ Ecal - bottom - matched")->Fill(delta_x);
             plotter->get1DHistogram("cluster y - track y @ Ecal - bottom - matched")->Fill(delta_y);
+
+            plotter->get1DHistogram("r - bottom - matched")->Fill(r); 
         }
     }
 
@@ -156,7 +163,6 @@ void TrackClusterMatcher::bookHistograms() {
     //--- Top ---//
     plotter->build1DHistogram("cluster x - track x @ Ecal - top - all", 200, -200, 200)
         ->GetXaxis()->SetTitle("Ecal cluster x - track x @ Ecal");
-    
     plotter->build2DHistogram("cluster x v track x @ Ecal - top - all", 200, -200, 200, 200, -200, 200);
     //plotter->build2DHistogram("p v track x @ Ecal - top", 50, 0, 1.5, 200, -200, 200);
     //plotter->build2DHistogram("p v cluster x - top", 50, 0, 1.5, 200, -200, 200);
@@ -166,6 +172,8 @@ void TrackClusterMatcher::bookHistograms() {
     plotter->build1DHistogram("cluster y - track y @ Ecal - top - all", 100, -100, 100)
         ->GetXaxis()->SetTitle("Ecal cluster y - track y @ Ecal");
     plotter->build2DHistogram("cluster y v track y @ Ecal - top - all", 100, -100, 100, 100, -100, 100);
+
+    plotter->build1DHistogram("r - top - all", 100, 0, 200);
 
     //--- Bottom ---//
     plotter->build1DHistogram("cluster x - track x @ Ecal - bottom - all", 200, -200, 200)
@@ -180,6 +188,8 @@ void TrackClusterMatcher::bookHistograms() {
         ->GetXaxis()->SetTitle("Ecal cluster y - track y @ Ecal");
     plotter->build2DHistogram("cluster y v track y @ Ecal - bottom - all", 100, -100, 100, 100, -100, 100);
 
+    plotter->build1DHistogram("r - bottom - all", 100, 0, 200);
+
     //--- Matched tracks ---//
     //----------------------//
     
@@ -192,6 +202,8 @@ void TrackClusterMatcher::bookHistograms() {
         ->GetXaxis()->SetTitle("Ecal cluster y - track y @ Ecal");
     plotter->build2DHistogram("cluster y v track y @ Ecal - top - matched", 100, -100, 100, 100, -100, 100);
 
+    plotter->build1DHistogram("r - top - matched", 100, 0, 200);
+
     //--- Bottom ---//
     plotter->build1DHistogram("cluster x - track x @ Ecal - bottom - matched", 200, -200, 200)
         ->GetXaxis()->SetTitle("Ecal cluster x - track x @ Ecal");
@@ -200,4 +212,6 @@ void TrackClusterMatcher::bookHistograms() {
     plotter->build1DHistogram("cluster y - track y @ Ecal - bottom - matched", 100, -100, 100)
         ->GetXaxis()->SetTitle("Ecal cluster y - track y @ Ecal");
     plotter->build2DHistogram("cluster y v track y @ Ecal - bottom - matched", 100, -100, 100, 100, -100, 100);
+
+    plotter->build1DHistogram("r - bottom - matched", 100, 0, 200);
 }
