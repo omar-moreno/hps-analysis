@@ -106,6 +106,9 @@ TGraph* Plotter::getGraph(std::string name) {
     return graph_map[name]; 
 }
 
+void Plotter::add1DHistogram(TH1* histogram) { 
+    histogram1D_map[histogram->GetName()] = histogram; 
+}
 
 void Plotter::saveToRootFile(std::string file_name) { 
 

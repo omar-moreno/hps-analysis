@@ -52,6 +52,11 @@ class Plotter {
         /**
          *
          */
+        void add1DHistogram(TH1* histogram); 
+
+        /**
+         *
+         */
         Plotter* setLineColor(int color) { this->color = color; return this; };
 
         /**
