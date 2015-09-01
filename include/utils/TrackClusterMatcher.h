@@ -29,6 +29,8 @@
 #include <SvtTrack.h>
 #include <EcalCluster.h>
 
+#include <TF1.h>
+
 class TrackClusterMatcher {
 
     public: 
@@ -85,7 +87,7 @@ class TrackClusterMatcher {
          * @param track : The SVT track
          * @param cluster : The Ecal cluster of interest 
          */
-        bool isMatch(EcalCluster* cluster, SvtTrack* track);
+        bool isMatch(EcalCluster* cluster, SvtTrack* track, double &r);
 
         /**
          * Book histograms.
