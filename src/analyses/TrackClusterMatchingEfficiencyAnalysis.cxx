@@ -10,10 +10,11 @@ TrackClusterMatchingEfficiencyAnalysis::TrackClusterMatchingEfficiencyAnalysis()
       cluster_energy_high_threshold(1.1 /* GeV */),
       cuts_enabled(true),
       class_name("TrackClusterMatchingEfficiencyAnalysis"),
-      total_events(0),
-      total_single1_triggers(0),
-      total_events_with_tracks(0) {
-
+      event_counter(0),
+      event_track_counter(0), 
+      bias_on_counter(0), 
+      single1_trigger_counter(0),
+      svt_closed_position_counter(0) {
 }
 
 TrackClusterMatchingEfficiencyAnalysis::~TrackClusterMatchingEfficiencyAnalysis() {
@@ -22,23 +23,35 @@ TrackClusterMatchingEfficiencyAnalysis::~TrackClusterMatchingEfficiencyAnalysis(
 }
 
 void TrackClusterMatchingEfficiencyAnalysis::initialize() { 
-    this->bookHistograms();
-    
+    this->bookHistograms(); 
     matcher->enablePlots(true);
 }
 
 void TrackClusterMatchingEfficiencyAnalysis::processEvent(HpsEvent* event) { 
 
     // Increment the total events counter
-    total_events++; 
+    event_counter++; 
 
     // Only look at single 1 triggers
-    //if (!event->isSingle1Trigger()) return;
-    
-    // Increment the singles1 trigger counter
-    total_single1_triggers++;
+    if (!event->isSingle1Trigger()) return;
 
-    if (event->getNumberOfTracks() != 0) total_events_with_tracks++;
+    // Increment the singles1 trigger counter
+    single1_trigger_counter++;
+
+    // Only look at events with the SVT bias ON
+    if (!event->isSvtBiasOn()) return; 
+    
+    // Increment the counter keeping track of events with SVT bias ON
+    bias_on_counter++; 
+
+    // Only look at events where the SVT is closed
+    if (!event->isSvtClosed()) return;
+
+    // Increment the counter keeping track of events with the SVT bias ON and
+    // the SVT closed 
+    svt_closed_position_counter++; 
+
+    if (event->getNumberOfTracks() != 0) event_track_counter++;
     
     // Find all track-cluster matches in the event
     matcher->findAllMatches(event);
@@ -201,7 +214,7 @@ void TrackClusterMatchingEfficiencyAnalysis::processEvent(HpsEvent* event) {
             if (!isEdgeCrystal(seed_hit)) { 
 
             // Loop over all of the tracks in the event
-            GblTrack* gbl_track = NULL; 
+            /*GblTrack* gbl_track = NULL; 
             for (int gbl_track_n = 0; gbl_track_n < event->getNumberOfGblTracks(); ++gbl_track_n) { 
 
                 // Get a GBL track from the event
@@ -220,7 +233,7 @@ void TrackClusterMatchingEfficiencyAnalysis::processEvent(HpsEvent* event) {
                 gbl_p = gbl_track->getMomentum();
                 gbl_p_mag = sqrt(gbl_p[0]*gbl_p[0] + gbl_p[1]*gbl_p[1] + gbl_p[2]*gbl_p[2]);
                 gbl_pt = sqrt(gbl_p[0]*gbl_p[0] + gbl_p[1]*gbl_p[1]);
-            }
+            }*/
 
             if (track->isTopTrack()) { 
                 plotter->get1DHistogram("p - matched - top - cuts: fee")->Fill(p_mag);
@@ -236,7 +249,7 @@ void TrackClusterMatchingEfficiencyAnalysis::processEvent(HpsEvent* event) {
                 plotter->get1DHistogram("tan_lambda - matched - top")->Fill(track->getTanLambda()); 
                 plotter->get1DHistogram("cos(theta) - matched - top")->Fill(TrackExtrapolator::getCosTheta(track));
 
-                if (gbl_track != NULL) { 
+                /*if (gbl_track != NULL) { 
                     plotter->get1DHistogram("p - matched - gbl - top - cuts: fee")->Fill(gbl_p_mag);
                 
                     plotter->get1DHistogram("doca - matched - gbl - top")->Fill(gbl_track->getD0());
@@ -245,7 +258,7 @@ void TrackClusterMatchingEfficiencyAnalysis::processEvent(HpsEvent* event) {
                     plotter->get1DHistogram("curvature - matched - gbl - top")->Fill(gbl_track->getKappa());
                     plotter->get1DHistogram("cos(theta) - matched - gbl - top")->Fill(cos(gbl_track->getTheta()));
                 
-                }
+                }*/
 
             } else if (track->isBottomTrack()) { 
                 plotter->get1DHistogram("p - matched - bottom - cuts: fee")->Fill(p_mag);
@@ -261,7 +274,7 @@ void TrackClusterMatchingEfficiencyAnalysis::processEvent(HpsEvent* event) {
                 plotter->get1DHistogram("tan_lambda - matched - bottom")->Fill(track->getTanLambda()); 
                 plotter->get1DHistogram("cos(theta) - matched - bottom")->Fill(TrackExtrapolator::getCosTheta(track));
 
-                if (gbl_track != NULL) { 
+                /*if (gbl_track != NULL) { 
                     plotter->get1DHistogram("p - matched - gbl - bottom - cuts: fee")->Fill(gbl_p_mag);
                     
                     plotter->get1DHistogram("doca - matched - gbl - bottom")->Fill(gbl_track->getD0());
@@ -269,7 +282,7 @@ void TrackClusterMatchingEfficiencyAnalysis::processEvent(HpsEvent* event) {
                     plotter->get1DHistogram("sin(phi0) - matched - gbl - bottom")->Fill(sin(gbl_track->getPhi0()));
                     plotter->get1DHistogram("curvature - matched - gbl - bottom")->Fill(gbl_track->getKappa());
                     plotter->get1DHistogram("cos(theta) - matched - gbl - bottom")->Fill(cos(gbl_track->getTheta()));
-                }
+                }*/
             }
         }
         
@@ -284,11 +297,13 @@ void TrackClusterMatchingEfficiencyAnalysis::processEvent(HpsEvent* event) {
 void TrackClusterMatchingEfficiencyAnalysis::finalize() { 
 
     std::cout << "//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%//" << std::endl;  
-    std::cout << "[ TrackClusterMatchingEfficiencyAnalysis ] Total number of events: " << total_events << std::endl;
-    std::cout << "[ TrackClusterMatchingEfficiencyAnalysis ] Total number of singles1 triggers: " 
-              << total_single1_triggers << std::endl;
+    std::cout << "[ TrackClusterMatchingEfficiencyAnalysis ] Total number of events: " << event_counter << std::endl;
+    std::cout << "[ TrackClusterMatchingEfficiencyAnalysis ] Total number of single1 triggers: " 
+              << single1_trigger_counter << std::endl;
+    std::cout << "[ TrackClusterMatchingEfficiencyAnalysis ] Total number of single1 trigger events with SVT "
+              << "bias ON: " << bias_on_counter << std::endl; 
     std::cout << "[ TrackClusterMatchingEfficiencyAnalysis ] Total number of events with tracks: "
-              << total_events_with_tracks << std::endl;
+              << event_track_counter << std::endl;
     std::cout << "//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%//" << std::endl;  
 
     plotter->get2DHistogram("cluster count - matched")->Divide(

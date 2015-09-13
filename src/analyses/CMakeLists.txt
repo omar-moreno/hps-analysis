@@ -34,6 +34,9 @@ target_link_libraries(TrackClusterMatchingEfficiencyAnalysis
     ${HPS_EVENT_LIBRARY}
     TrackExtrapolator
     Plotter
+    RooFitter
+    ${ROO_FIT}
+    ${ROO_FIT_CORE} 
 )
 
 add_library(SharedHitAnalysis SharedHitAnalysis.cxx)

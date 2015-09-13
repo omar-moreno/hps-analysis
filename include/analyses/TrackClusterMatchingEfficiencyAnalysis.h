@@ -96,10 +96,27 @@ class TrackClusterMatchingEfficiencyAnalysis : public HpsAnalysis {
 
         // Name of the class
 		std::string class_name;
+       
+        //-- Event counters --//
+        //--------------------//
         
-        int total_events;
-        int total_single1_triggers;
-        int total_events_with_tracks;
+        /** Total number of events */
+        int event_counter;
+        
+        /** Total number of singles1 trigger events that had tracks */
+        int event_track_counter;
+        
+        /** Total number of singles1 trigger events where the SVT bias was on */
+        int bias_on_counter; 
+
+        /** Total number of singles1 triggers */
+        int single1_trigger_counter;
+
+        /** 
+         * Total number of singles 1 triggers where the SVT bias was on and it
+         * was in closed position.
+         */
+        int svt_closed_position_counter; 
 
 };
 
