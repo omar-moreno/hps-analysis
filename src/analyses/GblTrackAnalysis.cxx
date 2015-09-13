@@ -46,8 +46,8 @@ void GblTrackAnalysis::processEvent(HpsEvent* event) {
         plotter->get1DHistogram("doca - gbl")->Fill(gbl_track->getD0());
         plotter->get1DHistogram("z0 - gbl")->Fill(gbl_track->getZ0());
         plotter->get1DHistogram("sin(phi0) - gbl")->Fill(sin(gbl_track->getPhi0()));
-        plotter->get1DHistogram("curvature - gbl")->Fill(gbl_track->getKappa());
-        plotter->get1DHistogram("cos(theta) - gbl")->Fill(cos(gbl_track->getTheta()));
+        plotter->get1DHistogram("curvature - gbl")->Fill(gbl_track->getOmega());
+//        plotter->get1DHistogram("cos(theta) - gbl")->Fill(cos(TrackExtrapolator::getCosTheta(gbl_track)));
 
         // Calculate the momentum magnitude and transverse momentum
         std::vector<double> gbl_p = gbl_track->getMomentum();
@@ -98,8 +98,8 @@ void GblTrackAnalysis::processEvent(HpsEvent* event) {
             plotter->get1DHistogram("doca - top - gbl")->Fill(gbl_track->getD0());
             plotter->get1DHistogram("z0 - top - gbl")->Fill(gbl_track->getZ0());
             plotter->get1DHistogram("sin(phi0) - top - gbl")->Fill(sin(gbl_track->getPhi0()));
-            plotter->get1DHistogram("curvature - top - gbl")->Fill(gbl_track->getKappa());
-            plotter->get1DHistogram("cos(theta) - top - gbl")->Fill(cos(gbl_track->getTheta()));
+            plotter->get1DHistogram("curvature - top - gbl")->Fill(gbl_track->getOmega());
+            //plotter->get1DHistogram("cos(theta) - top - gbl")->Fill(cos(TrackExtrapolator::getCosTheta(gbl_track)));
         
             plotter->get1DHistogram("p - top - gbl")->Fill(gbl_p_mag);
             plotter->get1DHistogram("pt - top - gbl")->Fill(gbl_pt);
@@ -126,8 +126,8 @@ void GblTrackAnalysis::processEvent(HpsEvent* event) {
             plotter->get1DHistogram("doca - bottom - gbl")->Fill(gbl_track->getD0());
             plotter->get1DHistogram("z0 - bottom - gbl")->Fill(gbl_track->getZ0());
             plotter->get1DHistogram("sin(phi0) - bottom - gbl")->Fill(sin(gbl_track->getPhi0()));
-            plotter->get1DHistogram("curvature - bottom - gbl")->Fill(gbl_track->getKappa());
-            plotter->get1DHistogram("cos(theta) - bottom - gbl")->Fill(cos(gbl_track->getTheta()));
+            plotter->get1DHistogram("curvature - bottom - gbl")->Fill(gbl_track->getOmega());
+            //plotter->get1DHistogram("cos(theta) - bottom - gbl")->Fill(cos(TrackExtrapolator::getCosTheta(gbl_track)));
         
             plotter->get1DHistogram("p - bottom - gbl")->Fill(gbl_p_mag);
             plotter->get1DHistogram("pt - bottom - gbl")->Fill(gbl_pt);
@@ -145,9 +145,9 @@ void GblTrackAnalysis::processEvent(HpsEvent* event) {
         plotter->get1DHistogram("seed sin(phi0) - gbl sin(phi0)")->Fill(
                 sin(seed_track->getPhi0()) - sin(gbl_track->getPhi0())); 
         plotter->get1DHistogram("seed curvature - gbl curvature")->Fill(
-                seed_track->getOmega() - gbl_track->getKappa()); 
-        plotter->get1DHistogram("seed cos(theta) - gbl cos(theta)")->Fill(
-                TrackExtrapolator::getCosTheta(seed_track) - cos(gbl_track->getTheta()));
+                seed_track->getOmega() - gbl_track->getOmega()); 
+//        plotter->get1DHistogram("seed cos(theta) - gbl cos(theta)")->Fill(
+//                TrackExtrapolator::getCosTheta(seed_track) - TrackExtrapolator::getCosTheta(gbl_track));
 
     } 
 }

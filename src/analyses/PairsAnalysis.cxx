@@ -31,16 +31,16 @@ void PairsAnalysis::processEvent(HpsEvent* event) {
 
     //if (!event->isPair1Trigger()) return;
 
-    if (event->getNumberOfParticles(HpsEvent::UC_VTX_PARTICLES) == 0) return;
+    if (event->getNumberOfParticles(HpsParticle::UC_V0_CANDIDATE) == 0) return;
 
     uc_vtx_plotter->get1DHistogram("number of vtx particles")->Fill
-        (event->getNumberOfParticles(HpsEvent::UC_VTX_PARTICLES));
+        (event->getNumberOfParticles(HpsParticle::UC_V0_CANDIDATE));
 
     for (int particle_n = 0; 
-            particle_n < event->getNumberOfParticles(HpsEvent::UC_VTX_PARTICLES);  
+            particle_n < event->getNumberOfParticles(HpsParticle::UC_V0_CANDIDATE);  
             ++particle_n) { 
 
-        particle = event->getParticle(HpsEvent::UC_VTX_PARTICLES, particle_n);
+        particle = event->getParticle(HpsParticle::UC_V0_CANDIDATE, particle_n);
 
 
         TRefArray* daughter_particles = particle->getParticles();
