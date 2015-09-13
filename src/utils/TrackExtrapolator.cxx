@@ -33,16 +33,16 @@ double TrackExtrapolator::getPathLength(SvtTrack* track, double x1, double y1, d
 }
 
 double TrackExtrapolator::getPathToXPlane(SvtTrack* track, double x) {
-    
+
     double r = getR(track);
-    
+
     double y = getYc(track) + AnalysisUtils::sgn<double>(r)*sqrt(r*r - pow(x - getXc(track), 2));
 
     return getPathLength(track, getX0(track), getY0(track), x, y); 
 }
 
 double TrackExtrapolator::getPhi(SvtTrack* track, std::vector<double> position) { 
-    
+
     double x = sin(track->getPhi0()) - track->getOmega()*(position[0] - getX0(track));
     double y = cos(track->getPhi0()) + track->getOmega()*(position[1] - getY0(track));
 
@@ -73,46 +73,59 @@ std::vector<double> TrackExtrapolator::getPointOnHelix(SvtTrack* track, double p
 }
 
 std::vector<double> TrackExtrapolator::extrapolateHelixToXPlane(SvtTrack* track, double x) { 
-    
+
     double path_length = getPathToXPlane(track, x);
 
     return getPointOnHelix(track, path_length);
 }
 
 std::vector<double> TrackExtrapolator::extrapolateTrack(SvtTrack* track, double z) { 
-    
+
     std::vector<double> position(3,0); 
     double dz = 0;
 
-    if (z >= 912) {
-       //std::cout << "[ TrackExtrapolator ]: Track outside of dipole." << std::endl;  
-       
-       position = extrapolateHelixToXPlane(track, 912);
-       //std::cout << "[ TrackExtrapolator ]: Track position at dipole edge: ( " 
-       //    << position[0] << ", " << position[1] << ", " << position[2] << " )" << std::endl; 
+    if (z >= TrackExtrapolator::DIPOLE_EDGE) {
 
-       dz = z - 912;
-       //std::cout << "[ TrackExtrapolator ]: dz: " << dz << std::endl;
-    } else if (z <= 0) { 
-       position = extrapolateHelixToXPlane(track, 0);
-       dz = z - position[0];  
+        // If the point of extrapolation is outside of the dipole edge, then 
+        // extrapolate the helix to the edge and then use a straight line 
+        // extrapolation beyond that
+
+        // Extrapolate the helix to the edge of the dipole 
+        position = extrapolateHelixToXPlane(track, TrackExtrapolator::DIPOLE_EDGE);
+
+        // Get the difference between the dipole edge and the extrapolation
+        // point. The track will be extrapolated assuming no field for this
+        // distance i.e. straight line extrapolation
+        dz = z - TrackExtrapolator::DIPOLE_EDGE;
+    } else if (z <= 0) {
+
+        // If the extrapolation point is upstream of the target, do something
+        // similar as above
+
+        position = extrapolateHelixToXPlane(track, 0);
+        dz = z - position[0];  
+    
     } else { 
+    
+        // If the extrapolation point is inside of the field region, 
+        // analytically extrapolate the helix and return the position
         position = extrapolateHelixToXPlane(track, z); 
+   
+        // FIXME: This position should be in the JLab frame     
         return position;
     }
 
+    // Calculate the value of Phi at the track position
     double phi = getPhi(track, position);
-    //std::cout << "[ TrackExtrapolator ]: Phi " << phi << std::endl;
-
-    double r = dz/getSinTheta(track)*cos(phi);
-    //std::cout << "[ TrackExtrapolator ]: r " << r << std::endl;
-
-    double dx = r*getSinTheta(track)*sin(phi);
-    //std::cout << "[ TrackExtrapolator ]: dx " << dx << std::endl;
     
-    double dy = r*getCosTheta(track);
-    //std::cout << "[ TrackExtrapolator ]: dy " << dy << std::endl;
+    // Calcualte the distance to the extrapolation point
+    double r = dz/getSinTheta(track)*cos(phi);
 
+    // Get the delta x and y values at the point of extrapolation 
+    double dx = r*getSinTheta(track)*sin(phi);
+    double dy = r*getCosTheta(track);
+
+    // Calculate the position of the track at the extrapolation point
     std::vector<double> extrapolated_position(3, 0);
     extrapolated_position[0] = position[1] + dx;
     extrapolated_position[1] = position[2] + dy;
@@ -120,20 +133,3 @@ std::vector<double> TrackExtrapolator::extrapolateTrack(SvtTrack* track, double 
 
     return extrapolated_position;
 }
-
-std::vector<double> TrackExtrapolator::extrapolateTrackWithFringe(SvtTrack* track, double z) { 
-
-    // Propogate to the beginning of the fringe field
-    std::vector<double> start_fringe = TrackExtrapolator::extrapolateTrack(track, 911);
-
-    // Get the B-field at the current position
-    // double b_field = ...
-
-
-
-    // Calculate phi at that position
-    double phi = getPhi(track, start_fringe);
-
-
-}
-
