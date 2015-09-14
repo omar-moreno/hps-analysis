@@ -12,8 +12,8 @@
 
 #include <TrackType.h>
 
-bool TrackType::foundByStrategy(SvtTrack* track, StrategyType strategyType) { 
-    return (track->getType() & (1 << ( ((int) strategyType) - 1))) != 0; 
+bool TrackType::foundByStrategy(SvtTrack* track, StrategyType strategy_type) { 
+    return (track->getType() & (1 << ( ((int) strategy_type) - 1))) != 0; 
 }
 
 bool TrackType::isGbl(SvtTrack* track) { 

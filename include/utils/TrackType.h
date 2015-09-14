@@ -35,7 +35,7 @@ namespace TrackType {
      * @return Returns <code>true</code> if an {@link SvtTrack} was found by 
      *         the given strategy, <code>false</code> otherwise.
      */
-    bool foundByStrategy(SvtTrack* track, StrategyType strategyType); 
+    bool foundByStrategy(SvtTrack* track, StrategyType strategy_type); 
 
     /**
      * Checks the track type of an {@link SvtTrack} to determine if it was 
