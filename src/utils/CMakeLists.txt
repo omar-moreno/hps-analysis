@@ -9,6 +9,11 @@ find_library(ROOT_GRAF_LIB Graf $ENV{ROOTSYS}/lib)
 
 find_library(HPS_EVENT_LIBRARY HpsEvent $ENV{HPS_DST_PATH}/build/lib)
 
+add_library(TrackType TrackType.cxx)
+target_link_libraries(TrackType
+    ${HPS_EVENT_LIBRARY}    
+)
+
 add_library(AnalysisUtils AnalysisUtils.cxx)
 target_link_libraries(AnalysisUtils
     ${HPS_EVENT_LIBRARY}
@@ -34,6 +39,8 @@ target_link_libraries(TrackExtrapolator
 add_library(TrackClusterMatcher TrackClusterMatcher.cxx)
 target_link_libraries(TrackClusterMatcher
     ${HPS_EVENT_LIBRARY}
+    ${ROOT_CORE_LIB}
+    ${ROOT_HIST_LIB}
     TrackExtrapolator
     Plotter
 )
