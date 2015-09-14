@@ -81,8 +81,6 @@ class TrackClusterMatchingEfficiencyAnalysis : public HpsAnalysis {
         bool isMatch(EcalCluster* cluster, SvtTrack* track);
         bool isEdgeCrystal(EcalHit* hit);
 
-        SvtTrack* track;
-        std::vector<SvtTrack*> matched_tracks; 
         EcalCluster* cluster;
 
         TrackClusterMatcher* matcher; 

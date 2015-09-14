@@ -2,8 +2,7 @@
 #include <TrackClusterMatchingEfficiencyAnalysis.h>
 
 TrackClusterMatchingEfficiencyAnalysis::TrackClusterMatchingEfficiencyAnalysis() 
-    : track(NULL),
-      cluster(NULL),
+    : cluster(NULL),
       plotter(new Plotter()),
       matcher(new TrackClusterMatcher()),
       cluster_energy_low_threshold(.75 /* GeV */),
@@ -56,7 +55,6 @@ void TrackClusterMatchingEfficiencyAnalysis::processEvent(HpsEvent* event) {
     // Find all track-cluster matches in the event
     matcher->findAllMatches(event);
 
-    matched_tracks.clear();
     // Loop over all clusters and apply cuts to try and isolate FEE's using
     // just Ecal information 
     for (int cluster_n = 0; cluster_n < event->getNumberOfEcalClusters(); ++cluster_n) {
@@ -70,14 +68,20 @@ void TrackClusterMatchingEfficiencyAnalysis::processEvent(HpsEvent* event) {
         //  Get the time associated with the cluster
         double cluster_time = cluster->getClusterTime();
 
+        // Get the size of the cluster
+        int cluster_size = cluster->getEcalHits()->GetEntriesFast(); 
+
         // Fill the cluster information for all events
         plotter->get1DHistogram("cluster energy")->Fill(cluster_energy);
         plotter->get1DHistogram("cluster time")->Fill(cluster_time);
+        if (cluster_size < 10) { 
+            plotter->get1DHistogram("cluster time - cluster size " + std::to_string(cluster_size))->Fill(cluster_time);
+        }
         plotter->get2DHistogram("cluster energy v cluster time")->Fill(cluster_energy, cluster_time);
-        plotter->get2DHistogram("cluster energy v cluster size")->Fill(cluster_energy, 
-                cluster->getEcalHits()->GetEntriesFast());
+        plotter->get2DHistogram("cluster energy v cluster size")->Fill(cluster_energy, cluster_size);
         plotter->get2DHistogram("cluster position")->Fill(
                 cluster->getPosition()[0], cluster->getPosition()[1]);
+        plotter->get2DHistogram("cluster time v cluster size")->Fill(cluster_time, cluster_size); 
 
         // Get the seed hit of the cluster
         EcalHit* seed_hit = cluster->getSeed();
@@ -99,10 +103,13 @@ void TrackClusterMatchingEfficiencyAnalysis::processEvent(HpsEvent* event) {
             plotter->get1DHistogram("cluster time - bottom")->Fill(cluster_time);
         }  
     
+        // Get the track was matched to this cluster
+        SvtTrack* track = matcher->getMatchingTrack(cluster); 
+
         // Before applying any cuts, check if the cluster is matched to a track.  This will
         // allow calculation of the track-cluster matching efficiencies as a function
-        // of energy and time.
-        if (matcher->getMatchingTrack(cluster) != NULL) { 
+        // of energy and time. 
+        if (track != NULL) { 
         
             plotter->get2DHistogram("cluster count - matched")->Fill(
                     seed_hit->getXCrystalIndex(), 
@@ -302,6 +309,8 @@ void TrackClusterMatchingEfficiencyAnalysis::finalize() {
               << single1_trigger_counter << std::endl;
     std::cout << "[ TrackClusterMatchingEfficiencyAnalysis ] Total number of single1 trigger events with SVT "
               << "bias ON: " << bias_on_counter << std::endl; 
+    std::cout << "[ TrackClusterMatchingEfficiencyAnalysis ] Total number of single1 trigger events with SVT "
+              << "bias ON and in closed position: " << svt_closed_position_counter << std::endl; 
     std::cout << "[ TrackClusterMatchingEfficiencyAnalysis ] Total number of events with tracks: "
               << event_track_counter << std::endl;
     std::cout << "//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%//" << std::endl;  
@@ -427,6 +436,14 @@ void TrackClusterMatchingEfficiencyAnalysis::bookHistograms() {
     plotter->build2DHistogram("cluster energy v cluster y", 50, 0, 1.5, 50, -100, 100);
 
     plotter->build2DHistogram("cluster energy v crystal index - y", 50, 0, 1.5, 12, -6, 6);
+
+
+    // Time 
+    plotter->build2DHistogram("cluster time v cluster size", 160, 0, 80, 10, 0, 10); 
+    
+    for (int cluster_size = 1; cluster_size < 10; ++cluster_size) { 
+        plotter->build1DHistogram("cluster time - cluster size " + std::to_string(cluster_size), 160, 0, 80); 
+    }
     
     // Plots of clusters split between top and bottom with no cuts
     plotter->build1DHistogram("cluster energy - top", 50, 0, 1.5);
@@ -630,7 +647,7 @@ bool TrackClusterMatchingEfficiencyAnalysis::passEnergyCut(EcalCluster* cluster)
 }
 
 bool TrackClusterMatchingEfficiencyAnalysis::passClusterTimeCut(EcalCluster* cluster) {   
-    if (cluster->getClusterTime() < 42 || cluster->getClusterTime() > 49.) return false;
+    if (cluster->getClusterTime() < 39.5 || cluster->getClusterTime() > 49.5) return false;
 
     return true;   
 }
