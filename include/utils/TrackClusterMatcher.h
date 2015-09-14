@@ -21,6 +21,8 @@
 //--------------------//
 #include <TrackExtrapolator.h>
 #include <Plotter.h>
+#include <TrackType.h>
+#include <StrategyType.h>
 
 //-----------------//
 //--- HPS Event ---//

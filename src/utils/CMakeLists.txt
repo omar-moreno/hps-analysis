@@ -43,6 +43,7 @@ target_link_libraries(TrackClusterMatcher
     ${ROOT_HIST_LIB}
     TrackExtrapolator
     Plotter
+    TrackType
 )
 
 add_library(RootFileReader RootFileReader.cxx)

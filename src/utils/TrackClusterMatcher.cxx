@@ -31,37 +31,6 @@ TrackClusterMatcher::~TrackClusterMatcher() {
     delete plotter;
 }
 
-/*void TrackClusterMatcher::findAllMatches(HpsEvent* event) {
-
-    // Clear the track and cluster maps of all previously found track and 
-    // cluster matches.
-    cluster_map.clear();
-    track_map.clear();
-
-    // Loop over all of the clusters in the event and try to find a track
-    // match for it.
-    for (int cluster_n = 0; cluster_n < event->getNumberOfEcalClusters(); ++cluster_n) {
-    
-        // Get the cluster from the event 
-        EcalCluster* cluster = event->getEcalCluster(cluster_n);
-    
-        // Loop over all of the tracks in the event and try to find a match to
-        // a cluster
-        for (int track_n = 0; track_n < event->getNumberOfTracks(); ++track_n) { 
-        
-            // Get a track from the event
-            SvtTrack* track = event->getTrack(track_n);
-            
-            // Check if the track and cluster match 
-            if (this->isMatch(cluster, track)) {
-                cluster_map[cluster] = track;
-                track_map[track] = cluster;
-                break;
-            }
-        } 
-    } 
-}*/
-
 void TrackClusterMatcher::findAllMatches(HpsEvent* event) { 
 
     // Clear the track and cluster maps of all previously found track and 
@@ -72,9 +41,12 @@ void TrackClusterMatcher::findAllMatches(HpsEvent* event) {
     // Loop over all of the tracks in the event and try to find a cluster
     // match for them
     for (int track_n = 0; track_n < event->getNumberOfTracks(); ++track_n) { 
-            
+
         // Get a track from the event    
         SvtTrack* track = event->getTrack(track_n);
+
+        // Only match to tracks found with the MatchedTracks collection for now
+        if (!TrackType::foundByStrategy(track, StrategyType::MATCHED_TRACKS)) continue;
     
         for (int cluster_n = 0; cluster_n < event->getNumberOfEcalClusters(); ++cluster_n) {
         
