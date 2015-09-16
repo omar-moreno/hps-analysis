@@ -11,16 +11,15 @@
 
 TrackClusterMatcher::TrackClusterMatcher() 
     : plotter(new Plotter()), 
-      top_cluster_track_match_delta_x_low(-7.61),
-      bottom_cluster_track_match_delta_x_low(-13.75),
-      top_cluster_track_match_delta_x_high(12),
-      bottom_cluster_track_match_delta_x_high(6),
-      top_cluster_track_match_delta_y_low(-14),
-      bottom_cluster_track_match_delta_y_low(-14),
-      top_cluster_track_match_delta_y_high(14),
-      bottom_cluster_track_match_delta_y_high(14), 
-      enable_plots(false)
-{
+      top_cluster_track_match_delta_x_low(-7.5),
+      bottom_cluster_track_match_delta_x_low(-9.75),
+      top_cluster_track_match_delta_x_high(14.3),
+      bottom_cluster_track_match_delta_x_high(8.3),
+      top_cluster_track_match_delta_y_low(-9.64),
+      bottom_cluster_track_match_delta_y_low(-8.07),
+      top_cluster_track_match_delta_y_high(11),
+      bottom_cluster_track_match_delta_y_high(10.3), 
+      enable_plots(false) {
     this->bookHistograms(); 
 }
 

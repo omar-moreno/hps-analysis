@@ -23,6 +23,7 @@
 #include <Plotter.h>
 #include <TrackType.h>
 #include <StrategyType.h>
+#include <TrackUtils.h>
 
 //-----------------//
 //--- HPS Event ---//
