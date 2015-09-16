@@ -14,6 +14,11 @@ target_link_libraries(TrackType
     ${HPS_EVENT_LIBRARY}    
 )
 
+add_library(TrackUtils TrackUtils.cxx)
+target_link_libraries(TrackUtils
+    ${HPS_EVENT_LIBRARY}
+)
+
 add_library(AnalysisUtils AnalysisUtils.cxx)
 target_link_libraries(AnalysisUtils
     ${HPS_EVENT_LIBRARY}
@@ -44,6 +49,7 @@ target_link_libraries(TrackClusterMatcher
     TrackExtrapolator
     Plotter
     TrackType
+    TrackUtils
 )
 
 add_library(RootFileReader RootFileReader.cxx)
