@@ -31,7 +31,7 @@ enum class StrategyType {
     /** Seed 123, confirm 4, extend 56 */
     S123_C4_E56 = 4, 
     /** Seed 123, confirm 5, extend 46 */
-    S123_C5_E45 = 5
+    S123_C5_E46 = 5
 
 }; // Strategy Type
 
