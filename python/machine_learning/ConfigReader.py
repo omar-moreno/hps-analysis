@@ -6,11 +6,16 @@ class ConfigReader:
     """ Reader used to parse and store hps-learn configuration files  """
 
     def __init__(self, file_name):
-        self.parse_config(file_name)
+        self.config = self.parse_config(str(file_name))
 
     def parse_config(self, file_name):
-        print "Loading configuration from " + file_name
+        print "Loading configuration from " + str(file_name)
         config_file = open(file_name, 'r')
-        yaml.load(config_file)
-        
+        return yaml.load(config_file)
+    
+    def get_signal_files(self):
+        return self.config["Signal Files"]
+
+    def get_background_files(self):
+        return self.config["Background Files"]
 
