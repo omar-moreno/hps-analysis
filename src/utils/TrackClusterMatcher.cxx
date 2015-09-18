@@ -37,9 +37,34 @@ void TrackClusterMatcher::findAllMatches(HpsEvent* event) {
     cluster_map.clear();
     track_map.clear();
 
+    // Get a set of 'good' tracks from the event
+    std::vector<SvtTrack*> tracks = TrackUtils::getGoodTracksList(event); 
+
     // Loop over all of the tracks in the event and try to find a cluster
     // match for them
-    for (int track_n = 0; track_n < event->getNumberOfTracks(); ++track_n) { 
+    for (auto& track : tracks) { 
+    
+        for (int cluster_n = 0; cluster_n < event->getNumberOfEcalClusters(); ++cluster_n) {
+        
+            // Get the cluster from the event 
+            EcalCluster* cluster = event->getEcalCluster(cluster_n);
+            
+            // Check if the track and cluster match
+            double r = 0; 
+            double r_min = 10000;  
+            if (this->isMatch(cluster, track, r)) {
+                if (r < r_min) { 
+                    r_min = r; 
+                    cluster_map[cluster] = track;
+                    track_map[track] = cluster;
+                }
+            }
+        }
+    }
+
+    // Loop over all of the tracks in the event and try to find a cluster
+    // match for them
+    /*for (int track_n = 0; track_n < event->getNumberOfTracks(); ++track_n) { 
 
         // Get a track from the event    
         SvtTrack* track = event->getTrack(track_n);
@@ -63,7 +88,7 @@ void TrackClusterMatcher::findAllMatches(HpsEvent* event) {
                 }
             }
         }
-    }
+    }*/
 }
 
 void TrackClusterMatcher::saveHistograms() { 

@@ -17,6 +17,7 @@ target_link_libraries(TrackType
 add_library(TrackUtils TrackUtils.cxx)
 target_link_libraries(TrackUtils
     ${HPS_EVENT_LIBRARY}
+    TrackType
 )
 
 add_library(AnalysisUtils AnalysisUtils.cxx)
