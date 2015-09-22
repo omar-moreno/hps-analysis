@@ -1,6 +1,11 @@
 Signal Files:
-    - signal.root
+    signal.root : signal 
 Background Files:
-    - bkg.root
+    background.root : background 
+Variables:
+    x : F
+    y : F
+Algorithms:
+Preprocessors: 
 
-
+    
