@@ -19,3 +19,5 @@ class ConfigReader:
     def get_background_files(self):
         return self.config["Background Files"]
 
+    def get_training_variables(self):
+        return self.config["Variables"]
