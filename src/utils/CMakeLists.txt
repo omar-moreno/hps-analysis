@@ -42,6 +42,13 @@ target_link_libraries(TrackExtrapolator
     ${HPS_EVENT_LIBRARY}
 )
 
+add_library(EcalUtils EcalUtils.cxx)
+target_link_libraries(EcalUtils
+    ${HPS_EVENT_LIBRARY}
+    Plotter
+)
+
+
 add_library(TrackClusterMatcher TrackClusterMatcher.cxx)
 target_link_libraries(TrackClusterMatcher
     ${HPS_EVENT_LIBRARY}
