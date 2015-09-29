@@ -20,6 +20,7 @@
 #include <AnalysisUtils.h>
 #include <TrackExtrapolator.h>
 #include <TrackClusterMatcher.h>
+#include <EcalUtils.h>
 
 //---------------//
 //--- HPS DST ---//
@@ -81,13 +82,28 @@ class MollerAnalysis : public HpsAnalysis {
         
         TrackClusterMatcher* matcher;
 
+        EcalUtils* ecal_utils; 
+
         // Name of the class
         std::string class_name;
 
-        float total_events;
-        float total_pair_trigger_events;
-        float total_pair_events; 
-        float total_two_cluster_events;
+        //-- Event counters --//
+        //--------------------//
+        
+        /** Total number of events */
+        int event_counter;
+
+        /** Total number of singles1 trigger events where the SVT bias was on */
+        int bias_on_counter; 
+
+        /** Total number of singles1 triggers */
+        int single1_trigger_counter;
+
+        /** 
+         * Total number of singles 1 triggers where the SVT bias was on and it
+         * was in closed position.
+         */
+        int svt_closed_position_counter; 
 };
 
 #endif // __MOLLER_ANALYSIS_H__
