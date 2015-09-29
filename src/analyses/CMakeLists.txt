@@ -61,6 +61,7 @@ target_link_libraries(MollerAnalysis
     AnalysisUtils
     TrackExtrapolator
     TrackClusterMatcher
+    EcalUtils
 )
 
 add_library(MuonAnalysis MuonAnalysis.cxx)
