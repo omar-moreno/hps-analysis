@@ -77,3 +77,11 @@ target_link_libraries(GblTrackAnalysis
     Plotter
     TrackExtrapolator
 )
+
+add_library(TridentAnalysis TridentAnalysis.cxx)
+target_link_libraries(TridentAnalysis
+    ${HPS_EVENT_LIBRARY}
+    Plotter
+    EcalUtils
+    TrackClusterMatcher
+)

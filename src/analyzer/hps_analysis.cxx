@@ -42,6 +42,7 @@
 #include <MollerAnalysis.h>
 #include <MuonAnalysis.h>
 #include <GblTrackAnalysis.h>
+#include <TridentAnalysis.h>
 
 using namespace std; 
 
@@ -149,7 +150,7 @@ int main(int argc, char **argv) {
     list<HpsAnalysis*> analyses;
 
     //analyses.push_back(new TrackAnalysis());
-    analyses.push_back(new GblTrackAnalysis());
+    //analyses.push_back(new GblTrackAnalysis());
     //analyses.push_back(new TimingAnalysis());
     //analyses.push_back(new PairsAnalysis());
     //analyses.push_back(new TagProbeAnalysis());
@@ -157,6 +158,7 @@ int main(int argc, char **argv) {
     //analyses.push_back(new SharedHitAnalysis());
     //analyses.push_back(new MollerAnalysis());
     //analyses.push_back(new MuonAnalysis());
+    analyses.push_back(new TridentAnalysis()); 
 
     // Initialize all analyses
     for (list<HpsAnalysis*>::iterator analysis = analyses.begin();

@@ -17,6 +17,7 @@ target_link_libraries(hps_analysis
     MollerAnalysis
     MuonAnalysis
     GblTrackAnalysis
+    TridentAnalysis
 )
 
 # Find the necessary LCIO libraries
