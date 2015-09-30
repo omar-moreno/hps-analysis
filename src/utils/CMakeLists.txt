@@ -58,6 +58,7 @@ target_link_libraries(TrackClusterMatcher
     Plotter
     TrackType
     TrackUtils
+    AnalysisUtils
 )
 
 add_library(RootFileReader RootFileReader.cxx)
