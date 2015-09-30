@@ -8,8 +8,7 @@
 #include <RootFileReader.h>
 
 RootFileReader::RootFileReader()
-    : histogram_substring("")
-{
+    : histogram_substring("") {
 }
 
 RootFileReader::~RootFileReader() { 
@@ -17,31 +16,39 @@ RootFileReader::~RootFileReader() {
 
 void RootFileReader::parseFile(TFile* root_file) { 
 
-    std::cout << "[ RootFileReader ]: Processing file: " << root_file->GetName() << std::endl;
-    
+
+    std::cout << "[ RootFileReader ]: Processing file: " << root_file->GetName() << std::endl; 
     this->parseFile(root_file->GetListOfKeys());
 }
 
 
 void RootFileReader::parseFile(TList* keys) { 
 
-    // Instantiate an iterator that will be used to loop through all of the 
-    // histograms in the file.
+    // Clear all maps of previously stored histograms
+    histogram1D_map.clear();
+    histogram2D_map.clear();
+    graph_map.clear(); 
+
+    // Instantiate an iterator that will be used to loop through all of the
+    // keys retrieved from the ROOT file.
     TIter next(keys);
 
-    // Iterate through the histograms (keys)    
+    // Iterate through all of the keys in the file.  A key can be 
+    // representitive of a directory, histogram or a graph.  
     while (TKey *key = (TKey*) next()) { 
 
-        // If the key points to a directory, retrieve the keys inside of the 
-        // directory and load them to the corresponding map
+        // If the key is associated with a directory, enter the directory, 
+        // retrieve all of the keys and iterate through them. This is done so
+        // the reader can handle any tree structure. 
         if (key->IsFolder()) this->parseFile(((TDirectory*) key->ReadObj())->GetListOfKeys());
         
-        // 
+        // If a user has specified a subset of histograms or graphs by name, 
+        // check that the histogram/graph associated with the current key is 
+        // named accordingly.
         if (!histogram_substring.empty() 
-                && std::string(key->GetName()).find(histogram_substring) == std::string::npos)
-            continue;
+                && std::string(key->GetName()).find(histogram_substring) == std::string::npos) continue;
 
-        //std::cout << "Object type: " << key->ReadObj()->ClassName() << std::endl;
+        // Sort the histograms based on type
         if (std::string(key->ReadObj()->ClassName()).find("1") != std::string::npos) {
             histogram1D_map[key->GetName()].push_back((TH1*) key->ReadObj()); 
         } else if (std::string(key->ReadObj()->ClassName()).find("2") != std::string::npos) {
@@ -54,12 +61,11 @@ void RootFileReader::parseFile(TList* keys) {
 }
 
 void RootFileReader::parseFile(TFile* root_file, std::string histogram_substring) { 
-    
-    histogram1D_map.clear();
-    histogram2D_map.clear();
-
+   
+    // Add the names of the histograms of interest. 
     this->setHistogramName(histogram_substring);
     
+    // Parse the ROOT file and extract the histograms of interest
     this->parseFile(root_file);
 }
 
