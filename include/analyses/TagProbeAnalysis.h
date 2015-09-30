@@ -14,7 +14,9 @@
 //--------------------//
 #include <HpsAnalysis.h>
 #include <TrackExtrapolator.h>
+#include <TrackClusterMatcher.h>
 #include <Plotter.h>
+#include <EcalUtils.h>
 
 //---------------//
 //--- HPS DST ---//
@@ -75,9 +77,11 @@ class TagProbeAnalysis : public HpsAnalysis {
 
         bool passFiducialCut(EcalCluster* first_cluster, EcalCluster* second_cluster); 
 
-        bool isMatch(EcalCluster* cluster, SvtTrack* track);
-
         Plotter* plotter;
+
+        EcalUtils* ecal_utils;
+
+        TrackClusterMatcher* matcher;  
 
         double total_events;
         double total_trigger_events;
