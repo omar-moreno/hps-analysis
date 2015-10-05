@@ -59,41 +59,17 @@ void TrackClusterMatcher::findAllMatches(HpsEvent* event) {
                     track_map[track] = cluster;
                 }
             }
-        }
-    }
-
-    // Loop over all of the tracks in the event and try to find a cluster
-    // match for them
-    /*for (int track_n = 0; track_n < event->getNumberOfTracks(); ++track_n) { 
-
-        // Get a track from the event    
-        SvtTrack* track = event->getTrack(track_n);
-
-        // Only match to tracks found with the MatchedTracks collection for now
-        if (!TrackType::foundByStrategy(track, StrategyType::MATCHED_TRACKS)) continue;
-    
-        for (int cluster_n = 0; cluster_n < event->getNumberOfEcalClusters(); ++cluster_n) {
         
-            // Get the cluster from the event 
-            EcalCluster* cluster = event->getEcalCluster(cluster_n);
-            
-            // Check if the track and cluster match
-            double r = 0; 
-            double r_min = 10000;  
-            if (this->isMatch(cluster, track, r)) {
-                if (r < r_min) { 
-                    r_min = r; 
-                    cluster_map[cluster] = track;
-                    track_map[track] = cluster;
-                }
+            if (enable_plots && cluster_map[cluster] != nullptr) { 
+                plotter->get1DHistogram("track time - cluster time - matched")->Fill(cluster->getClusterTime() 
+                        - cluster_map[cluster]->getTrackTime()); 
             }
         }
-    }*/
+    }
 }
 
 void TrackClusterMatcher::saveHistograms() { 
     
-    //TF1* gaussian = new TF1("gaus", "gaus", -200, 200);  
     TH2* histogram = plotter->get2DHistogram("track x @ Ecal v cluster x - track x @Ecal - top - all");
     plotter->buildGraph("average");
     TF1* gaussian = new TF1("gaussian", "gaus"); 
@@ -274,4 +250,6 @@ void TrackClusterMatcher::bookHistograms() {
     plotter->build2DHistogram("cluster y v track y @ Ecal - bottom - matched", 100, -100, 100, 100, -100, 100);
 
     plotter->build1DHistogram("r - bottom - matched", 100, 0, 200);
+
+    plotter->build1DHistogram("track time - cluster time - matched", 60, 30, 60); 
 }
