@@ -13,6 +13,26 @@ EcalUtils::~EcalUtils() {
     delete plotter; 
 }
 
+bool EcalUtils::isGoodClusterPair(HpsParticle* particle) { 
+    
+    TRefArray* cluster_objects = particle->getClusters();
+    if (cluster_objects->GetEntriesFast() != 2) return false;
+
+    std::vector<EcalCluster*> clusters = { 
+        (EcalCluster*) cluster_objects->At(0), 
+        (EcalCluster*) cluster_objects->At(1)
+    }; 
+
+    if (clusters[0]->getPosition()[1]*clusters[1]->getPosition()[1] > 0) return false;
+
+    double delta_cluster_time 
+        = clusters[0]->getClusterTime() - clusters[1]->getClusterTime();
+
+    if (delta_cluster_time < delta_t_lower_bound || delta_cluster_time > delta_t_upper_bound) return false;
+
+    return true; 
+}
+
 std::vector<EcalCluster*> EcalUtils::getClusterPair(HpsEvent* event) { 
 
     std::vector<EcalCluster*> cluster_pair(2, nullptr); 

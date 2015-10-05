@@ -39,6 +39,11 @@ class EcalUtils {
         // TODO: This should return a std::pair
         std::vector<EcalCluster*> getClusterPair(HpsEvent* event);
 
+        /**
+         *
+         */
+        bool isGoodClusterPair(HpsParticle* particle); 
+    
         /** Save the histogram to a ROOT file. */
         void saveHistograms();
 
