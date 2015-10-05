@@ -21,3 +21,6 @@ class ConfigReader:
 
     def get_training_variables(self):
         return self.config["Variables"]
+
+    def get_preprocessors(self):
+        return self.config["Preprocessors"]
