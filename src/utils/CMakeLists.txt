@@ -9,6 +9,8 @@ find_library(ROOT_GRAF_LIB Graf $ENV{ROOTSYS}/lib)
 
 find_library(HPS_EVENT_LIBRARY HpsEvent $ENV{HPS_DST_PATH}/build/lib)
 
+find_library(YAML_CPP_LIB yaml-cpp $ENV{YAML_CPP_LIB_PATH})
+
 add_library(TrackType TrackType.cxx)
 target_link_libraries(TrackType
     ${HPS_EVENT_LIBRARY}    
@@ -85,6 +87,7 @@ target_link_libraries(ComparePlots
 
 add_executable(compare_plots compare_plots.cxx)
 target_link_libraries(compare_plots 
+   ${YAML_CPP_LIB}
     ComparePlots    
 )
 

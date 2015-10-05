@@ -86,9 +86,7 @@ void ComparePlots::overlayPlots() {
     for (graph_it; graph_it != graph_map.end(); graph_it++) { 
 
         TMultiGraph* m_graph = new TMultiGraph();
-        //m_graph->GetXaxis()->SetTitle(graph_it->second[0]->GetXaxis()->GetTitle()); 
         m_graph->SetNameTitle(graph_it->second[0]->GetName(), graph_it->second[0]->GetTitle());
-        //histogram2D_it->second[0]->GetYaxis()->SetRangeUser(0, max_bin_value + .1*max_bin_value);
 
         TMultiGraph* m_comp = new TMultiGraph();
         m_comp->SetNameTitle(graph_it->second[0]->GetName(), graph_it->second[0]->GetTitle());
@@ -96,6 +94,10 @@ void ComparePlots::overlayPlots() {
         int color_index = 1;
         double x, y, base_x, base_y;
         for (int hist_n = 0; hist_n < graph_it->second.size(); hist_n++) { 
+
+            graph_it->second[hist_n]->SetMarkerStyle(21);
+            graph_it->second[hist_n]->SetMarkerColor(color_index);
+            graph_it->second[hist_n]->SetMarkerSize(.4);
 
             m_graph->Add(graph_it->second[hist_n]); 
 
@@ -113,21 +115,11 @@ void ComparePlots::overlayPlots() {
             m_comp->Add(comparison_graph);
         }
         m_graph->Draw("Ap");
-
-        // TODO: Axi titles should be added through a configuration file
-        m_graph->GetXaxis()->SetTitle("Physical Channel");
-        m_graph->GetYaxis()->SetTitle("Noise (ADC Counts)");
-        m_graph->GetYaxis()->SetTitleOffset(1.20);
-        
+        m_graph->GetXaxis()->SetTitle(graph_it->second[0]->GetXaxis()->GetTitle()); 
         canvas->Write();
         canvas->Print("plot_comparison.pdf(");
 
-
         m_comp->Draw("Ap");
-        m_comp->GetXaxis()->SetTitle("Physical Channel");
-        m_comp->GetYaxis()->SetTitle("Noise (4471) - Noise (ADC Counts)");
-        m_comp->GetYaxis()->SetTitleOffset(1.20);
-        canvas->Write();
         canvas->Print("plot_comparison.pdf(");
 
         delete m_graph; 

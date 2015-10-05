@@ -24,11 +24,6 @@ void RootFileReader::parseFile(TFile* root_file) {
 
 void RootFileReader::parseFile(TList* keys) { 
 
-    // Clear all maps of previously stored histograms
-    histogram1D_map.clear();
-    histogram2D_map.clear();
-    graph_map.clear(); 
-
     // Instantiate an iterator that will be used to loop through all of the
     // keys retrieved from the ROOT file.
     TIter next(keys);
