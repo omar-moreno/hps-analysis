@@ -28,13 +28,14 @@ void TagProbeAnalysis::processEvent(HpsEvent* event) {
 
 
     // Only look at single 1 triggers
-    if (!event->isSingle1Trigger()) return;
+    /*if (!event->isSingle1Trigger()) return;
 
     // Only look at events with the SVT bias ON
     if (!event->isSvtBiasOn()) return; 
     
     // Only look at events where the SVT is closed
     if (!event->isSvtClosed()) return;
+    */
 
     // Get a "good" pair from the event.  If a good pair isn't found, skip
     // the event.
@@ -332,18 +333,19 @@ bool TagProbeAnalysis::passClusterEnergySumCut(EcalCluster* first_cluster, EcalC
 
 bool TagProbeAnalysis::passFiducialCut(EcalCluster* first_cluster, EcalCluster* second_cluster) { 
    
-    // Make sure that the clusters aren't on the same side in y
-    if (first_cluster->getPosition()[1]*second_cluster->getPosition()[1] > 0) return false;
-
     // Require that they are on the electron side in x
-    if (first_cluster->getPosition()[0] < 0 || second_cluster->getPosition()[0] < 0) return false;
-    
-    double cluster_pair_delta_x = first_cluster->getPosition()[0] - second_cluster->getPosition()[0]; 
+    if (first_cluster->getPosition()[0] > 0 || second_cluster->getPosition()[0] > 0) return false;
+   
     double cluster_pair_sum_x = first_cluster->getPosition()[0] + second_cluster->getPosition()[0]; 
+
+    if (cluster_pair_sum_x < -180 || cluster_pair_sum_x > -140) return false;
+
+    /* 
+    double cluster_pair_delta_x = first_cluster->getPosition()[0] - second_cluster->getPosition()[0]; 
 
     if (abs(first_cluster->getPosition()[0] - second_cluster->getPosition()[0]) > 60) return false; 
     
-    if (cluster_pair_sum_x < 50 || cluster_pair_sum_x > 120) return false;
+    */
 
     return true;
 }
