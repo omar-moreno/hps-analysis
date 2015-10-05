@@ -38,6 +38,8 @@ find_package(LibXml2 REQUIRED)
 # include the xml2 headers
 include_directories(${LIBXML2_INCLUDE_DIRS})
 
+include_directories("$ENV{YAML_CPP_INCLUDE_PATH}")
+
 set(UTILS_HDR_DIR "${HPS_ANALYSIS_SOURCE_DIR}/include/utils")
 include_directories("${UTILS_HDR_DIR}")
 
