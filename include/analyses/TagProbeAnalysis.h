@@ -85,9 +85,18 @@ class TagProbeAnalysis : public HpsAnalysis {
 
         double total_events;
         double total_trigger_events;
-        double total_pair_events;
-        double total_events_pass_fiducial_cut;
-        double total_tag_candidates;
+        double good_ecal_pair_count; 
+        double fiducial_cut_pass_count;
+        double ecal_cluster_sum_cut_pass_count;
+        double ecal_cluster_diff_cut_pass_count;
+        double ecal_cluster_time_cut_pass_count;
+        double ecal_row1_cut_pass_count;
+        double ecal_cluster_y_cut_pass_count;  
+        double tag_ep_cut_pass_count; 
+        double top_tag_cluster_count; 
+        double bottom_tag_cluster_count; 
+        double top_tag_cand_cluster_count; 
+        double bottom_tag_cand_cluster_count; 
 
         // Name of the class
 		std::string class_name;
