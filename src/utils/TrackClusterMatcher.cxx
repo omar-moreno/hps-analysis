@@ -10,15 +10,43 @@
 #include <TrackClusterMatcher.h>
 
 TrackClusterMatcher::TrackClusterMatcher() 
-    : plotter(new Plotter()), 
-      top_cluster_track_match_delta_x_low(-7.5),
-      bottom_cluster_track_match_delta_x_low(-9.75),
-      top_cluster_track_match_delta_x_high(14.3),
-      bottom_cluster_track_match_delta_x_high(8.3),
-      top_cluster_track_match_delta_y_low(-9.64),
-      bottom_cluster_track_match_delta_y_low(-8.07),
-      top_cluster_track_match_delta_y_high(11),
-      bottom_cluster_track_match_delta_y_high(10.3), 
+    : plotter(new Plotter()),
+      // Data Moller
+      top_cluster_track_match_delta_x_low(-6.10094), // data
+      top_cluster_track_match_delta_x_high(12.93466), // data
+      bottom_cluster_track_match_delta_x_low(-8.024475), // data
+      bottom_cluster_track_match_delta_x_high(10.835475), // data
+      bottom_cluster_track_match_delta_y_high(7.3967), 
+      bottom_cluster_track_match_delta_y_low(-8.3093),
+      top_cluster_track_match_delta_y_high(11.494),
+      top_cluster_track_match_delta_y_low(-6.07562), 
+      // Data FEE
+      /*top_cluster_track_match_delta_x_low(-5.86232), // data
+      top_cluster_track_match_delta_x_high(9.11768), // data
+      bottom_cluster_track_match_delta_x_low(-5.61583), // data
+      bottom_cluster_track_match_delta_x_high(8.40442), // data
+      bottom_cluster_track_match_delta_y_high(6.381765), 
+      bottom_cluster_track_match_delta_y_low(-7.610285),
+      top_cluster_track_match_delta_y_high(7.684701),
+      top_cluster_track_match_delta_y_low(-6.228299), */
+      // Moller MC //
+      /*top_cluster_track_match_delta_x_low(-9.4235), // moller mc
+      bottom_cluster_track_match_delta_x_low(-8.6535), // moller mc
+      top_cluster_track_match_delta_x_high(12.4115), // moller mc
+      bottom_cluster_track_match_delta_x_high(12.2715), // moller mc
+      top_cluster_track_match_delta_y_low(-8.05575), // moller mc
+      bottom_cluster_track_match_delta_y_low(-13.61441), // moller mc
+      top_cluster_track_match_delta_y_high(15.01425), // moller mc
+      bottom_cluster_track_match_delta_y_high(7.92559), // moller mc */
+      // FEE
+      /*top_cluster_track_match_delta_x_low(-5.731), // fee mc
+      top_cluster_track_match_delta_x_high(8.519), // fee mc
+      bottom_cluster_track_match_delta_x_low(-5.86232), // fee mc
+      bottom_cluster_track_match_delta_x_high(9.11768), // fee mc
+      top_cluster_track_match_delta_y_low(-6.2283), // fee mc
+      top_cluster_track_match_delta_y_high(7.6847), // fee mc
+      bottom_cluster_track_match_delta_y_low(-7.530397), // fee mc
+      bottom_cluster_track_match_delta_y_high(6.258603), // fee mc */
       enable_plots(false) {
     this->bookHistograms(); 
 }
@@ -145,11 +173,19 @@ bool TrackClusterMatcher::isMatch(EcalCluster* cluster, SvtTrack* track, double 
                     delta_x < top_cluster_track_match_delta_x_low)) ||
         (track->isBottomTrack() && (delta_x > bottom_cluster_track_match_delta_x_high ||
                                    delta_x < bottom_cluster_track_match_delta_x_low ))) return false;
-    
+
+    if (track->isTopTrack()) { 
+        plotter->get1DHistogram("cluster x - track x @ Ecal - top - cuts: delta x")->Fill(delta_x);
+        plotter->get1DHistogram("cluster y - track y @ Ecal - top - cuts: delta x")->Fill(delta_y);
+    } else if (track->isBottomTrack()) { 
+        plotter->get1DHistogram("cluster x - track x @ Ecal - bottom - cuts: delta x")->Fill(delta_x);
+        plotter->get1DHistogram("cluster y - track y @ Ecal - bottom - cuts: delta x")->Fill(delta_y);
+    }
+
     if ((track->isTopTrack() && (delta_y > top_cluster_track_match_delta_y_high ||
                     delta_y < top_cluster_track_match_delta_y_low)) ||
         (track->isBottomTrack() && (delta_y > bottom_cluster_track_match_delta_y_high ||
-                                    delta_y < bottom_cluster_track_match_delta_y_low))) return false;
+                                    delta_y < bottom_cluster_track_match_delta_y_low))) return false;  
 
     if (enable_plots) { 
         if (track->isTopTrack()) { 
@@ -193,7 +229,10 @@ void TrackClusterMatcher::bookHistograms() {
     //--- Top ---//
     plotter->build1DHistogram("cluster x - track x @ Ecal - top - all", 200, -200, 200)
         ->GetXaxis()->SetTitle("Ecal cluster x - track x @ Ecal");
-    
+
+    plotter->build1DHistogram("cluster x - track x @ Ecal - top - cuts: delta x", 200, -200, 200)
+        ->GetXaxis()->SetTitle("Ecal cluster x - track x @ Ecal");
+
     plotter->build2DHistogram("cluster x v track x @ Ecal - top - all", 200, -200, 200, 200, -200, 200);
     plotter->build2DHistogram("cluster x v cluster x - track x @Ecal - top - all", 200, -200, 200, 200, -200, 200);
     plotter->build2DHistogram("track x @ Ecal v cluster x - track x @Ecal - top - all", 200, -200, 200, 200, -200, 200);
@@ -206,10 +245,16 @@ void TrackClusterMatcher::bookHistograms() {
         ->GetXaxis()->SetTitle("Ecal cluster y - track y @ Ecal");
     plotter->build2DHistogram("cluster y v track y @ Ecal - top - all", 100, -100, 100, 100, -100, 100);
 
+    plotter->build1DHistogram("cluster y - track y @ Ecal - top - cuts: delta x", 100, -100, 100)
+        ->GetXaxis()->SetTitle("Ecal cluster y - track y @ Ecal");
+
+
     plotter->build1DHistogram("r - top - all", 100, 0, 200);
 
     //--- Bottom ---//
     plotter->build1DHistogram("cluster x - track x @ Ecal - bottom - all", 200, -200, 200)
+        ->GetXaxis()->SetTitle("Ecal cluster x - track x @ Ecal");
+    plotter->build1DHistogram("cluster x - track x @ Ecal - bottom - cuts: delta x", 200, -200, 200)
         ->GetXaxis()->SetTitle("Ecal cluster x - track x @ Ecal");
     plotter->build2DHistogram("cluster x v track x @ Ecal - bottom - all", 200, -200, 200, 200, -200, 200);
     plotter->build2DHistogram("track x @ Ecal v cluster x - track x @Ecal - bottom - all", 200, -200, 200, 200, -200, 200);
@@ -219,6 +264,8 @@ void TrackClusterMatcher::bookHistograms() {
     //plotter->build2DHistogram("cluster x - track x v e/p - bottom", 200, -200, 200, 40, 0, 2);
 
     plotter->build1DHistogram("cluster y - track y @ Ecal - bottom - all", 100, -100, 100)
+        ->GetXaxis()->SetTitle("Ecal cluster y - track y @ Ecal");
+    plotter->build1DHistogram("cluster y - track y @ Ecal - bottom - cuts: delta x", 100, -100, 100)
         ->GetXaxis()->SetTitle("Ecal cluster y - track y @ Ecal");
     plotter->build2DHistogram("cluster y v track y @ Ecal - bottom - all", 100, -100, 100, 100, -100, 100);
 
