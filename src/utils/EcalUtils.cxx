@@ -157,9 +157,7 @@ void EcalUtils::bookHistograms() {
     //----------------------------//
 
     plotter->build1DHistogram("cluster pair #Delta t", 80, -10, 10)->GetXaxis()->SetTitle("Cluster pair #Delta t (ns)");
-    
     plotter->build1DHistogram("cluster pair #Delta t - cuts: fiducial", 80, -10, 10)->GetXaxis()->SetTitle("Cluster pair #Delta t (ns)");
-
     plotter->build1DHistogram("cluster pair #Delta t - cuts: fiducial, time", 80, -10, 10)->GetXaxis()->SetTitle("Cluster pair #Delta t (ns)");
 
     plotter->build2DHistogram("cluster pair time", 250, 0, 125, 250, 0, 125);
@@ -181,9 +179,9 @@ void EcalUtils::bookHistograms() {
     plotter->build1DHistogram("cluster pair delta x - cuts: fiducial", 200, -200, 200)->GetXaxis()->SetTitle("Ecal cluster pair delta x (mm)");
     plotter->build1DHistogram("cluster pair delta x - cuts: fiducial, time", 200, -200, 200)->GetXaxis()->SetTitle("Ecal cluster pair delta x (mm)");
 
-    plotter->build1DHistogram("cluster pair x sum", 200, -200, 200)->GetXaxis()->SetTitle("Ecal cluster pair x sum (mm)");
-    plotter->build1DHistogram("cluster pair x sum - cuts: fiducial", 200, -200, 200)->GetXaxis()->SetTitle("Ecal cluster pair x sum (mm)");
-    plotter->build1DHistogram("cluster pair x sum - cuts: fiducial, time", 200, -200, 200)->GetXaxis()->SetTitle("Ecal cluster pair x sum (mm)");
+    plotter->build1DHistogram("cluster pair x sum", 200, -300, -100)->GetXaxis()->SetTitle("Ecal cluster pair x sum (mm)");
+    plotter->build1DHistogram("cluster pair x sum - cuts: fiducial", 200, -300, -100)->GetXaxis()->SetTitle("Ecal cluster pair x sum (mm)");
+    plotter->build1DHistogram("cluster pair x sum - cuts: fiducial, time", 200, -300, 100)->GetXaxis()->SetTitle("Ecal cluster pair x sum (mm)");
 
     plotter->build2DHistogram("cluster x vs cluster x", 200, -200, 200, 200, -200, 200);
     plotter->get2DHistogram("cluster x vs cluster x")->GetYaxis()->SetTitle("Cluster position - x (mm)");
