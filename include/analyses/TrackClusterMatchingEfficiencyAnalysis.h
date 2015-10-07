@@ -110,6 +110,11 @@ class TrackClusterMatchingEfficiencyAnalysis : public HpsAnalysis {
         /** Total number of singles1 triggers */
         int single1_trigger_counter;
 
+        int ecal_cluster_time_cut_pass_counter; 
+        int ecal_cluster_size_cut_pass_counter; 
+        int ecal_cluster_energy_cut_pass_counter; 
+        int ecal_cluster_seed_energy_cut_pass_counter; 
+
         /** 
          * Total number of singles 1 triggers where the SVT bias was on and it
          * was in closed position.

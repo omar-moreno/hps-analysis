@@ -13,6 +13,10 @@ TrackClusterMatchingEfficiencyAnalysis::TrackClusterMatchingEfficiencyAnalysis()
       event_track_counter(0), 
       bias_on_counter(0), 
       single1_trigger_counter(0),
+      ecal_cluster_time_cut_pass_counter(0), 
+      ecal_cluster_size_cut_pass_counter(0), 
+      ecal_cluster_energy_cut_pass_counter(0), 
+      ecal_cluster_seed_energy_cut_pass_counter(0), 
       svt_closed_position_counter(0) {
 }
 
@@ -32,23 +36,26 @@ void TrackClusterMatchingEfficiencyAnalysis::processEvent(HpsEvent* event) {
     event_counter++; 
 
     // Only look at single 1 triggers
-    if (!event->isSingle1Trigger()) return;
+    if (false) { 
+        if (!event->isSingle1Trigger()) return;
 
-    // Increment the singles1 trigger counter
-    single1_trigger_counter++;
 
-    // Only look at events with the SVT bias ON
-    if (!event->isSvtBiasOn()) return; 
+        // Only look at events with the SVT bias ON
+        if (!event->isSvtBiasOn()) return; 
     
-    // Increment the counter keeping track of events with SVT bias ON
-    bias_on_counter++; 
+        // Increment the counter keeping track of events with SVT bias ON
+        bias_on_counter++; 
 
-    // Only look at events where the SVT is closed
-    if (!event->isSvtClosed()) return;
+        // Only look at events where the SVT is closed
+        if (!event->isSvtClosed()) return;
 
-    // Increment the counter keeping track of events with the SVT bias ON and
-    // the SVT closed 
-    svt_closed_position_counter++; 
+        // Increment the counter keeping track of events with the SVT bias ON and
+        // the SVT closed 
+        svt_closed_position_counter++; 
+    }
+
+        // Increment the singles1 trigger counter
+        single1_trigger_counter++;
 
     if (event->getNumberOfTracks() != 0) event_track_counter++;
     
@@ -131,6 +138,7 @@ void TrackClusterMatchingEfficiencyAnalysis::processEvent(HpsEvent* event) {
  
         // Check that the cluster passes the time requirement
         if (!passClusterTimeCut(cluster)) return;
+        ecal_cluster_time_cut_pass_counter++; 
 
         plotter->get1DHistogram("cluster time - cuts: time")->Fill(cluster_time);
         plotter->get2DHistogram("cluster energy v cluster time - cuts: time")->Fill(cluster_energy, cluster_time);
@@ -145,6 +153,7 @@ void TrackClusterMatchingEfficiencyAnalysis::processEvent(HpsEvent* event) {
 
         // Check that the cluster passes the size requirement
         if (!passClusterSizeCut(cluster)) return; 
+        ecal_cluster_size_cut_pass_counter++; 
 
         plotter->get2DHistogram("cluster energy v cluster time - cuts: time, size")->Fill(cluster_energy, cluster_time);
         plotter->get2DHistogram("cluster energy v cluster y - cuts: time, size")->Fill(cluster_energy, 
@@ -163,9 +172,11 @@ void TrackClusterMatchingEfficiencyAnalysis::processEvent(HpsEvent* event) {
 
         // Check that the cluster passes the energy requirement
         if (!passEnergyCut(cluster)) return;
+        ecal_cluster_energy_cut_pass_counter++; 
 
         if (seed_hit->getEnergy() < .4) return; 
-    
+        ecal_cluster_seed_energy_cut_pass_counter++; 
+
         plotter->get2DHistogram("cluster energy v cluster time - cuts: fee")->Fill(cluster_energy, cluster_time);
         plotter->get2DHistogram("cluster energy v cluster size - cuts: fee")->Fill(cluster_energy, 
                 cluster->getEcalHits()->GetEntriesFast());
@@ -240,7 +251,7 @@ void TrackClusterMatchingEfficiencyAnalysis::processEvent(HpsEvent* event) {
                 // Get the seed track associated with the GBL track
                 SvtTrack* seed_track = (SvtTrack*) gbl_track->getSeedTrack().GetObject();
             
-                if (seed_track = track) break;  
+                if (seed_track == track) break;  
             }
             
             std::vector<double> gbl_p;
@@ -266,16 +277,15 @@ void TrackClusterMatchingEfficiencyAnalysis::processEvent(HpsEvent* event) {
                 plotter->get1DHistogram("tan_lambda - matched - top")->Fill(track->getTanLambda()); 
                 plotter->get1DHistogram("cos(theta) - matched - top")->Fill(TrackExtrapolator::getCosTheta(track));
 
-                /*if (gbl_track != NULL) { 
+                if (gbl_track != NULL) { 
                     plotter->get1DHistogram("p - matched - gbl - top - cuts: fee")->Fill(gbl_p_mag);
-                
                     plotter->get1DHistogram("doca - matched - gbl - top")->Fill(gbl_track->getD0());
                     plotter->get1DHistogram("z0 - matched - gbl - top")->Fill(gbl_track->getZ0());
                     plotter->get1DHistogram("sin(phi0) - matched - gbl - top")->Fill(sin(gbl_track->getPhi0()));
-                    plotter->get1DHistogram("curvature - matched - gbl - top")->Fill(gbl_track->getKappa());
-                    plotter->get1DHistogram("cos(theta) - matched - gbl - top")->Fill(cos(gbl_track->getTheta()));
+                    plotter->get1DHistogram("curvature - matched - gbl - top")->Fill(gbl_track->getOmega());
+                    //plotter->get1DHistogram("cos(theta) - matched - gbl - top")->Fill(TrackExtrapolator::getCosTheta(gbl_track));
                 
-                }*/
+                }
 
             } else if (track->isBottomTrack()) { 
                 plotter->get1DHistogram("p - matched - bottom - cuts: fee")->Fill(p_mag);
@@ -291,15 +301,14 @@ void TrackClusterMatchingEfficiencyAnalysis::processEvent(HpsEvent* event) {
                 plotter->get1DHistogram("tan_lambda - matched - bottom")->Fill(track->getTanLambda()); 
                 plotter->get1DHistogram("cos(theta) - matched - bottom")->Fill(TrackExtrapolator::getCosTheta(track));
 
-                /*if (gbl_track != NULL) { 
+                if (gbl_track != NULL) { 
                     plotter->get1DHistogram("p - matched - gbl - bottom - cuts: fee")->Fill(gbl_p_mag);
-                    
                     plotter->get1DHistogram("doca - matched - gbl - bottom")->Fill(gbl_track->getD0());
                     plotter->get1DHistogram("z0 - matched - gbl - bottom")->Fill(gbl_track->getZ0());
                     plotter->get1DHistogram("sin(phi0) - matched - gbl - bottom")->Fill(sin(gbl_track->getPhi0()));
-                    plotter->get1DHistogram("curvature - matched - gbl - bottom")->Fill(gbl_track->getKappa());
-                    plotter->get1DHistogram("cos(theta) - matched - gbl - bottom")->Fill(cos(gbl_track->getTheta()));
-                }*/
+                    plotter->get1DHistogram("curvature - matched - gbl - bottom")->Fill(gbl_track->getOmega());
+                    //plotter->get1DHistogram("cos(theta) - matched - gbl - bottom")->Fill(TrackExtrapolator::getCosTheta(gbl_track));
+                }
             }
         }
         
@@ -317,12 +326,16 @@ void TrackClusterMatchingEfficiencyAnalysis::finalize() {
     std::cout << "[ TrackClusterMatchingEfficiencyAnalysis ] Total number of events: " << event_counter << std::endl;
     std::cout << "[ TrackClusterMatchingEfficiencyAnalysis ] Total number of single1 triggers: " 
               << single1_trigger_counter << std::endl;
-    std::cout << "[ TrackClusterMatchingEfficiencyAnalysis ] Total number of single1 trigger events with SVT "
+    /*std::cout << "[ TrackClusterMatchingEfficiencyAnalysis ] Total number of single1 trigger events with SVT "
               << "bias ON: " << bias_on_counter << std::endl; 
     std::cout << "[ TrackClusterMatchingEfficiencyAnalysis ] Total number of single1 trigger events with SVT "
-              << "bias ON and in closed position: " << svt_closed_position_counter << std::endl; 
+              << "bias ON and in closed position: " << svt_closed_position_counter << std::endl; */
     std::cout << "[ TrackClusterMatchingEfficiencyAnalysis ] Total number of events with tracks: "
               << event_track_counter << std::endl;
+    std::cout << "Pass cluster time cut: " << ecal_cluster_time_cut_pass_counter << std::endl;
+    std::cout << "Pass cluster size cut: " << ecal_cluster_size_cut_pass_counter << std::endl;
+    std::cout << "Pass cluster energy cut: " << ecal_cluster_energy_cut_pass_counter << std::endl;
+    std::cout << "Pass cluster seed cut: " << ecal_cluster_seed_energy_cut_pass_counter << std::endl;
     std::cout << "//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%//" << std::endl;  
 
     plotter->get2DHistogram("cluster count - matched")->Divide(
