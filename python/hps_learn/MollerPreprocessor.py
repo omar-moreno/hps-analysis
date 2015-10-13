@@ -2,8 +2,6 @@ import os
 import ROOT as r
 import numpy as n
 import FlatTupleMaker as ft
-import EcalUtilsModule as em
-import ctypes
 
 class MollerPreprocessor : 
 
@@ -41,30 +39,34 @@ class MollerPreprocessor :
             
             tree.GetEntry(entry)
 
+            cluster_pair = self.get_good_cluster_pair(hps_event)
+            print len(cluster_pair)
+
             ft_maker.set_variable_value("cluster_pair_energy_high", 10)
             ft_maker.set_variable_value("cluster_pair_energy_low", 10)
 
             ft_maker.fill()
-
-            '''
-
-            if hps_event.getNumberOfEcalClusters() != 2: continue
-            
-            first_cluster_energy[0] = hps_event.getEcalCluster(0).getEnergy()
-            first_cluster_x_position[0] = hps_event.getEcalCluster(0).getPosition()[0]
-            second_cluster_energy[0] = hps_event.getEcalCluster(1).getEnergy()
-            second_cluster_x_position[0] = hps_event.getEcalCluster(1).getPosition()[0]
-           
-            output_tree.Fill()
-            '''
+        
         ft_maker.close()
 
     def get_good_cluster_pair(self, event) :
 
-        for first_cluster_n in xrange(event.getEcalCluster()) :
-        
-            first_ckuster = event.getEcalCluster(first_cluster_n)
+        cluster_pair = ()
 
-            for second_cluster_n in xrange(event.getEcalCluster()) :
+        for first_cluster_n in xrange(event.getNumberOfEcalClusters()) :
+        
+            first_cluster = event.getEcalCluster(first_cluster_n)
+
+            for second_cluster_n in xrange(event.getNumberOfEcalClusters()) :
 
                 second_cluster = event.getEcalCluster(second_cluster_n)
+
+                if first_cluster.getPosition()[1]*second_cluster.getPosition()[1] > 0 : continue
+
+                cluster_pair_dt = first_cluster.getClusterTime() - second_cluster.getClusterTime()
+                
+                if cluster_pair_dt < -1.6 or cluster_pair_dt > 1.7 : continue
+
+                cluster_pair = (first_cluster, second_cluster)
+
+        return cluster_pair
