@@ -85,3 +85,8 @@ target_link_libraries(TridentAnalysis
     EcalUtils
     TrackClusterMatcher
 )
+
+add_library(TridentDataAnalysis TridentDataAnalysis.cxx)
+target_link_libraries(TridentDataAnalysis 
+    TridentAnalysis
+)

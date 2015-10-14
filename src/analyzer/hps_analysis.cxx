@@ -43,6 +43,7 @@
 #include <MuonAnalysis.h>
 #include <GblTrackAnalysis.h>
 #include <TridentAnalysis.h>
+#include <TridentDataAnalysis.h>
 
 using namespace std; 
 
@@ -159,6 +160,7 @@ int main(int argc, char **argv) {
     //analyses.push_back(new MollerAnalysis());
     //analyses.push_back(new MuonAnalysis());
     analyses.push_back(new TridentAnalysis()); 
+    //analyses.push_back(new TridentDataAnalysis()); 
 
     // Initialize all analyses
     for (list<HpsAnalysis*>::iterator analysis = analyses.begin();
