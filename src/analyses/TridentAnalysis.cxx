@@ -30,15 +30,6 @@ void TridentAnalysis::initialize() {
 
 void TridentAnalysis::processEvent(HpsEvent* event) { 
     
-    // Only look at pairs1 triggers
-    if (!event->isPair1Trigger()) return;
-
-    // Only look at events with the SVT bias ON
-    if (!event->isSvtBiasOn()) return; 
-    
-    // Only look at events where the SVT is closed
-    if (!event->isSvtClosed()) return;
-
     // Get a "good" pair from the event.  If a good pair isn't found, skip
     // the event.
     std::vector<EcalCluster*> pair = ecal_utils->getClusterPair(event);
