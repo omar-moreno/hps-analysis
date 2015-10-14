@@ -48,7 +48,12 @@ class TridentAnalysis : public HpsAnalysis {
 
         /** @return A string representation of this analysis. */
         std::string toString(); 
+    
+    protected: 
 
+        /** Name of the class */
+        std::string class_name; 
+    
     private: 
 
         /** Histogram factory used to build and save histograms. */
@@ -59,9 +64,6 @@ class TridentAnalysis : public HpsAnalysis {
 
         /** A set of Ecal utilities */
         EcalUtils* ecal_utils;
-
-        /** Name of the class */
-        std::string class_name; 
 
 }; // TridentAnalysis
 
