@@ -81,22 +81,22 @@ def extrapolate_track(track, z):
         '''
 
         # Extrapolate the helix to the edge of the dipole
-		position = extrapolate_helix_to_x_plane(track, DIPOLE_EDGE)
+        position = extrapolate_helix_to_x_plane(track, DIPOLE_EDGE)
 
         '''
             Get the difference between the dipole edge and the extrapolation
             point.  The track will be extrapolated assuming no field for this
             distance i.e. straight line extrapolation.
         '''
-		dz = z - DIPOLE_EDGE 
+        dz = z - DIPOLE_EDGE 
     elif z <= DIPOLE_EDGE_LOW :
         
         '''
             If the extrapolation point is upstream of the target, do something
             similar as above.
         '''
-		position = extrapolate_helix_to_x_plane(track, DIPOLE_EDGE_LOW)
-		dz = z - position[0]
+        position = extrapolate_helix_to_x_plane(track, DIPOLE_EDGE_LOW)
+        dz = z - position[0]
 
     else: 
 
@@ -105,12 +105,12 @@ def extrapolate_track(track, z):
             analytically extrapolate the helix and return the position.
         '''
 
-		position = extrapolate_helix_to_x_plane(track, z)
-		lab_position = [0]*3
-		lab_position[0] = position[1]
-		lab_position[1] = position[2]
-		lab_position[2] = position[0]
-		return lab_position
+        position = extrapolate_helix_to_x_plane(track, z)
+        lab_position = [0]*3
+        lab_position[0] = position[1]
+        lab_position[1] = position[2]
+        lab_position[2] = position[0]
+        return lab_position
 
     # Calculate the azimuthal angle at the track position
     phi = get_phi(track, position)
