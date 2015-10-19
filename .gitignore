@@ -11,6 +11,7 @@ lib/
 *.la
 *.a
 *.dylib
+*.pyc
 
 # Build directory
 build/
