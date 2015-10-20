@@ -1,7 +1,9 @@
 import os
 import ROOT as r
-import numpy as n
+import numpy as np
 import FlatTupleMaker as ft
+import TrackClusterMatcher as tcm
+import AnalysisUtils as au
 
 class MollerPreprocessor : 
 
@@ -34,20 +36,43 @@ class MollerPreprocessor :
         ft_maker = ft.FlatTupleMaker(output_file_name)
         ft_maker.add_variable("cluster_pair_energy_high")
         ft_maker.add_variable("cluster_pair_energy_low")
+        ft_maker.add_variable("cluster_pair_energy_high_x")
+        ft_maker.add_variable("cluster_pair_energy_low_x")
+
+        matcher = tcm.TrackClusterMatcher()
 
         for entry in xrange(0, tree.GetEntries()):
             
             tree.GetEntry(entry)
 
-            cluster_pair = self.get_good_cluster_pair(hps_event)
-            print len(cluster_pair)
+            # Loop through all clusters in the event and find a 'good' pair.  
+            # For now, a 'good' pair is defined as two clusters whose cluster
+            # time difference is less than 1.7 ns and greater than -1.6 ns
+            cluster_pair = au.get_good_cluster_pair(hps_event)
+            if len(cluster_pair) != 2 : continue
 
-            ft_maker.set_variable_value("cluster_pair_energy_high", 10)
-            ft_maker.set_variable_value("cluster_pair_energy_low", 10)
+            ft_maker.set_variable_value("cluster_pair_energy_high", cluster_pair[0].getEnergy())
+            ft_maker.set_variable_value("cluster_pair_energy_low", cluster_pair[1].getEnergy())
+            ft_maker.set_variable_value("cluster_pair_energy_high_x", cluster_pair[0].getPosition()[0])
+            ft_maker.set_variable_value("cluster_pair_energy_low_x", cluster_pair[1].getPosition()[0])
 
             ft_maker.fill()
         
         ft_maker.close()
+
+    def is_good_event(self, event) :
+
+        if not event.isSingle1Trigger() : return False
+
+        if not event.isSvtBiasOn() : return False
+
+        if not event.isSvtClosed() : return False
+
+        if event.hasSvtBurstModeNoise() : return False
+
+        if event.hasSvtEventHeaderErrors() : return False
+
+        return True
 
     def get_good_cluster_pair(self, event) :
 
