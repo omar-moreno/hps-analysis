@@ -24,3 +24,5 @@ build/
 # Eclipse project description file
 .project
 
+# Files
+*.root
