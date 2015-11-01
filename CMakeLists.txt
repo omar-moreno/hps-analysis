@@ -43,14 +43,11 @@ include_directories("$ENV{YAML_CPP_INCLUDE_PATH}")
 set(UTILS_HDR_DIR "${HPS_ANALYSIS_SOURCE_DIR}/include/utils")
 include_directories("${UTILS_HDR_DIR}")
 
-add_subdirectory("${HPS_ANALYSIS_SOURCE_DIR}/src/utils")
-
 # Include the analysis headers
 set(ANALYSIS_HDR_DIR "${HPS_ANALYSIS_SOURCE_DIR}/include/analyses")
 include_directories("${ANALYSIS_HDR_DIR}")
 
-# Add the analyzer directory
-add_subdirectory("${HPS_ANALYSIS_SOURCE_DIR}/src/analyzer")
+add_subdirectory("${HPS_ANALYSIS_SOURCE_DIR}/src/utils")
 
 # Add the analysis subdirectory to the build
 add_subdirectory("${HPS_ANALYSIS_SOURCE_DIR}/src/analyses")
