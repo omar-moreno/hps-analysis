@@ -18,7 +18,7 @@
 //------------------//
 #include <MollerAnalysis.h>
 
-class MollerDataAnalysis : public MollerDataAnalysis { 
+class MollerDataAnalysis : public MollerAnalysis { 
 
     /**
      * Process an HPS event i.e. {@link HpsEvent} object and extract Moller
@@ -30,7 +30,6 @@ class MollerDataAnalysis : public MollerDataAnalysis {
 
     /** @return A string representation of this analysis. */
     std::string toString(); 
-
 
 }; // MollerDataAnalysis 
 
