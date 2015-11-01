@@ -70,7 +70,12 @@ class MollerAnalysis : public HpsAnalysis {
          *  @return String representation of this analysis.
          */
         std::string toString();
-    
+   
+    protected: 
+
+        // Name of the class
+        std::string class_name; 
+
     private:
 
         // TODO: Move this class to a utility class
@@ -83,9 +88,6 @@ class MollerAnalysis : public HpsAnalysis {
         TrackClusterMatcher* matcher;
 
         EcalUtils* ecal_utils; 
-
-        // Name of the class
-        std::string class_name;
 
         //-- Event counters --//
         //--------------------//
