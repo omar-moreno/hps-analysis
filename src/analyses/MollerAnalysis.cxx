@@ -32,28 +32,9 @@ void MollerAnalysis::initialize() {
 }
 
 void MollerAnalysis::processEvent(HpsEvent* event) { 
-
+    
     // Increment the total events counter
     event_counter++; 
-
-    // Only look at single 1 triggers
-    if (!event->isSingle1Trigger()) return;
-
-    // Increment the singles1 trigger counter
-    single1_trigger_counter++;
-
-    // Only look at events with the SVT bias ON
-    if (!event->isSvtBiasOn()) return; 
-    
-    // Increment the counter keeping track of events with SVT bias ON
-    bias_on_counter++; 
-
-    // Only look at events where the SVT is closed
-    if (!event->isSvtClosed()) return;
-
-    // Increment the counter keeping track of events with the SVT bias ON and
-    // the SVT closed 
-    svt_closed_position_counter++; 
 
     // Get a "good" pair from the event.  If a good pair isn't found, skip
     // the event.
