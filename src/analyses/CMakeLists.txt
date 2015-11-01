@@ -64,6 +64,11 @@ target_link_libraries(MollerAnalysis
     EcalUtils
 )
 
+add_library(MollerDataAnalysis MollerDataAnalysis.cxx)
+target_link_libraries(MollerDataAnalysis
+    MollerAnalysis
+)
+
 add_library(MuonAnalysis MuonAnalysis.cxx)
 target_link_libraries(MuonAnalysis
     ${HPS_EVENT_LIBRARY}
