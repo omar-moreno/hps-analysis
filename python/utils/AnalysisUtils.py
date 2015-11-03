@@ -17,7 +17,7 @@ def is_good_data_event(event) :
 
 def get_good_cluster_pair(event) :
  
-    cluster_pair = ()
+    cluster_pair = []
 
     for first_cluster_n in xrange(event.getNumberOfEcalClusters()) :
         
@@ -33,6 +33,6 @@ def get_good_cluster_pair(event) :
                 
             if cluster_pair_dt < -1.6 or cluster_pair_dt > 1.7 : continue
 
-            cluster_pair = (first_cluster, second_cluster)
+            cluster_pair = [first_cluster, second_cluster]
 
     return cluster_pair
