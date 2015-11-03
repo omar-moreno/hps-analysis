@@ -28,8 +28,8 @@ class TrackClusterMatcher :
         self.top_cluster_track_match_delta_y_high = 11.494
         self.top_cluster_track_match_delta_y_low = -6.07562
 
-        self.clusters = dict()
-        self.tracks = dict()
+        self.cluster_dic = dict()
+        self.track_dic = dict()
 
         self.histograms = dict()
         self.histograms["cluster x - track x @ Ecal - top - all"] = r.TH1F("cluster x - track x @ Ecal - top - all",
@@ -39,13 +39,19 @@ class TrackClusterMatcher :
                                                                          "cluster x - track x @ Ecal - bottom - all",
                                                                          200, -200, 200)
 
+    def get_track(self, cluster) : return self.track_dic.get(cluster)
+    
+    def get_cluster(self, track) : return self.cluster_dic.get(track)
+
     def find_all_matches(self, event) :
 
-        self.clusters.clear()
-        self.tracks .clear()
+        self.cluster_dic.clear()
+        self.track_dic .clear()
 
         for track_n in xrange(0, event.getNumberOfTracks()) :
             track = event.getTrack(track_n)
+
+            if track.getType() >= 32 : continue
 
             for cluster_n in xrange(0, event.getNumberOfEcalClusters()) :
 
@@ -54,8 +60,8 @@ class TrackClusterMatcher :
                 r = 0
                 if self.is_match(cluster, track, r) :
 
-                    self.clusters[cluster] = track
-                    self.tracks[track] = cluster
+                    self.cluster_dic[track] = cluster
+                    self.track_dic[cluster] = track
 
     def is_match(self, cluster, track, r) :
 
