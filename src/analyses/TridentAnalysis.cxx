@@ -105,29 +105,29 @@ void TridentAnalysis::finalize() {
 void TridentAnalysis::bookHistograms() { 
 
     // Matched Ecal clusters
-    plotter->build1DHistogram("cluster pair energy diff - matched", 50, -1, 1)->GetXaxis()->SetTitle(
+    plotter->build1DHistogram("cluster pair energy diff - matched", 150, -1, 1)->GetXaxis()->SetTitle(
             "Cluster Pair Energy Difference (GeV)");
     
     plotter->build1DHistogram("track time - cluster time - matched", 60, 30, 60)->GetXaxis()->SetTitle(
             "Track time - Ecal cluster time"); 
 
-    plotter->build2DHistogram("cluster pair energy - matched", 50, 0, 1.5, 50, 0, 1.5);
+    plotter->build2DHistogram("cluster pair energy - matched", 150, 0, 1.5, 150, 0, 1.5);
     plotter->get2DHistogram("cluster pair energy - matched")->GetXaxis()->SetTitle("Cluster Energy (GeV)");
     plotter->get2DHistogram("cluster pair energy - matched")->GetYaxis()->SetTitle("Cluster Energy (GeV)");
 
-    plotter->build1DHistogram("cluster pair energy sum - matched", 50, 0, 1.5)->GetXaxis()->SetTitle(
+    plotter->build1DHistogram("cluster pair energy sum - matched", 150, 0, 1.5)->GetXaxis()->SetTitle(
             "Cluster Pair Energy Sum (GeV)");
     
-    plotter->build1DHistogram("cluster pair energy diff - matched, e+e-", 50, -1, 1)->GetXaxis()->SetTitle(
+    plotter->build1DHistogram("cluster pair energy diff - matched, e+e-", 150, -1, 1)->GetXaxis()->SetTitle(
             "Cluster Pair Energy Difference (GeV)");
 
     plotter->build1DHistogram("track time - cluster time - matched, e+e-", 60, 30, 60)->GetXaxis()->SetTitle(
             "Track time - Ecal cluster time");
 
-    plotter->build1DHistogram("cluster pair energy sum - matched, e+e-", 50, 0, 1.5)->GetXaxis()->SetTitle(
+    plotter->build1DHistogram("cluster pair energy sum - matched, e+e-", 150, 0, 1.5)->GetXaxis()->SetTitle(
             "Cluster Pair Energy Sum (GeV)");
 
-    plotter->build2DHistogram("cluster pair energy - matched, e+e-", 50, 0, 1.5, 50, 0, 1.5);
+    plotter->build2DHistogram("cluster pair energy - matched, e+e-", 150, 0, 1.5, 150, 0, 1.5);
     plotter->get2DHistogram("cluster pair energy - matched, e+e-")->GetXaxis()->SetTitle("Cluster Energy (GeV)");
     plotter->get2DHistogram("cluster pair energy - matched, e+e-")->GetYaxis()->SetTitle("Cluster Energy (GeV)");
 
@@ -135,15 +135,15 @@ void TridentAnalysis::bookHistograms() {
     plotter->build1DHistogram("track pair dt - matched", 50, -25, 25)->GetXaxis()->SetTitle("Track time #Delta t");  
     plotter->build1DHistogram("track pair dt - matched, e+e-", 50, -25, 25)->GetXaxis()->SetTitle(
             "Track time #Delta t");  
-    plotter->build1DHistogram("p top - matched, e+e-", 50, 0, 1.5)->GetXaxis()->SetTitle("p (GeV)");
-    plotter->build1DHistogram("p bottom - matched, e+e-", 50, 0, 1.5)->GetXaxis()->SetTitle("p (GeV)");
+    plotter->build1DHistogram("p top - matched, e+e-", 150, 0, 1.5)->GetXaxis()->SetTitle("p (GeV)");
+    plotter->build1DHistogram("p bottom - matched, e+e-", 150, 0, 1.5)->GetXaxis()->SetTitle("p (GeV)");
 
-    plotter->build2DHistogram("p[e+] v p[e-] - matched, e+e-", 50, 0, 1.5, 50, 0, 1.5);
+    plotter->build2DHistogram("p[e+] v p[e-] - matched, e+e-", 150, 0, 1.5, 150, 0, 1.5);
     plotter->get2DHistogram("p[e+] v p[e-] - matched, e+e-")->GetXaxis()->SetTitle("p[e-] (GeV)"); 
     plotter->get2DHistogram("p[e+] v p[e-] - matched, e+e-")->GetYaxis()->SetTitle("p[e+] (GeV)"); 
 
     // Invariant mass
-    plotter->build1DHistogram("invariant mass", 50, 0, 0.1)->GetXaxis()->SetTitle("Mass (GeV)");
+    plotter->build1DHistogram("invariant mass", 200, 0, 0.1)->GetXaxis()->SetTitle("Mass (GeV)");
 
 }
 
