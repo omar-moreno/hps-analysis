@@ -47,7 +47,8 @@ TrackClusterMatcher::TrackClusterMatcher()
       top_cluster_track_match_delta_y_high(7.6847), // fee mc
       bottom_cluster_track_match_delta_y_low(-7.530397), // fee mc
       bottom_cluster_track_match_delta_y_high(6.258603), // fee mc */
-      enable_plots(false) {
+      enable_plots(false), 
+      use_field_map(false) {
     this->bookHistograms(); 
 }
 
@@ -60,6 +61,11 @@ TrackClusterMatcher::~TrackClusterMatcher() {
 
 void TrackClusterMatcher::findAllMatches(HpsEvent* event) { 
 
+    //std::cout << "[ TrackClusterMatcher ]: Finding all track-cluster matches." << std::endl;
+
+
+    //std::cout << "[ TrackClusterMatcher ]: Number of Tracks: " << event->getNumberOfTracks() << std::endl;
+    //std::cout << "[ TrackClusterMatcher ]: Number of cluster : " << event->getNumberOfEcalClusters() << std::endl;
     // Clear the track and cluster maps of all previously found track and 
     // cluster matches.
     cluster_map.clear();
@@ -72,16 +78,28 @@ void TrackClusterMatcher::findAllMatches(HpsEvent* event) {
     // match for them
     for (auto& track : tracks) { 
     
+        //std::cout << "[ TrackClusterMatcher ]: New Track ===> Position at Ecal with field map: [ " 
+        //    << track->getPositionAtEcal()[0] << ", " 
+        //    << track->getPositionAtEcal()[1] << ", " 
+        //    << track->getPositionAtEcal()[2] << " ]" 
+        //    << std::endl;
         for (int cluster_n = 0; cluster_n < event->getNumberOfEcalClusters(); ++cluster_n) {
         
             // Get the cluster from the event 
             EcalCluster* cluster = event->getEcalCluster(cluster_n);
+            //std::cout << "[ TrackClusterMatcher ]: Ecal cluster " << cluster_n << " position: [ " 
+            //    << cluster->getPosition()[0] << ", " 
+            //    << cluster->getPosition()[1] << ", " 
+            //    << cluster->getPosition()[2] << " ]" 
+            //    << std::endl;
             
             // Check if the track and cluster match
             double r = 0; 
             double r_min = 10000;  
             if (this->isMatch(cluster, track, r)) {
+                //std::cout << "[ TrackClusterMatcher ]: Track-Cluster match found" << std::endl;
                 if (r < r_min) { 
+                //    std::cout << "[ TrackClusterMatcher ]: New r value: " << r << std::endl;
                     r_min = r; 
                     cluster_map[cluster] = track;
                     track_map[track] = cluster;
@@ -118,19 +136,32 @@ void TrackClusterMatcher::saveHistograms() {
 }
 
 bool TrackClusterMatcher::isMatch(EcalCluster* cluster, SvtTrack* track, double &r) { 
-    
-    // Check that the track and cluster are in the same detector volume.
-    // If not, thre is no way they can match.
+   
+    //std::cout << "[ TrackClusterMatcher ]: Finding match to Ecal cluster " << std::endl;
+
+    // Check that the track and cluster are in the same detector volume.  If 
+    // not, thre is no way they can match.
     if (track->isTopTrack() && cluster->getPosition()[1] < 0
-            || track->isBottomTrack() && cluster->getPosition()[1] > 0) return false;
+            || track->isBottomTrack() && cluster->getPosition()[1] > 0) { 
+        //std::cout << "[ TrackClusterMatcher ]: Track and cluster are in opposite volumes" << std::endl;
+        return false;
+    }
 
     // Get the cluster position
     std::vector<double> cluster_pos = cluster->getPosition();
     
-    // Extrapolate the track to the Ecal cluster position 
-    std::vector<double> track_pos_at_ecal 
-        = TrackExtrapolator::extrapolateTrack(track, cluster_pos[2]);
-    
+    std::vector<double> track_pos_at_ecal; 
+    // Get the track position at the Ecal face.
+    if (use_field_map) { 
+        track_pos_at_ecal = track->getPositionAtEcal();  
+    } else { 
+        track_pos_at_ecal = TrackExtrapolator::extrapolateTrack(track, cluster_pos[2]);
+    }
+
+   
+    //std::cout << "[ TrackClusterMatcher ]: Track position at Ecal: [ " << track_pos_at_ecal[0] << ", " 
+    //    << track_pos_at_ecal[1] << ", " << track_pos_at_ecal[2] << std::endl; 
+
     double p = AnalysisUtils::getMagnitude(track->getMomentum());
 
     double delta_x = cluster_pos[0] - track_pos_at_ecal[0];

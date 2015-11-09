@@ -71,6 +71,16 @@ class TrackClusterMatcher {
         EcalCluster* getMatchingCluster(SvtTrack* track) { return track_map[track]; };
 
         /**
+         * Use the extrapolated track position at the Ecal face found using
+         * the full field map.
+         *
+         * @param use_field_map If true, use the extrapolated track position 
+         *                      found using the field map.  If false, 
+         *                      extrapolated the track analytically.
+         */
+        void useFieldMap(bool use_field_map) { this->use_field_map = use_field_map; }; 
+
+        /**
          * Enable/disable booking, filling and saving of plots.
          *
          * @param enable_plots : true to enable, false to disable
@@ -117,6 +127,12 @@ class TrackClusterMatcher {
         double bottom_cluster_track_match_delta_y_high;
 
         bool enable_plots; 
+        
+        /** 
+         * Flag indicating whether the extrapolated track position at the Ecal
+         * face found using the full field map should be used. 
+         */
+        bool use_field_map; 
 };
 
 #endif // __TRACK_CLUSTER_MATCHER_H__
