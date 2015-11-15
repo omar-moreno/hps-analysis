@@ -65,6 +65,11 @@ class TridentAnalysis : public HpsAnalysis {
         /** A set of Ecal utilities */
         EcalUtils* ecal_utils;
 
+        double event_counter;
+        double good_cluster_pair_event_counter; 
+        double matched_event_counter; 
+        double v0_cand_counter;
+
 }; // TridentAnalysis
 
 #endif // __TRIDENT_ANALYSIS_H__
