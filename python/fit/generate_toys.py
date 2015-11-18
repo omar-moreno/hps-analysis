@@ -21,6 +21,7 @@ def main() :
     parser.add_argument("-n", "--name",   help="Name of histogram to generate toy from.") 
     parser.add_argument("-c", "--count",  help="Number of toy histograms to generate.")
     parser.add_argument("-e", "--events", help="Number of events per histogram.")
+    parser.add_argument("-o", "--output", help="ROOT output file.")
     args = parser.parse_args()
 
     if args.input is None : 
@@ -56,7 +57,9 @@ def main() :
     arg_set = r.RooArgSet(x)
     hist_pdf = r.RooHistPdf("hist_pdf", "hist_pdf", arg_set, histo_data, 0)
 
-    output_file = r.TFile("output.root", "RECREATE")
+    output_file_name = "output.root"
+    if args.output is not None: output_file_name = args.output
+    output_file = r.TFile(output_file_name, "RECREATE")
 
     for hist_count in range(0, count) : 
         generated_hist = hist_pdf.generate(arg_set, events, r.RooFit.Extended(r.kTRUE))
@@ -65,29 +68,6 @@ def main() :
         frame.Write()
 
     output_file.Close()
-
-    #canvas.Clear()
-    #frame.Draw()
-
-    #canvas.SaveAs("test.png")
-
-   # gauss = r.RooGaussian("gaus", "gaus", x, mean, sigma)
-    #arg_set = r.RooArgSet(x)
-    #frame = x.frame()
-    #data = gauss.generate(arg_set, 1000)
-    #data.plotOn(frame)
-    #frame.Draw()
-
-   # canvas.SaveAs("test2.png")
-    
-    #frame = x.frame()
-    #data = gauss.generate(arg_set, 1000)
-    #data.plotOn(frame)
-    #frame.Draw()
-    
-    #canvas.SaveAs("test3.png")
-    
-
 
 if __name__ == "__main__":
     main()
