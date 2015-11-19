@@ -62,10 +62,8 @@ def main() :
     output_file = r.TFile(output_file_name, "RECREATE")
 
     for hist_count in range(0, count) : 
-        generated_hist = hist_pdf.generate(arg_set, events, r.RooFit.Extended(r.kTRUE))
-        frame = x.frame()
-        generated_hist.plotOn(frame)
-        frame.Write()
+        generated_hist = hist_pdf.generateBinned(arg_set, events, r.RooFit.Extended(r.kTRUE))
+        generated_hist.createHistogram(histo.GetName() + "_" + str(hist_count), x).Write()
 
     output_file.Close()
 
