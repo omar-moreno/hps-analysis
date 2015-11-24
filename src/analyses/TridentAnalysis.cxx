@@ -138,7 +138,11 @@ void TridentAnalysis::processEvent(HpsEvent* event) {
     plotter->get2DHistogram("cluster pair energy - matched, e+e-")->Fill(cluster_energy[0], cluster_energy[1]); 
     plotter->get2DHistogram("p_{e+} v p_{e-} - matched, e+e-")->Fill(electron_p, positron_p);  
     plotter->get2DHistogram("invariant mass v track p sum")->Fill(
-            AnalysisUtils::getInvariantMass(electron, positron), track_p[0]+track_p[1]); 
+            AnalysisUtils::getInvariantMass(electron, positron), track_p[0]+track_p[1]);
+
+    if (track_p[0]+track_p[1] >= 0.8) { 
+        plotter->get1DHistogram("invariant mass - final")->Fill(AnalysisUtils::getInvariantMass(electron, positron)); 
+    }
 
     //
     // Get the reconstructed particle associated with both tracks
