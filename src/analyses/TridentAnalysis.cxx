@@ -59,6 +59,16 @@ void TridentAnalysis::processEvent(HpsEvent* event) {
         pair[second_cluster_index]->getClusterTime()
     };
 
+    std::vector<double> cluster_x = {
+        pair[first_cluster_index]->getPosition()[0], 
+        pair[second_cluster_index]->getPosition()[0] 
+    };
+
+    std::vector<double> cluster_y = {
+        pair[first_cluster_index]->getPosition()[1], 
+        pair[second_cluster_index]->getPosition()[1] 
+    };
+
     double cluster_energy_sum = cluster_energy[0] + cluster_energy[1]; 
     double cluster_energy_diff = cluster_energy[0] - cluster_energy[1];
 
@@ -70,6 +80,8 @@ void TridentAnalysis::processEvent(HpsEvent* event) {
     plotter->get1DHistogram("cluster energy low")->Fill(cluster_energy[1]); 
     plotter->get1DHistogram("cluster time")->Fill(cluster_time[0]); 
     plotter->get1DHistogram("cluster time")->Fill(cluster_time[1]); 
+    plotter->get2DHistogram("cluster position")->Fill(cluster_x[0], cluster_y[0]); 
+    plotter->get2DHistogram("cluster position")->Fill(cluster_x[1], cluster_y[1]); 
 
     // Find all track-cluster matches in the event
     matcher->findAllMatches(event);
@@ -105,6 +117,8 @@ void TridentAnalysis::processEvent(HpsEvent* event) {
     plotter->get1DHistogram("p low - matched")->Fill(track_p[1]); 
     plotter->get1DHistogram("p sum - matched")->Fill(track_p[0] + track_p[1]); 
     plotter->get2DHistogram("cluster pair energy - matched")->Fill(cluster_energy[0], cluster_energy[1]); 
+    plotter->get2DHistogram("cluster position - matched")->Fill(cluster_x[0], cluster_y[0]); 
+    plotter->get2DHistogram("cluster position - matched")->Fill(cluster_x[1], cluster_y[1]); 
     plotter->get2DHistogram("p_{e} v p_{e} - matched")->Fill(track_p[0], track_p[1]);  
 
     // Skip events where both tracks have the same charge
@@ -136,9 +150,16 @@ void TridentAnalysis::processEvent(HpsEvent* event) {
     plotter->get1DHistogram("p low - matched, e+e-")->Fill(track_p[1]); 
     plotter->get1DHistogram("p sum - matched, e+e-")->Fill(track_p[0] + track_p[1]); 
     plotter->get2DHistogram("cluster pair energy - matched, e+e-")->Fill(cluster_energy[0], cluster_energy[1]); 
+    plotter->get2DHistogram("cluster position - matched, e+e-")->Fill(cluster_x[0], cluster_y[0]); 
+    plotter->get2DHistogram("cluster position - matched, e+e-")->Fill(cluster_x[1], cluster_y[1]); 
     plotter->get2DHistogram("p_{e+} v p_{e-} - matched, e+e-")->Fill(electron_p, positron_p);  
     plotter->get2DHistogram("invariant mass v track p sum")->Fill(
             AnalysisUtils::getInvariantMass(electron, positron), track_p[0]+track_p[1]);
+    plotter->get2DHistogram("cluster x high v track p sum - matched, e+e-")->Fill(cluster_x[0], track_p[0]+track_p[1]);
+    plotter->get2DHistogram("cluster y high v track p sum - matched, e+e-")->Fill(cluster_y[0], track_p[0]+track_p[1]);
+    plotter->get2DHistogram("cluster x low v track p sum - matched, e+e-")->Fill(cluster_x[1], track_p[0]+track_p[1]);
+    plotter->get2DHistogram("cluster y low v track p sum - matched, e+e-")->Fill(cluster_y[1], track_p[0]+track_p[1]);
+
 
     if (track_p[0]+track_p[1] >= 0.8) { 
         plotter->get1DHistogram("invariant mass - final")->Fill(AnalysisUtils::getInvariantMass(electron, positron)); 
@@ -189,6 +210,10 @@ void TridentAnalysis::bookHistograms() {
     plotter->build1DHistogram("cluster energy low", 150, 0, 1.5)->GetXaxis()->SetTitle("Ecal cluster energy (GeV)");
 
     plotter->build1DHistogram("cluster time", 200, 0, 100)->GetXaxis()->SetTitle("Ecal cluster time (ns)");
+
+    plot = plotter->build2DHistogram("cluster position", 200, -200, 200, 100, -100, 100);
+    plot->GetXaxis()->SetTitle("Ecal cluster x (mm)");
+    plot->GetXaxis()->SetTitle("Ecal cluster y (mm)");
     
     //
     // Plots of matched tracks and clusters   
@@ -211,6 +236,10 @@ void TridentAnalysis::bookHistograms() {
     plot = plotter->build2DHistogram("cluster pair energy - matched", 150, 0, 1.5, 150, 0, 1.5);
     plot->GetXaxis()->SetTitle("Cluster Energy (GeV)");
     plot->GetYaxis()->SetTitle("Cluster Energy (GeV)");
+
+    plot = plotter->build2DHistogram("cluster position - matched", 200, -200, 200, 100, -100, 100);
+    plot->GetXaxis()->SetTitle("Ecal cluster x (mm)");
+    plot->GetXaxis()->SetTitle("Ecal cluster y (mm)");
 
     plot = plotter->build1DHistogram("track time - cluster time - matched", 60, 30, 60); 
     plot->GetXaxis()->SetTitle("Track time - Ecal cluster time"); 
@@ -240,6 +269,10 @@ void TridentAnalysis::bookHistograms() {
     plot->GetXaxis()->SetTitle("Cluster Energy (GeV)");
     plot->GetYaxis()->SetTitle("Cluster Energy (GeV)");
 
+    plot = plotter->build2DHistogram("cluster position - matched, e+e-", 200, -200, 200, 100, -100, 100);
+    plot->GetXaxis()->SetTitle("Ecal cluster x (mm)");
+    plot->GetXaxis()->SetTitle("Ecal cluster y (mm)");
+
     plot = plotter->build1DHistogram("track time - cluster time - matched, e+e-", 60, 30, 60);
     plot->GetXaxis()->SetTitle("Track time - Ecal cluster time");
 
@@ -250,10 +283,28 @@ void TridentAnalysis::bookHistograms() {
     plotter->build1DHistogram("p high - matched, e+e-", 150, 0, 1.5)->GetXaxis()->SetTitle("p (GeV)");
     plotter->build1DHistogram("p low - matched, e+e-", 150, 0, 1.5)->GetXaxis()->SetTitle("p (GeV)");
     plotter->build1DHistogram("p sum - matched, e+e-", 150, 0, 1.5)->GetXaxis()->SetTitle("p sum (GeV)"); 
+    plotter->build1DHistogram("p sum - matched, e+e-, fiducial", 150, 0, 1.5)->GetXaxis()->SetTitle("p sum (GeV)"); 
+    
 
     plot = plotter->build2DHistogram("p_{e+} v p_{e-} - matched, e+e-", 150, 0, 1.5, 150, 0, 1.5);
     plot->GetXaxis()->SetTitle("p_{e-} (GeV)"); 
     plot->GetYaxis()->SetTitle("p_{e+} (GeV)");
+
+    plot = plotter->build2DHistogram("cluster x high v track p sum - matched, e+e-", 200, -200, 200, 150, 0, 1.5);
+    plot->GetXaxis()->SetTitle("Ecal cluster x (mm)");
+    plot->GetYaxis()->SetTitle("p Sum (GeV)"); 
+
+    plot = plotter->build2DHistogram("cluster x low v track p sum - matched, e+e-", 200, -200, 200, 150, 0, 1.5);
+    plot->GetXaxis()->SetTitle("Ecal cluster x (mm)");
+    plot->GetYaxis()->SetTitle("p Sum (GeV)"); 
+
+    plot = plotter->build2DHistogram("cluster y high v track p sum - matched, e+e-", 100, -100, 100, 150, 0, 1.5);
+    plot->GetXaxis()->SetTitle("Ecal cluster y (mm)");
+    plot->GetYaxis()->SetTitle("p Sum (GeV)"); 
+
+    plot = plotter->build2DHistogram("cluster y low v track p sum - matched, e+e-", 100, -100, 100, 150, 0, 1.5);
+    plot->GetXaxis()->SetTitle("Ecal cluster y (mm)");
+    plot->GetYaxis()->SetTitle("p Sum (GeV)"); 
 
     //plot = plotter->build1DHistogram("cos(#theta_{e+}) v cos(#theta_{e-}) - matched, e+e-");
     //plot->GetXaxis()->SetTitle("cos(#theta_{e-})");  
@@ -263,8 +314,8 @@ void TridentAnalysis::bookHistograms() {
     // Invariant mass
     //
     
-    plotter->build1DHistogram("invariant mass", 200, 0, 0.1)->GetXaxis()->SetTitle("Mass (GeV)");
-    plotter->build1DHistogram("invariant mass - final", 200, 0, 0.1)->GetXaxis()->SetTitle("Mass (GeV)");
+    plotter->build1DHistogram("invariant mass", 400, 0, 0.1)->GetXaxis()->SetTitle("Mass (GeV)");
+    plotter->build1DHistogram("invariant mass - final", 400, 0, 0.1)->GetXaxis()->SetTitle("Mass (GeV)");
 
     plot = plotter->build2DHistogram("invariant mass v track p sum", 200, 0, 0.1, 150, 0, 1.5);
     plot->GetXaxis()->SetTitle("Mass (GeV)");
