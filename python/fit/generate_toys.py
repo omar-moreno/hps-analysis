@@ -22,6 +22,7 @@ def main() :
     parser.add_argument("-c", "--count",  help="Number of toy histograms to generate.")
     parser.add_argument("-e", "--events", help="Number of events per histogram.")
     parser.add_argument("-o", "--output", help="ROOT output file.")
+    parser.add_argument("-b", "--bins",   help="Number of bins the histgram should have.")
     args = parser.parse_args()
 
     if args.input is None : 
@@ -46,9 +47,10 @@ def main() :
     histo = root_file.Get(args.name)
     histo.Draw()
    
-    # 
+    #
     x = r.RooRealVar("x", "x", canvas.GetUxmin(), canvas.GetUxmax())
-    
+    if args.bins is not None : x.setBins(int(args.bins))
+
     #
     arg_list = r.RooArgList(x)
     histo_data = r.RooDataHist("histo_data", "histo_data", arg_list, histo)
