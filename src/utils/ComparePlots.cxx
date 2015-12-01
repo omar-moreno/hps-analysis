@@ -9,7 +9,17 @@
 #include <ComparePlots.h>
 
 ComparePlots::ComparePlots() 
-    : style("") { 
+    : style(""), 
+      colors { "#348ABD",
+               "#A60628", 
+               "#7A68A6", 
+               "#467821", 
+               "#D55E00",
+               "#CC79A7",
+               "#56B4E9",
+               "#009E73",
+               "#F0E442",
+               "#0072B2" } { 
 }
 
 ComparePlots::~ComparePlots() { 
@@ -32,25 +42,32 @@ void ComparePlots::overlayPlots() {
         this->applyMCStyle();
     }
 
-    std::map<std::string, std::vector<TH1*> >::iterator histogram1D_it = histogram1D_map.begin();
-    for (histogram1D_it; histogram1D_it != histogram1D_map.end(); histogram1D_it++) { 
+    for ( auto const & histo1D_element : histogram1D_map ) { 
 
-        histogram1D_it->second[0]->Draw(options.c_str());
-        int max_xbin_value = histogram1D_it->second[0]->GetBinContent(histogram1D_it->second[0]->GetMaximumBin()); 
+        histo1D_element.second[0]->Draw(options.c_str()); 
+        histo1D_element.second[0]->SetFillColorAlpha(TColor::GetColor(colors[0].c_str()), 0.7);
+        histo1D_element.second[0]->SetLineColorAlpha(TColor::GetColor(colors[0].c_str()), 0.7);
+        
+        int max_xbin_value = histo1D_element.second[0]->GetBinContent(
+                histo1D_element.second[0]->GetMaximumBin());
 
-        for (int hist_n = 1; hist_n < histogram1D_it->second.size(); hist_n++) { 
+        for (int hist_n = 1; hist_n < histo1D_element.second.size(); ++hist_n) { 
 
-            histogram1D_it->second[hist_n]->Draw("same");  
-            if (histogram1D_it->second[hist_n]->GetBinContent(histogram1D_it->second[hist_n]->GetMaximumBin()) 
-                    > max_xbin_value) { 
+            histo1D_element.second[hist_n]->Draw("same");  
+            histo1D_element.second[hist_n]->SetFillColorAlpha(TColor::GetColor(colors[hist_n].c_str()), .7); 
+            histo1D_element.second[hist_n]->SetLineColorAlpha(TColor::GetColor(colors[hist_n].c_str()), .7); 
+            
+            if (histo1D_element.second[hist_n]->GetBinContent(
+                        histo1D_element.second[hist_n]->GetMaximumBin()) > max_xbin_value) { 
                 max_xbin_value 
-                    = histogram1D_it->second[hist_n]->GetBinContent(histogram1D_it->second[hist_n]->GetMaximumBin());
-            } 
-        }
-        histogram1D_it->second[0]->GetYaxis()->SetRangeUser(0, max_xbin_value + .1*max_xbin_value);
-        histogram1D_it->second[0]->GetXaxis()->SetRangeUser(2000, 4000);
+                    = histo1D_element.second[hist_n]->GetBinContent(
+                            histo1D_element.second[hist_n]->GetMaximumBin());
+            }
 
-        if (style.compare("mc") == 0) { 
+            histo1D_element.second[0]->GetYaxis()->SetRangeUser(0, max_xbin_value + .1*max_xbin_value);
+        }
+
+        /*if (style.compare("mc") == 0) { 
             
             legend = new TLegend(0.79, 0.79, 0.89, 0.89);
             legend->SetFillColor(0);
@@ -59,13 +76,13 @@ void ComparePlots::overlayPlots() {
             legend->AddEntry(histogram1D_it->second[1], "MC", "l");
             legend->Draw();
         
-        }
+        }*/
 
         canvas->Write();
         canvas->Print("plot_comparison.pdf(");
         delete legend; 
-    }
 
+    }
 
     std::map<std::string, std::vector<TH1*> >::iterator histogram2D_it = histogram2D_map.begin();
     for (histogram2D_it; histogram2D_it != histogram2D_map.end(); histogram2D_it++) { 

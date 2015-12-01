@@ -28,6 +28,7 @@
 #include <TMultiGraph.h>
 #include <TLegend.h>
 #include <TF1.h>
+#include <TColor.h>
 
 //--------------------//
 //--- HPS Analysis ---//
@@ -76,6 +77,8 @@ class ComparePlots : public RootFileReader {
         void applyMCStyle();
 
         std::string style;
+
+        std::vector<std::string> colors; 
 };
 
 #endif // __COMPARE_PLOTS_H__
