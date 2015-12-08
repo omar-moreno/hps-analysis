@@ -6,10 +6,13 @@
 #   Imports   #
 ###############
 import ROOT as r
+import gc
 
 class BumpHunter :
 
     def __init__(self, poly_order) : 
+
+        gc.set_debug(gc.DEBUG_LEAK)
 
         # Create the object used to define the observable
         self.invariant_mass = r.RooRealVar("Invariant Mass",
@@ -55,13 +58,14 @@ class BumpHunter :
 
         # Create the objects that will represent the number of signal and 
         # background events in a given window.
-        self.nsig = r.RooRealVar("nsig","signal fraction", 0, -800., 800)
-        self.nbkg = r.RooRealVar("nbkg","background fraction", 10000., 0.,100000)
+        self.nsig = r.RooRealVar("nsig","signal fraction", 0, -10000., 10000)
+        self.nbkg = r.RooRealVar("nbkg","background fraction", 10000., 0.,10000000)
 
         # Build a composite model 
         self.model = r.RooAddPdf("model", "model", 
                 r.RooArgList(self.signal, self.bkg), r.RooArgList(self.nsig, self.nbkg))
 
+    
     def fit(self, histogram, mass_start, mass_end, mass_step) :
 
         histogram_data = r.RooDataHist("invariant_mass_data", "invariant_mass_data", 
@@ -73,26 +77,50 @@ class BumpHunter :
         # Loop over 
         while mass_start <= mass_end - self.mass_window_size : 
 
+            print "Count: " + str(gc.get_count())
+            #print "Objects: " + str(gc.get_objects())
+
             ap_mass = mass_start + self.mass_window_size/2
-            #print "Setting A' mass to " + str(ap_mass)
-            self.ap_mass_mean.setVal(ap_mass)
+            #self.ap_mass_mean.setVal(ap_mass)
             
-            self.invariant_mass.setRange("A' mass = " + str(ap_mass),
-                                         mass_start, mass_start + self.mass_window_size)
-            self.invariant_mass.setRange(mass_start, mass_start + self.mass_window_size)
+            #self.invariant_mass.setRange("A' mass = " + str(ap_mass),
+            #                             mass_start, mass_start + self.mass_window_size)
 
+            #nll = self.model.createNLL(histogram_data, 
+            #                           r.RooFit.Extended(r.kTRUE), 
+            #                           r.RooFit.SumCoefRange("A' mass = " + str(ap_mass)),
+            #                           r.RooFit.Range("A' mass = " + str(ap_mass)))
+            #print "NLL object + " + str(nll)
+            #print "Model " + str(self.model)
+            #print "iv object: " + str(self.invariant_mass)
 
-            result = self.model.fitTo(histogram_data, 
-                                       r.RooFit.SumCoefRange("A' mass = " + str(ap_mass)),
-                                       r.RooFit.Range("A' mass = " + str(ap_mass)),
-                                       r.RooFit.Extended(r.kTRUE),
-                                       r.RooFit.Save())
+            #m = r.RooMinuit(nll)
 
-            self.reset_params(result.floatParsInit())
+            #m.migrad()
 
-            results.append(result)
+            #m.improve()
+
+            #m.hesse()
+
+            #m.minos()
+
+            #result = m.save()
+            #result = self.model.fitTo(histogram_data, 
+            #                           r.RooFit.SumCoefRange("A' mass = " + str(ap_mass)),
+            #                           r.RooFit.Range("A' mass = " + str(ap_mass)),
+            #                          r.RooFit.Extended(r.kTRUE),
+            #                           r.RooFit.Save())
+
+            #self.reset_params(result.floatParsInit())
+
+            #results.append(result)
 
             mass_start += mass_step
+    
+            #gc.collect()
+            #print "Refs: " + str(gc.get_referrers(nll)[0])
+
+            #print "After removal Refs: " + str(gc.get_referrers(nll))
 
         return results
 
