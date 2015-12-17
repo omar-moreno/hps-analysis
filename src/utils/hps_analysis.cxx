@@ -34,7 +34,6 @@
 //--- HPS Analysis ---//
 //--------------------//
 #include <TrackAnalysis.h>
-#include <PairsAnalysis.h>
 #include <TagProbeAnalysis.h>
 #include <TrackClusterMatchingEfficiencyAnalysis.h>
 #include <SharedHitAnalysis.h>
@@ -44,6 +43,7 @@
 #include <GblTrackAnalysis.h>
 #include <TridentAnalysis.h>
 #include <TridentDataAnalysis.h>
+#include <MollerDataAnalysis.h>
 
 using namespace std; 
 
@@ -153,11 +153,11 @@ int main(int argc, char **argv) {
     //analyses.push_back(new TrackAnalysis());
     //analyses.push_back(new GblTrackAnalysis());
     //analyses.push_back(new TimingAnalysis());
-    //analyses.push_back(new PairsAnalysis());
     //analyses.push_back(new TagProbeAnalysis());
     //analyses.push_back(new TrackClusterMatchingEfficiencyAnalysis());
     //analyses.push_back(new SharedHitAnalysis());
     //analyses.push_back(new MollerAnalysis());
+    //analyses.push_back(new MollerDataAnalysis());
     //analyses.push_back(new MuonAnalysis());
     analyses.push_back(new TridentAnalysis()); 
     //analyses.push_back(new TridentDataAnalysis()); 

@@ -12,16 +12,6 @@ target_link_libraries(TrackAnalysis
     TrackExtrapolator
 )
 
-add_library(PairsAnalysis PairsAnalysis.cxx)
-target_link_libraries(PairsAnalysis
-    ${ROOT_CORE_LIBRARY}
-    ${ROOT_RIO_LIBRARY}
-    ${ROOT_GPAD_LIBRARY}
-    ${ROOT_HIST_LIBRARY}
-    ${HPS_EVENT_LIBRARY}
-    Plotter
-)
-
 add_library(TagProbeAnalysis TagProbeAnalysis.cxx)
 target_link_libraries(TagProbeAnalysis
     ${HPS_EVENT_LIBRARY}
