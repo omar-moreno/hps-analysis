@@ -36,7 +36,7 @@ void GblTrackAnalysis::processEvent(HpsEvent* event) {
         //std::cout << "GBL Track: D0: " << gbl_track->getD0() << std::endl;
         
         // Get the seed track associated with the GBL track
-        SvtTrack* seed_track = (SvtTrack*) gbl_track->getSeedTrack().GetObject();
+        //SvtTrack* seed_track = (SvtTrack*) gbl_track->getSeedTrack().GetObject();
         //std::cout << "Seed Track: D0: " << seed_track->getD0() << std::endl;
 
         // Fill the plots providing general event information related to tracks
@@ -60,15 +60,16 @@ void GblTrackAnalysis::processEvent(HpsEvent* event) {
         plotter->get1DHistogram("py - gbl")->Fill(gbl_p[1]);
         plotter->get1DHistogram("pz - gbl")->Fill(gbl_p[2]);
 
+        /*
         plotter->get1DHistogram("chi2")->Fill(seed_track->getChi2());
         plotter->get1DHistogram("doca")->Fill(seed_track->getD0());
         plotter->get1DHistogram("z0")->Fill(seed_track->getZ0());
         plotter->get1DHistogram("sin(phi0)")->Fill(sin(seed_track->getPhi0()));
         plotter->get1DHistogram("curvature")->Fill(seed_track->getOmega());
         plotter->get1DHistogram("cos(theta)")->Fill(TrackExtrapolator::getCosTheta(seed_track));
-
+        */
         // Calculate the momentum magnitude and transverse momentum
-        std::vector<double> p = seed_track->getMomentum();
+        /*std::vector<double> p = seed_track->getMomentum();
         double p_mag = sqrt(p[0]*p[0] + p[1]*p[1] + p[2]*p[2]);
         double pt = sqrt(p[0]*p[0] + p[1]*p[1]);
 
@@ -77,7 +78,6 @@ void GblTrackAnalysis::processEvent(HpsEvent* event) {
         plotter->get1DHistogram("px")->Fill(p[0]);
         plotter->get1DHistogram("py")->Fill(p[1]);
         plotter->get1DHistogram("pz")->Fill(p[2]);
-
 
         if (seed_track->isTopTrack()) { 
             
@@ -148,7 +148,7 @@ void GblTrackAnalysis::processEvent(HpsEvent* event) {
                 seed_track->getOmega() - gbl_track->getOmega()); 
 //        plotter->get1DHistogram("seed cos(theta) - gbl cos(theta)")->Fill(
 //                TrackExtrapolator::getCosTheta(seed_track) - TrackExtrapolator::getCosTheta(gbl_track));
-
+*/
     } 
 }
 

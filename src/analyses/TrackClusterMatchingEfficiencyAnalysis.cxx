@@ -246,12 +246,12 @@ void TrackClusterMatchingEfficiencyAnalysis::processEvent(HpsEvent* event) {
             for (int gbl_track_n = 0; gbl_track_n < event->getNumberOfGblTracks(); ++gbl_track_n) { 
 
                 // Get a GBL track from the event
-                gbl_track = event->getGblTrack(gbl_track_n); 
+                //gbl_track = event->getGblTrack(gbl_track_n); 
         
                 // Get the seed track associated with the GBL track
-                SvtTrack* seed_track = (SvtTrack*) gbl_track->getSeedTrack().GetObject();
+                //SvtTrack* seed_track = (SvtTrack*) gbl_track->getSeedTrack().GetObject();
             
-                if (seed_track == track) break;  
+                //if (seed_track == track) break;  
             }
             
             std::vector<double> gbl_p;
@@ -678,7 +678,7 @@ bool TrackClusterMatchingEfficiencyAnalysis::passEnergyCut(EcalCluster* cluster)
 }
 
 bool TrackClusterMatchingEfficiencyAnalysis::passClusterTimeCut(EcalCluster* cluster) {   
-    if (cluster->getClusterTime() < 39.5 || cluster->getClusterTime() > 49.5) return false;
+    if (cluster->getClusterTime() < 42 || cluster->getClusterTime() > 49.5) return false;
 
     return true;   
 }
