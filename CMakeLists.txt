@@ -52,5 +52,8 @@ add_subdirectory("${HPS_ANALYSIS_SOURCE_DIR}/src/utils")
 # Add the analysis subdirectory to the build
 add_subdirectory("${HPS_ANALYSIS_SOURCE_DIR}/src/analyses")
 
+# Add the fit subdirectory to the build
+add_subdirectory("${HPS_ANALYSIS_SOURCE_DIR}/src/fit")
+
 add_subdirectory("root")
 
