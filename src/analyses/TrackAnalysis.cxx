@@ -145,8 +145,8 @@ void TrackAnalysis::processEvent(HpsEvent* event) {
             electron_plotter->get2DHistogram("sin(phi0) v px")->Fill(sin(track->getPhi0()), p[0]); 
             electron_plotter->get2DHistogram("sin(phi0) v py")->Fill(sin(track->getPhi0()), p[1]); 
 
-            if (((HpsParticle*) track->getParticle().GetObject())->getClusters()->GetEntriesFast() != 0) { 
-               double energy = ((EcalCluster*) ((HpsParticle*) track->getParticle().GetObject())->getClusters()->At(0))->getEnergy();
+            if (track->getParticle()->getClusters()->GetEntriesFast() != 0) { 
+               double energy = ((EcalCluster*) track->getParticle()->getClusters()->At(0))->getEnergy();
                 electron_plotter->get1DHistogram("ep")->Fill(energy/p_mag);
             }
 
@@ -193,8 +193,8 @@ void TrackAnalysis::processEvent(HpsEvent* event) {
             top_plotter->get1DHistogram("curvature")->Fill(track->getOmega());
             top_plotter->get1DHistogram("tan_lambda")->Fill(track->getTanLambda());
 
-            if (track->getCharge() < 0 && ((HpsParticle*) track->getParticle().GetObject())->getClusters()->GetEntriesFast() != 0) { 
-               double energy = ((EcalCluster*) ((HpsParticle*) track->getParticle().GetObject())->getClusters()->At(0))->getEnergy();
+            if (track->getCharge() < 0 && track->getParticle()->getClusters()->GetEntriesFast() != 0) { 
+               double energy = ((EcalCluster*) track->getParticle()->getClusters()->At(0))->getEnergy();
                 top_plotter->get1DHistogram("ep")->Fill(energy/p_mag);
             }
         
@@ -212,8 +212,8 @@ void TrackAnalysis::processEvent(HpsEvent* event) {
             bottom_plotter->get1DHistogram("curvature")->Fill(track->getOmega());
             bottom_plotter->get1DHistogram("tan_lambda")->Fill(track->getTanLambda());
 
-            if (track->getCharge() < 0 && ((HpsParticle*) track->getParticle().GetObject())->getClusters()->GetEntriesFast() != 0) { 
-               double energy = ((EcalCluster*) ((HpsParticle*) track->getParticle().GetObject())->getClusters()->At(0))->getEnergy();
+            if (track->getCharge() < 0 && track->getParticle()->getClusters()->GetEntriesFast() != 0) { 
+               double energy = ((EcalCluster*) track->getParticle()->getClusters()->At(0))->getEnergy();
                 bottom_plotter->get1DHistogram("ep")->Fill(energy/p_mag);
             }
         }
