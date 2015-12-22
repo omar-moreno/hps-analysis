@@ -115,7 +115,6 @@ target_link_libraries(hps_analysis
     ${LIBXML2_LIBRARIES}
     ${HPS_EVENT_LIBRARY}
     TrackAnalysis
-    PairsAnalysis
     TagProbeAnalysis
     TrackClusterMatchingEfficiencyAnalysis
     SharedHitAnalysis
@@ -125,6 +124,7 @@ target_link_libraries(hps_analysis
     GblTrackAnalysis
     TridentAnalysis
     TridentDataAnalysis
+    MollerDataAnalysis
 )
 
 # Find the necessary LCIO libraries
