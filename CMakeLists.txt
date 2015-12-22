@@ -47,6 +47,9 @@ include_directories("${UTILS_HDR_DIR}")
 set(ANALYSIS_HDR_DIR "${HPS_ANALYSIS_SOURCE_DIR}/include/analyses")
 include_directories("${ANALYSIS_HDR_DIR}")
 
+set(FIT_HDR_DIR "${HPS_ANALYSIS_SOURCE_DIR}/include/fit")
+include_directories("${FIT_HDR_DIR}")
+
 add_subdirectory("${HPS_ANALYSIS_SOURCE_DIR}/src/utils")
 
 # Add the analysis subdirectory to the build
