@@ -62,12 +62,10 @@ TrackClusterMatcher::~TrackClusterMatcher() {
 void TrackClusterMatcher::findAllMatches(HpsEvent* event) { 
 
     //std::cout << "[ TrackClusterMatcher ]: Finding all track-cluster matches." << std::endl;
-
-
     //std::cout << "[ TrackClusterMatcher ]: Number of Tracks: " << event->getNumberOfTracks() << std::endl;
     //std::cout << "[ TrackClusterMatcher ]: Number of cluster : " << event->getNumberOfEcalClusters() << std::endl;
-    // Clear the track and cluster maps of all previously found track and 
-    // cluster matches.
+    
+    // Clear the track and cluster maps of all previously found matches
     cluster_map.clear();
     track_map.clear();
 

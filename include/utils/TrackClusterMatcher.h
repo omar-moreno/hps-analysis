@@ -85,7 +85,7 @@ class TrackClusterMatcher {
          *
          * @param enable_plots : true to enable, false to disable
          */
-        void enablePlots(bool enable_plots) { this->enable_plots = enable_plots; }; 
+        void enablePlots(bool enable_plots = true) { this->enable_plots = enable_plots; }; 
 
         /**
          * Save the histograms to a ROOT file.
