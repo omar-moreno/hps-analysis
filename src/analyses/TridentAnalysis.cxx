@@ -29,6 +29,10 @@ TridentAnalysis::~TridentAnalysis() {
 }
 
 void TridentAnalysis::initialize() { 
+
+    // Enable track-cluster matching plots
+    matcher->enablePlots(); 
+
     this->bookHistograms(); 
 }
 
@@ -186,7 +190,10 @@ void TridentAnalysis::processEvent(HpsEvent* event) {
     }  
 }
 
-void TridentAnalysis::finalize() { 
+void TridentAnalysis::finalize() {
+    
+    // Save the track-Ecal cluster matching plots to a ROOT file
+    matcher->saveHistograms();  
     ecal_utils->saveHistograms();
     plotter->saveToRootFile("trident_analysis.root");
 
@@ -314,8 +321,8 @@ void TridentAnalysis::bookHistograms() {
     // Invariant mass
     //
     
-    plotter->build1DHistogram("invariant mass", 400, 0, 0.1)->GetXaxis()->SetTitle("Mass (GeV)");
-    plotter->build1DHistogram("invariant mass - final", 400, 0, 0.1)->GetXaxis()->SetTitle("Mass (GeV)");
+    plotter->build1DHistogram("invariant mass", 1000, 0, 0.1)->GetXaxis()->SetTitle("Mass (GeV)");
+    plotter->build1DHistogram("invariant mass - final", 1000, 0, 0.1)->GetXaxis()->SetTitle("Mass (GeV)");
 
     plot = plotter->build2DHistogram("invariant mass v track p sum", 200, 0, 0.1, 150, 0, 1.5);
     plot->GetXaxis()->SetTitle("Mass (GeV)");
