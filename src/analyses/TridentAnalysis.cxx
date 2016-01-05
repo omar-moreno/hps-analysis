@@ -31,7 +31,8 @@ TridentAnalysis::~TridentAnalysis() {
 void TridentAnalysis::initialize() { 
 
     // Enable track-cluster matching plots
-    matcher->enablePlots(); 
+    matcher->enablePlots();
+    matcher->useFieldMap();  
 
     this->bookHistograms(); 
 }
