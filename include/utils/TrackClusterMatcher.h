@@ -78,7 +78,7 @@ class TrackClusterMatcher {
          *                      found using the field map.  If false, 
          *                      extrapolated the track analytically.
          */
-        void useFieldMap(bool use_field_map) { this->use_field_map = use_field_map; }; 
+        void useFieldMap(bool use_field_map = true) { this->use_field_map = use_field_map; }; 
 
         /**
          * Enable/disable booking, filling and saving of plots.
