@@ -105,7 +105,10 @@ class MollerAnalysis : public HpsAnalysis {
          * Total number of singles 1 triggers where the SVT bias was on and it
          * was in closed position.
          */
-        int svt_closed_position_counter; 
+        int svt_closed_position_counter;
+
+        /** Total number of events with a "good" cluster pair. */
+        int cluster_pair_counter;  
 };
 
 #endif // __MOLLER_ANALYSIS_H__
