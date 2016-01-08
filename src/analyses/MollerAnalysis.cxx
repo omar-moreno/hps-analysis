@@ -186,6 +186,24 @@ void MollerAnalysis::processEvent(HpsEvent* event) {
     double mass = AnalysisUtils::getInvariantMass(tracks[0], tracks[1]); 
     plotter->get1DHistogram("invariant mass - mollers")->Fill(mass);
 
+    std::vector<GblTrack*> gbl_tracks = { 
+        nullptr,
+        nullptr
+    };
+
+    //std::cout << "Total GBL tracks: " << event->getNumberOfGblTracks() << std::endl;
+    for (int gbl_track_n = 0; gbl_track_n < event->getNumberOfGblTracks(); ++gbl_track_n) { 
+        GblTrack* gbl_track = event->getGblTrack(gbl_track_n); 
+        
+        if (gbl_track->getSeedTrack() == tracks[0]) { 
+            //std::cout << "First GBL track match found." << std::endl;
+            gbl_tracks[0] = gbl_track;
+        } else if (gbl_track->getSeedTrack() == tracks[1]) { 
+            //std::cout << "Second GBL track match found." << std::endl;
+            gbl_tracks[1] = gbl_track;
+        }
+    }
+
     if (event->getNumberOfParticles(HpsParticle::TC_MOLLER_CANDIDATE) == 0) {
         std::cout << "Moller found but event doesn't contain TC moller candidate." << std::endl;
         return;
@@ -196,11 +214,30 @@ void MollerAnalysis::processEvent(HpsEvent* event) {
 
         TRefArray* daughter_particles = particle->getParticles();
         
-        if (((HpsParticle*) daughter_particles->At(0))->getType() >32) continue;
+        if (((HpsParticle*) daughter_particles->At(0))->getType() > 32 && event->getNumberOfParticles(HpsParticle::TC_MOLLER_CANDIDATE) == 2) {
+            //std::cout << "Total TC candidates: " << event->getNumberOfParticles(HpsParticle::TC_MOLLER_CANDIDATE) << std::endl;
+            if (gbl_tracks[0] == nullptr || gbl_tracks[1] == nullptr) continue;
+            //std::cout << "GBL particle found" << std::endl; 
+            plotter->get1DHistogram("invariant mass - mollers - GBL TC")->Fill(particle->Mass());
+        
+            plotter->get1DHistogram("v_{x} - mollers - GBL TC")->Fill(particle->getVertexPosition()[0]); 
+            plotter->get1DHistogram("v_{y} - mollers - GBL TC")->Fill(particle->getVertexPosition()[1]); 
+            plotter->get1DHistogram("v_{z} - mollers - GBL TC")->Fill(particle->getVertexPosition()[2]); 
+
+            plotter->get2DHistogram("invariant mass : cluster pair x sum - mollers - GBL TC")->Fill(particle->Mass(), cluster_x_sum); 
+            plotter->get2DHistogram("invariant mass : cluster pair delta - mollers - GBL TC")->Fill(particle->Mass(), cluster_x_diff);
+
+            plotter->get2DHistogram("invariant mass : Vextex x - mollers - GBL TC")->Fill(particle->Mass(), particle->getVertexPosition()[0]);
+            plotter->get2DHistogram("invariant mass : Vextex y - mollers - GBL TC")->Fill(particle->Mass(), particle->getVertexPosition()[1]);
+            plotter->get2DHistogram("invariant mass : Vextex #Chi^{2} - mollers - GBL TC")->Fill(particle->Mass(), particle->getVertexFitChi2());
+
+            continue;
+        } 
         
         if (daughter_particles->IndexOf(tracks[0]->getParticle())
                 *daughter_particles->IndexOf(tracks[1]->getParticle()) != 0) continue;        
 
+        //std::cout << "Seed particle found" << std::endl;
         plotter->get1DHistogram("invariant mass - mollers - TC")->Fill(particle->Mass());
     
         plotter->get1DHistogram("v_{x} - mollers - TC")->Fill(particle->getVertexPosition()[0]); 
@@ -214,29 +251,12 @@ void MollerAnalysis::processEvent(HpsEvent* event) {
         plotter->get2DHistogram("invariant mass : Vextex y - mollers - TC")->Fill(particle->Mass(), particle->getVertexPosition()[1]);
         plotter->get2DHistogram("invariant mass : Vextex #Chi^{2} - mollers - TC")->Fill(particle->Mass(), particle->getVertexFitChi2());
     
-        break;
     }
 
     /*
-    std::vector<GblTrack*> gbl_tracks = { 
-        nullptr, 
-        nullptr
-    };
-
-    for (int gbl_track_n = 0; gbl_track_n < event->getNumberOfGblTracks(); ++gbl_track_n) { 
-        GblTrack* gbl_track = event->getGblTrack(gbl_track_n); 
-
-        if (gbl_track->getSeedTrack() == tracks[0]) { 
-            gbl_tracks[0] = gbl_track;
-        } else if (gbl_track->getSeedTrack() == tracks[1]) { 
-            gbl_tracks[1] = gbl_track;
-        }
-    }
 
     if (gbl_tracks[0] == nullptr || gbl_tracks[1] == nullptr) return;
 
-    mass = AnalysisUtils::getInvariantMass(gbl_tracks[0], gbl_tracks[1]); 
-    plotter->get1DHistogram("invariant mass - mollers - GBL")->Fill(mass);
     */
 }
 
@@ -327,13 +347,13 @@ void MollerAnalysis::bookHistograms() {
    
 
     // Invariant mass
-    plot = plotter->build1DHistogram("invariant mass - mollers", 100, 0, 0.1);
+    plot = plotter->build1DHistogram("invariant mass - mollers", 100, 0.02, 0.05);
     plot->GetXaxis()->SetTitle("Invariant mass (GeV)");
 
-    plot = plotter->build1DHistogram("invariant mass - mollers - TC", 100, 0, 0.1); 
+    plot = plotter->build1DHistogram("invariant mass - mollers - TC", 100, 0.02, 0.05); 
     plot->GetXaxis()->SetTitle("Invariant mass (GeV)"); 
 
-    plot = plotter->build1DHistogram("invariant mass - mollers - GBL", 100, 0, 0.1);
+    plot = plotter->build1DHistogram("invariant mass - mollers - GBL TC", 100, 0.02, 0.05);
     plot->GetXaxis()->SetTitle("Invariant mass (GeV)");
 
     plot = plotter->build1DHistogram("v_{x} - mollers - TC", 100, -1, 1); 
@@ -344,7 +364,16 @@ void MollerAnalysis::bookHistograms() {
 
     plot = plotter->build1DHistogram("v_{z} - mollers - TC", 100, -1, 1); 
     plot->GetXaxis()->SetTitle("Vertex z position (mm)"); 
-   
+
+    plot = plotter->build1DHistogram("v_{z} - mollers - GBL TC", 100, -1, 1); 
+    plot->GetXaxis()->SetTitle("Vertex z position (mm)"); 
+
+    plot = plotter->build1DHistogram("v_{x} - mollers - GBL TC", 100, -1, 1); 
+    plot->GetXaxis()->SetTitle("Vertex x position (mm)"); 
+
+    plot = plotter->build1DHistogram("v_{y} - mollers - GBL TC", 100, -1, 1); 
+    plot->GetXaxis()->SetTitle("Vertex y position (mm)"); 
+
     plotter->build2DHistogram("invariant mass : cluster pair x sum - mollers - TC", 100, 0, 0.1, 100, -250, -100);
     plotter->build2DHistogram("invariant mass : cluster pair delta - mollers - TC", 100, 0, 0.1, 100, -150, 200);
 
@@ -353,6 +382,15 @@ void MollerAnalysis::bookHistograms() {
     plotter->build2DHistogram("invariant mass : Vextex y - mollers - TC", 100, 0, 0.1, 100, -1, 1); 
     
     plotter->build2DHistogram("invariant mass : Vextex #Chi^{2} - mollers - TC", 100, 0, 0.1, 100, 0, 50);
+
+    plotter->build2DHistogram("invariant mass : cluster pair x sum - mollers - GBL TC", 100, 0, 0.1, 100, -250, -100);
+    plotter->build2DHistogram("invariant mass : cluster pair delta - mollers - GBL TC", 100, 0, 0.1, 100, -150, 200);
+
+    plotter->build2DHistogram("invariant mass : Vextex x - mollers - GBL TC", 100, 0, 0.1, 100, -1, 1); 
+
+    plotter->build2DHistogram("invariant mass : Vextex y - mollers - GBL TC", 100, 0, 0.1, 100, -1, 1); 
+    
+    plotter->build2DHistogram("invariant mass : Vextex #Chi^{2} - mollers - GBL TC", 100, 0, 0.1, 100, 0, 50);
 
     plotter->build2DHistogram("cluster position - moller", 200, -200, 200, 100, -100, 100);
 } 
