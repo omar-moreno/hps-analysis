@@ -12,20 +12,21 @@
 
 #include <TFile.h>
 #include <TH1.h>
+#include <RooFitResult.h>
 
 #include <RootFileReader.h>
+#include <BumpHunter.h>
 
 using namespace std;
 
 int main(int argc, char **argv) { 
 
     string file_name;
-    int histo_count;
-    int event_count;
-    int poly_order;
-    double window_size; 
-    double window_start;
-    double window_end;
+    int hist_count = 10;
+    int poly_order = 3;
+    double window_size = 0.020; 
+    double window_start = 0.03;
+    double window_end = 0.050;
 
     // Parse all the command line arguments.  If there are no valid command
     // line arguments passed, print the usage and exit the application
@@ -49,7 +50,7 @@ int main(int argc, char **argv) {
                 file_name = optarg;
                 break;
             case 'n':
-                event_count = atoi(optarg);
+                hist_count = atoi(optarg);
                 break;
             case 'o': 
                 poly_order = atoi(optarg);
@@ -81,7 +82,17 @@ int main(int argc, char **argv) {
     RootFileReader* reader = new RootFileReader(); 
     reader->parseFile(file);
 
-    for (auto& histo : reader->get1DHistograms()) { 
-        std::cout << "Histogram: " << histo->GetName() << std::endl;
+    BumpHunter* bump_hunter = new BumpHunter(poly_order);
+
+    int hist_counter = 0; 
+    for (auto& hist : reader->get1DHistograms()) { 
+        std::cout << "Histogram: " << hist->GetName() << std::endl;
+        if (hist_counter == hist_count) break;
+
+        std::vector<RooFitResult*> results = bump_hunter->fit(hist, window_start, window_end, 0.01);
+        
+        
+
+        hist_counter++;
     }
 }
