@@ -32,6 +32,9 @@ target_link_libraries(bump_hunt_evaluator
     ${ROOT_CORE_LIB}
     ${ROOT_RIO_LIB}
     ${ROOT_HIST_LIB}   
+    ${ROO_FIT}
+    ${ROO_FIT_CORE}
     RootFileReader
+    BumpHunter
 )
 
