@@ -55,3 +55,52 @@ BumpHunter::~BumpHunter() {
     delete bkg;
     delete model; 
 }
+
+std::vector<RooFitResult*> BumpHunter::fit(TH1* histogram, double window_start, double window_end, double window_step) { 
+    
+    RooDataHist* data = new RooDataHist("data", "data", RooArgList(*variable_map["invariant mass"]), histogram);
+
+    std::vector<RooFitResult*> results; 
+
+    while (window_start <= (window_end - window_size)) { 
+        double ap_hypothesis = window_start + window_size/2; 
+        variable_map["A' mass"]->setVal(ap_hypothesis); 
+
+        std::string range_name = "A' mass = " + std::to_string(ap_hypothesis); 
+        variable_map["invariant mass"]->setRange(range_name.c_str(), window_start, window_start + window_size); 
+
+        RooAbsReal* nll = model->createNLL(*data, RooFit::Extended(kTRUE), 
+                RooFit::SumCoefRange(range_name.c_str()), 
+                RooFit::Range(range_name.c_str()));
+
+        RooMinuit m(*nll);
+
+        m.migrad();
+
+        RooFitResult* result = m.save(); 
+        results.push_back(result); 
+
+        window_start += window_step; 
+
+        resetParameters(result->floatParsInit()); 
+
+         
+    }
+
+    delete data; 
+    
+    return results; 
+}
+
+void BumpHunter::resetParameters(RooArgList initial_params) { 
+    
+    for (auto& element : variable_map) { 
+        if (initial_params.find(element.second->GetName()) == NULL) continue;
+
+        RooRealVar* var = (RooRealVar*) initial_params.find(element.second->GetName());
+
+        element.second->setVal(var->getVal());
+        element.second->setError(var->getError()); 
+
+    }
+}
