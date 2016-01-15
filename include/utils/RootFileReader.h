@@ -84,6 +84,8 @@ class RootFileReader {
          */
         std::vector<TGraph*> getMatchingGraphs(std::string histogram_name);
 
+        std::vector<TH1*> get1DHistograms() { return histogram1D_vec; };
+
     protected: 
 
         /** Map containing 1D histograms */
@@ -94,6 +96,9 @@ class RootFileReader {
 
         /** Map containing objects of type TGraph */
         std::map <std::string, std::vector<TGraph*> > graph_map;
+
+        /** Vector containing all 1D histograms */
+        std::vector<TH1*> histogram1D_vec; 
 
     private:
 

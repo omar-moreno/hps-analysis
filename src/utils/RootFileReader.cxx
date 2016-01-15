@@ -45,7 +45,8 @@ void RootFileReader::parseFile(TList* keys) {
 
         // Sort the histograms based on type
         if (std::string(key->ReadObj()->ClassName()).find("1") != std::string::npos) {
-            histogram1D_map[key->GetName()].push_back((TH1*) key->ReadObj()); 
+            histogram1D_map[key->GetName()].push_back((TH1*) key->ReadObj());
+            histogram1D_vec.push_back((TH1*) key->ReadObj()); 
         } else if (std::string(key->ReadObj()->ClassName()).find("2") != std::string::npos) {
             histogram2D_map[key->GetName()].push_back((TH1*) key->ReadObj()); 
         } else if (std::string(key->ReadObj()->ClassName()).find("Graph") != std::string::npos) { 
