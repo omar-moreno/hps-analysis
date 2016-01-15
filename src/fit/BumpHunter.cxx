@@ -12,37 +12,46 @@
 #include <BumpHunter.h>
 
 BumpHunter::BumpHunter(int poly_order) 
-    : window_size(0.01)
-{
+    : window_size(0.01) {
 
-    // 
-    invariant_mass = new RooRealVar("Invariant Mass", "Invariant Mass (GeV)", 0.003, 0.1);
+    // Independent variable
+    variable_map["invariant mass"] = new RooRealVar("Invariant Mass", "Invariant Mass (GeV)", 0.003, 0.1);
 
     //   Signal PDF   //
-    ap_mass_mean  = new RooRealVar("ap_mass_mean",  "ap_mass_mean",  0.03);
-    ap_mass_sigma = new RooRealVar("ap_mass_sigma", "ap_mass_sigma", 0.00167);
+    variable_map["A' mass"]  = new RooRealVar("A' Mass",  "A' Mass",  0.03);
+    variable_map["A' mass resolution"] = new RooRealVar("A' Mass Resolution", "A' Mass Resolution", 0.00167);
 
-    signal = new RooGaussian("signal", "signal", *invariant_mass, *ap_mass_mean, *ap_mass_sigma);
+    signal = new RooGaussian("signal", "signal", *variable_map["invariant mass"],
+                             *variable_map["A' mass"], *variable_map["A' mass resolution"]);
 
+    std::string name;
     for (int order = 1; order <= poly_order; ++order) {
-        t.push_back(new RooRealVar(("t"+std::to_string(order)).c_str(),
-                    ("t"+std::to_string(order)).c_str(), 
-                    0, -1, 1));
-        arg_list.add(*t[order - 1]);
+        name = "t" + std::to_string(order);
+        variable_map[name] = new RooRealVar(name.c_str(), name.c_str(), 0, -1, 1);
+        arg_list.add(*variable_map[name]);
     }
 
-    bkg = new RooChebychev("bkg", "bkg", *invariant_mass, arg_list);
+    
+    bkg = new RooChebychev("bkg", "bkg", *variable_map["invariant mass"], arg_list);
 
-    n_sig = new RooRealVar("nsig", "signal yield", 0, -5000, 5000);
-    n_bkg = new RooRealVar("nbkg", "bkg yield", 50000, 10000, 1000000);
 
-    model = new RooAddPdf("model", "model", RooArgList(*signal, *bkg), RooArgList(*n_sig, *n_bkg)); 
+    variable_map["signal yield"] = new RooRealVar("signal yield", "signal yield", 0, -5000, 5000);
+    variable_map["bkg yield"] = new RooRealVar("bkg yield", "bkg yield", 50000, 10000, 1000000);
+
+    model = new RooAddPdf("model", "model", RooArgList(*signal, *bkg), 
+                            RooArgList(*variable_map["signal yield"], *variable_map["bkg yield"])); 
 }
 
 
 BumpHunter::~BumpHunter() {
-    delete invariant_mass;
-    delete ap_mass_mean;
-    delete ap_mass_sigma;
+
+    
+    for (auto& element : variable_map) { 
+       delete element.second; 
+    }
+    variable_map.clear();
+
     delete signal;
+    delete bkg;
+    delete model; 
 }

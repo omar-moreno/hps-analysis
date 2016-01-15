@@ -3,6 +3,7 @@
 #define __BUMP_HUNTER_H__
 
 #include <vector>
+#include <map>
 
 #include <RooGaussian.h>
 #include <RooChebychev.h>
@@ -24,17 +25,12 @@ class BumpHunter {
 
     private: 
 
-        RooRealVar* invariant_mass;
-        RooRealVar* ap_mass_mean;
-        RooRealVar* ap_mass_sigma;
-        RooRealVar* n_sig;
-        RooRealVar* n_bkg;
+        std::map <std::string, RooRealVar*> variable_map; 
+
         RooAddPdf* model;  
         RooGaussian* signal;
         RooChebychev* bkg; 
         RooArgList arg_list;
-
-        std::vector<RooRealVar*> t;
 
         double window_size; 
 };
