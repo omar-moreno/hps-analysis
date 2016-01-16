@@ -56,11 +56,11 @@ BumpHunter::~BumpHunter() {
     delete model; 
 }
 
-std::vector<RooFitResult*> BumpHunter::fit(TH1* histogram, double window_start, double window_end, double window_step) { 
+std::map<std::string, RooFitResult*> BumpHunter::fit(TH1* histogram, double window_start, double window_end, double window_step) { 
     
     RooDataHist* data = new RooDataHist("data", "data", RooArgList(*variable_map["invariant mass"]), histogram);
 
-    std::vector<RooFitResult*> results; 
+    std::map<std::string ,RooFitResult*> results; 
 
     while (window_start <= (window_end - window_size)) { 
         double ap_hypothesis = window_start + window_size/2; 
@@ -78,7 +78,7 @@ std::vector<RooFitResult*> BumpHunter::fit(TH1* histogram, double window_start, 
         m.migrad();
 
         RooFitResult* result = m.save(); 
-        results.push_back(result); 
+        results[range_name] = result; 
 
         window_start += window_step; 
 

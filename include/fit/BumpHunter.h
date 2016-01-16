@@ -28,7 +28,9 @@ class BumpHunter {
         /**
          *
          */
-        std::vector<RooFitResult*> fit(TH1* histogram, double window_start, double window_end, double window_step); 
+        std::map<std::string, RooFitResult*> fit(TH1* histogram, double window_start, double window_end, double window_step);
+
+        void setWindowSize(double window_size) { this->window_size = window_size; };  
 
     private: 
 
