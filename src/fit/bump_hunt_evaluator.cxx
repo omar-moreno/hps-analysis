@@ -16,6 +16,7 @@
 
 #include <RootFileReader.h>
 #include <BumpHunter.h>
+#include <Plotter.h>
 
 using namespace std;
 
@@ -83,16 +84,45 @@ int main(int argc, char **argv) {
     reader->parseFile(file);
 
     BumpHunter* bump_hunter = new BumpHunter(poly_order);
+    bump_hunter->setWindowSize(window_size); 
+
+    Plotter* plotter = new Plotter(); 
 
     int hist_counter = 0; 
+    string hist_name; 
     for (auto& hist : reader->get1DHistograms()) { 
-        std::cout << "Histogram: " << hist->GetName() << std::endl;
+        cout << "Histogram: " << hist->GetName() << endl;
         if (hist_counter == hist_count) break;
 
-        std::vector<RooFitResult*> results = bump_hunter->fit(hist, window_start, window_end, 0.01);
-        
-        
+        map<string, RooFitResult*> results = bump_hunter->fit(hist, window_start, window_end, 0.01);
+       
+        for (auto& result : results) { 
+            
+            hist_name = result.first + " - Signal Yield"; 
+            cout << "Processing result for range: " << result.first << endl;
+            if (!plotter->has1DHistogram(hist_name)) { 
+                plotter->build1DHistogram(hist_name, 100, -3000, 3000); 
+                plotter->build1DHistogram(result.first + " - Signal Yield Error", 50, -1000, 1000); 
+                plotter->build1DHistogram(result.first + " - Pull", 50, -10, 10); 
+            }
 
+            RooFitResult* fit_result = result.second; 
+            double signal_yield = ((RooRealVar*) fit_result->floatParsFinal().find("signal yield"))->getVal();
+            double signal_yield_error = ((RooRealVar*) fit_result->floatParsFinal().find("signal yield"))->getError();
+            plotter->get1DHistogram(result.first + " - Signal Yield")->Fill(signal_yield);
+            plotter->get1DHistogram(result.first + " - Signal Yield Error")->Fill(signal_yield_error);
+            plotter->get1DHistogram(result.first + " - Pull")->Fill(signal_yield/signal_yield_error);
+            delete fit_result;  
+        }
+
+        results.clear(); 
         hist_counter++;
     }
+
+    plotter->saveToRootFile("fit_results.root"); 
+
+    delete plotter; 
+    delete bump_hunter; 
+    delete reader; 
+    delete file;
 }

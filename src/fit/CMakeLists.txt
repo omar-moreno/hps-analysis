@@ -36,5 +36,6 @@ target_link_libraries(bump_hunt_evaluator
     ${ROO_FIT_CORE}
     RootFileReader
     BumpHunter
+    Plotter
 )
 
