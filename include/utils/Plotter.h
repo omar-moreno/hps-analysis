@@ -90,6 +90,15 @@ class Plotter {
          */
         TGraph* getGraph(std::string name); 
 
+        /** */
+        bool has1DHistogram(std::string name); 
+        
+        /** */
+        bool has2DHistogram(std::string name); 
+        
+        /** */
+        bool hasGraph(std::string name); 
+
         /**
          *
          */

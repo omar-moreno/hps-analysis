@@ -106,6 +106,23 @@ TGraph* Plotter::getGraph(std::string name) {
     return graph_map[name]; 
 }
 
+
+bool Plotter::has1DHistogram(std::string name) { 
+    if (histogram1D_map[name] == NULL) return false; 
+
+    return true;
+}
+
+bool Plotter::has2DHistogram(std::string name) { 
+    if (histogram2D_map[name] == NULL) return false; 
+    return true;
+}
+
+bool Plotter::hasGraph(std::string name) { 
+    if (graph_map[name] == NULL) return false; 
+    return true;
+}
+
 void Plotter::add1DHistogram(TH1* histogram) { 
     histogram1D_map[histogram->GetName()] = histogram; 
 }
