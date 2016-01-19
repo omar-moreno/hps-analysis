@@ -4,7 +4,7 @@
 EcalUtils::EcalUtils() 
     : plotter(new Plotter()), 
       delta_t_lower_bound(-1.6),
-      delta_t_upper_bound(1.7) {
+      delta_t_upper_bound(1.6) {
     
     this->bookHistograms(); 
 }
@@ -13,35 +13,70 @@ EcalUtils::~EcalUtils() {
     delete plotter; 
 }
 
-bool EcalUtils::isGoodClusterPair(HpsParticle* particle) { 
-    
-    TRefArray* cluster_objects = particle->getClusters();
-    if (cluster_objects->GetEntriesFast() != 2) return false;
+bool EcalUtils::hasGoodClusterPair(HpsParticle* particle) { 
+   
+    // Get the daughter particles composing this particle. 
+    TRefArray* daughter_particles = particle->getParticles();
+
+    // Check that the mother particle has exactly two daughters. If not, return
+    // false.
+    if (daughter_particles->GetEntriesFast() != 2) return false;
+
+    std::cout << "Mother has two daughters" << std::endl;
+
+    // Check that the two daughters have an Ecal cluster associated with them.
+    // If not, return false.
+    if (((HpsParticle*) daughter_particles->At(0))->getClusters()->GetEntriesFast() != 1 || 
+            ((HpsParticle*) daughter_particles->At(1))->getClusters()->GetEntriesFast() != 1) return false;
+   
+    std::cout << "Both daughters have clusters associated with them." << std::endl;
 
     std::vector<EcalCluster*> clusters = { 
-        (EcalCluster*) cluster_objects->At(0), 
-        (EcalCluster*) cluster_objects->At(1)
-    }; 
+        (EcalCluster*) ((HpsParticle*) daughter_particles->At(0))->getClusters()->At(0),
+        (EcalCluster*) ((HpsParticle*) daughter_particles->At(0))->getClusters()->At(0)
+    };
+    
+    //if (clusters[0]->getPosition()[1]*clusters[1]->getPosition()[1] > 0) return false;
+   
+    //std::cout << "Clusters are in opposite volumes." << std::endl;
 
-    if (clusters[0]->getPosition()[1]*clusters[1]->getPosition()[1] > 0) return false;
-
-    double delta_cluster_time 
-        = clusters[0]->getClusterTime() - clusters[1]->getClusterTime();
-
+    double delta_cluster_time = clusters[0]->getClusterTime() - clusters[1]->getClusterTime();
+    
     if (delta_cluster_time < delta_t_lower_bound || delta_cluster_time > delta_t_upper_bound) return false;
+
+    std::cout << "Clusters are coincident" << std::endl;
 
     return true; 
 }
 
 std::vector<EcalCluster*> EcalUtils::getClusterPair(HpsEvent* event) { 
 
+    // Initialize a vector that will be used to contain a cluster pair.  For
+    // now, the clusters are set to null. 
     std::vector<EcalCluster*> cluster_pair(2, nullptr); 
+    
+    // If the event has less than two clusters, return a cluster pair 
+    // consisting of null pointers. 
+    if (event->getNumberOfEcalClusters() < 2) return cluster_pair; 
+
+    //std::cout << "[ EcalUtils ]: Searching for best cluster pair " << std::endl;
+    //std::cout << "[ EcalUtils ]: Number of clusters: " << event->getNumberOfEcalClusters() << std::endl;
 
     // Loop through all clusters in an event and find the best pair
     for (int first_cluster_n = 0; first_cluster_n < event->getNumberOfEcalClusters(); ++first_cluster_n) { 
     
         // Get an Ecal cluster from the event
         EcalCluster* current_first_cluster = event->getEcalCluster(first_cluster_n);
+
+        //if (first_cluster_n == 0) { 
+            //std::cout << "[ EcalUtils ]: First cluster number: " << first_cluster_n << std::endl;
+            //std::cout << "[ EcalUtils ]: First cluster time: " << current_first_cluster->getClusterTime() << std::endl;
+            //    std::cout << "[ EcalUtils ]: Ecal cluster position: [ " 
+            //        << current_first_cluster->getPosition()[0] << ", " 
+            //        << current_first_cluster->getPosition()[1] << ", " 
+             //       << current_first_cluster->getPosition()[2] << " ]" 
+            //        << std::endl;
+        //}
 
         // Make sure that the Ecal cluster has a reasonable time associated 
         // with it.  If not, move on to the next cluster.
@@ -52,9 +87,21 @@ std::vector<EcalCluster*> EcalUtils::getClusterPair(HpsEvent* event) {
         double min_delta_cluster_time = 1000;
         for (int second_cluster_n = (first_cluster_n + 1); second_cluster_n < event->getNumberOfEcalClusters();
                 ++second_cluster_n) { 
-            
+
+
             // Get the second Ecl cluster in the event
             EcalCluster* current_second_cluster = event->getEcalCluster(second_cluster_n);
+        
+            //if (first_cluster_n == 0) { 
+                //std::cout << "[ EcalUtils ]: Second cluster number: " << second_cluster_n << std::endl;
+                //std::cout << "[ EcalUtils ]: Second cluster time: " << current_second_cluster->getClusterTime() << std::endl;
+                //std::cout << "[ EcalUtils ]: Ecal cluster position: [ " 
+                //    << current_second_cluster->getPosition()[0] << ", " 
+                //    << current_second_cluster->getPosition()[1] << ", " 
+                //    << current_second_cluster->getPosition()[2] << " ]" 
+                //    << std::endl;
+            
+            //}
 
             plotter->get2DHistogram("cluster pair energy")->Fill(current_first_cluster->getEnergy(), 
                     current_second_cluster->getEnergy());
@@ -79,7 +126,12 @@ std::vector<EcalCluster*> EcalUtils::getClusterPair(HpsEvent* event) {
 
             // Require that the two clusters are in opposite volumes.  This cut should
             // eventually become part of the standard pair requirement.
-            if (current_first_cluster->getPosition()[1]*current_second_cluster->getPosition()[1] > 0) continue;
+            if (current_first_cluster->getPosition()[1]*current_second_cluster->getPosition()[1] > 0) { 
+                if (first_cluster_n == 0) { 
+                    //std::cout << "[ EcalUtils ]: Clusters are in same volume." << std::endl;
+                }
+                continue;
+            }
 
             plotter->get2DHistogram("cluster pair energy - cuts: fiducial")->Fill(current_first_cluster->getEnergy(), 
                     current_second_cluster->getEnergy()); 
@@ -124,7 +176,14 @@ std::vector<EcalCluster*> EcalUtils::getClusterPair(HpsEvent* event) {
             } 
         }
     }
-
+    
+    if (cluster_pair[0] != nullptr && cluster_pair[1] != nullptr) {
+        //std::cout << "[ EcalUtils ]: cluster 0 time : " << cluster_pair[0]->getClusterTime() << " cluster 1 time: " << cluster_pair[1]->getClusterTime() << std::endl;
+        //std::cout << "[ EcalUtils ]: Ecal cluster 0 position: [ " << cluster_pair[0]->getPosition()[0] << ", " << cluster_pair[0]->getPosition()[1] << ", " 
+        //          << cluster_pair[0]->getPosition()[2] << " ]" << std::endl;
+        //std::cout << "[ EcalUtils ]: Ecal cluster 1 position: [ " << cluster_pair[1]->getPosition()[0] << ", " << cluster_pair[1]->getPosition()[1] << ", " 
+        //          << cluster_pair[1]->getPosition()[2] << " ]" << std::endl;
+    }
     return cluster_pair; 
 }
 
