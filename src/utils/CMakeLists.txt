@@ -125,6 +125,7 @@ target_link_libraries(hps_analysis
     TridentAnalysis
     TridentDataAnalysis
     MollerDataAnalysis
+    V0Analysis
 )
 
 # Find the necessary LCIO libraries
