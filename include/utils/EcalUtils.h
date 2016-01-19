@@ -42,7 +42,7 @@ class EcalUtils {
         /**
          *
          */
-        bool isGoodClusterPair(HpsParticle* particle); 
+        bool hasGoodClusterPair(HpsParticle* particle); 
     
         /** Save the histogram to a ROOT file. */
         void saveHistograms();
