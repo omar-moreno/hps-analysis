@@ -106,6 +106,12 @@ target_link_libraries(RooFitter
     ${ROOT_HIST_LIB}
 )
 
+add_library(FlatTupleMaker FlatTupleMaker.cxx)
+target_link_libraries(FlatTupleMaker
+    ${ROOT_CORE_LIBRARY}
+    ${ROOT_RIO_LIB}
+)
+
 add_executable(hps_analysis hps_analysis.cxx)
 
 target_link_libraries(hps_analysis 
