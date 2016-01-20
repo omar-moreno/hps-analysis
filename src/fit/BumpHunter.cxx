@@ -38,8 +38,12 @@ BumpHunter::BumpHunter(int poly_order)
     variable_map["signal yield"] = new RooRealVar("signal yield", "signal yield", 0, -5000, 5000);
     variable_map["bkg yield"] = new RooRealVar("bkg yield", "bkg yield", 50000, 10000, 1000000);
 
-    model = new RooAddPdf("model", "model", RooArgList(*signal, *bkg), 
-                            RooArgList(*variable_map["signal yield"], *variable_map["bkg yield"])); 
+    comp_model = new RooAddPdf("comp model", "comp model", RooArgList(*signal, *bkg), 
+                            RooArgList(*variable_map["signal yield"], *variable_map["bkg yield"]));
+
+    bkg_model = new RooAddPdf("bkg model", "bkg model", RooArgList(*bkg), RooArgList(*variable_map["bkg yield"]));
+
+    model = comp_model;  
 }
 
 
@@ -53,20 +57,20 @@ BumpHunter::~BumpHunter() {
 
     delete signal;
     delete bkg;
-    delete model; 
+    delete comp_model; 
 }
 
-std::map<std::string, RooFitResult*> BumpHunter::fit(TH1* histogram, double window_start, double window_end, double window_step) { 
+std::map<double, RooFitResult*> BumpHunter::fit(TH1* histogram, double window_start, double window_end, double window_step) { 
     
     RooDataHist* data = new RooDataHist("data", "data", RooArgList(*variable_map["invariant mass"]), histogram);
 
-    std::map<std::string ,RooFitResult*> results; 
+    std::map<double, RooFitResult*> results; 
 
     while (window_start <= (window_end - window_size)) { 
         double ap_hypothesis = window_start + window_size/2; 
         variable_map["A' mass"]->setVal(ap_hypothesis); 
 
-        std::string range_name = "A' mass = " + std::to_string(ap_hypothesis); 
+        std::string range_name = "ap_mass_" + std::to_string(ap_hypothesis); 
         variable_map["invariant mass"]->setRange(range_name.c_str(), window_start, window_start + window_size); 
 
         RooAbsReal* nll = model->createNLL(*data, RooFit::Extended(kTRUE), 
@@ -78,16 +82,16 @@ std::map<std::string, RooFitResult*> BumpHunter::fit(TH1* histogram, double wind
         m.migrad();
 
         RooFitResult* result = m.save(); 
-        results[range_name] = result; 
+        results[ap_hypothesis] = result; 
 
         window_start += window_step; 
 
         resetParameters(result->floatParsInit()); 
-
          
+        delete nll; 
     }
 
-    delete data; 
+    delete data;
     
     return results; 
 }
@@ -103,4 +107,9 @@ void BumpHunter::resetParameters(RooArgList initial_params) {
         element.second->setError(var->getError()); 
 
     }
+}
+
+void BumpHunter::fitBkgOnly() { 
+    this->bkg_only = true; 
+    model = bkg_model; 
 }

@@ -28,9 +28,11 @@ class BumpHunter {
         /**
          *
          */
-        std::map<std::string, RooFitResult*> fit(TH1* histogram, double window_start, double window_end, double window_step);
+        std::map<double, RooFitResult*> fit(TH1* histogram, double window_start, double window_end, double window_step);
 
-        void setWindowSize(double window_size) { this->window_size = window_size; };  
+        void setWindowSize(double window_size) { this->window_size = window_size; }; 
+
+        void fitBkgOnly();
 
     private: 
 
@@ -38,12 +40,27 @@ class BumpHunter {
 
         std::map <std::string, RooRealVar*> variable_map; 
 
-        RooAddPdf* model;  
+        /** Signal + bkg model */
+        RooAddPdf* comp_model;  
+
+        /** Bkg only model */
+        RooAddPdf* bkg_model;
+
+        /** */
+        RooAddPdf* model; 
+
+        /** Signal PDF */ 
         RooGaussian* signal;
-        RooChebychev* bkg; 
+
+        /** Bkg PDF */
+        RooChebychev* bkg;
+
+        /** */ 
         RooArgList arg_list;
 
-        double window_size; 
+        double window_size;
+
+        bool bkg_only;  
 };
 
 #endif // __BUMP_HUNTER_H__
