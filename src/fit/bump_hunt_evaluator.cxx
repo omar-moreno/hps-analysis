@@ -16,7 +16,7 @@
 
 #include <RootFileReader.h>
 #include <BumpHunter.h>
-#include <Plotter.h>
+#include <FlatTupleMaker.h>
 
 using namespace std;
 
@@ -28,10 +28,12 @@ int main(int argc, char **argv) {
     double window_size = 0.020; 
     double window_start = 0.03;
     double window_end = 0.050;
+    bool bkg_only = false; 
 
     // Parse all the command line arguments.  If there are no valid command
     // line arguments passed, print the usage and exit the application
     static struct option long_options[] = {
+        {"bkg_only",   required_argument, 0, 'b'},
         {"file_name",  required_argument, 0, 'i'},
         {"number",     required_argument, 0, 'n'},
         {"order",      required_argument, 0, 'o'},
@@ -44,9 +46,12 @@ int main(int argc, char **argv) {
     
     int option_index = 0;
     int option_char; 
-    while ((option_char = getopt_long(argc, argv, "i:n:o:w:s:e:h", long_options, &option_index)) != -1) {
+    while ((option_char = getopt_long(argc, argv, "bi:n:o:w:s:e:h", long_options, &option_index)) != -1) {
 
-        switch(option_char){
+        switch(option_char) {
+            case 'b': 
+                bkg_only = true;
+                break; 
             case 'i': 
                 file_name = optarg;
                 break;
@@ -79,39 +84,41 @@ int main(int argc, char **argv) {
     }
 
     TFile* file = new TFile(file_name.c_str());
+    FlatTupleMaker* tuple = new FlatTupleMaker("fit_results.root", "results"); 
 
     RootFileReader* reader = new RootFileReader(); 
     reader->parseFile(file);
 
     BumpHunter* bump_hunter = new BumpHunter(poly_order);
-    bump_hunter->setWindowSize(window_size); 
+    bump_hunter->setWindowSize(window_size);
+    if (bkg_only) bump_hunter->fitBkgOnly();  
 
-    Plotter* plotter = new Plotter(); 
 
     int hist_counter = 0; 
-    string hist_name; 
+    tuple->addVariable("ap_mass"); 
+    tuple->addVariable("yield"); 
+    tuple->addVariable("yield_error"); 
+    tuple->addVariable("pull");  
     for (auto& hist : reader->get1DHistograms()) { 
-        cout << "Histogram: " << hist->GetName() << endl;
         if (hist_counter == hist_count) break;
 
-        map<string, RooFitResult*> results = bump_hunter->fit(hist, window_start, window_end, 0.01);
+        map<double, RooFitResult*> results = bump_hunter->fit(hist, window_start, window_end, 0.001);
        
         for (auto& result : results) { 
-            
-            hist_name = result.first + " - Signal Yield"; 
+           
             cout << "Processing result for range: " << result.first << endl;
-            if (!plotter->has1DHistogram(hist_name)) { 
-                plotter->build1DHistogram(hist_name, 100, -3000, 3000); 
-                plotter->build1DHistogram(result.first + " - Signal Yield Error", 50, -1000, 1000); 
-                plotter->build1DHistogram(result.first + " - Pull", 50, -10, 10); 
-            }
 
             RooFitResult* fit_result = result.second; 
-            double signal_yield = ((RooRealVar*) fit_result->floatParsFinal().find("signal yield"))->getVal();
-            double signal_yield_error = ((RooRealVar*) fit_result->floatParsFinal().find("signal yield"))->getError();
-            plotter->get1DHistogram(result.first + " - Signal Yield")->Fill(signal_yield);
-            plotter->get1DHistogram(result.first + " - Signal Yield Error")->Fill(signal_yield_error);
-            plotter->get1DHistogram(result.first + " - Pull")->Fill(signal_yield/signal_yield_error);
+            double signal_yield = ((RooRealVar*) fit_result->floatParsFinal().find("bkg yield"))->getVal();
+            double signal_yield_error = ((RooRealVar*) fit_result->floatParsFinal().find("bkg yield"))->getError();
+           
+            tuple->setVariableValue("ap_mass", result.first);  
+            tuple->setVariableValue("yield", signal_yield);  
+            tuple->setVariableValue("yield_error", signal_yield_error);
+            tuple->setVariableValue("pull", signal_yield/signal_yield_error);
+              
+            tuple->fill(); 
+
             delete fit_result;  
         }
 
@@ -119,9 +126,8 @@ int main(int argc, char **argv) {
         hist_counter++;
     }
 
-    plotter->saveToRootFile("fit_results.root"); 
+    tuple->close(); 
 
-    delete plotter; 
     delete bump_hunter; 
     delete reader; 
     delete file;
