@@ -37,5 +37,6 @@ target_link_libraries(bump_hunt_evaluator
     RootFileReader
     BumpHunter
     Plotter
+    FlatTupleMaker
 )
 
