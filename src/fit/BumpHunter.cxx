@@ -75,9 +75,12 @@ std::map<double, RooFitResult*> BumpHunter::fit(TH1* histogram, double window_st
 
         RooAbsReal* nll = model->createNLL(*data, RooFit::Extended(kTRUE), 
                 RooFit::SumCoefRange(range_name.c_str()), 
-                RooFit::Range(range_name.c_str()));
+                RooFit::Range(range_name.c_str()),
+                RooFit::Verbose(kFALSE));
 
         RooMinuit m(*nll);
+        m.setPrintLevel(-1);
+        m.setWarnLevel(-1);
 
         m.migrad();
 
