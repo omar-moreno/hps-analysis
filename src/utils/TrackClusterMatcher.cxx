@@ -20,33 +20,6 @@ TrackClusterMatcher::TrackClusterMatcher()
       bottom_cluster_track_match_delta_y_low(-8.3093),
       top_cluster_track_match_delta_y_high(11.494),
       top_cluster_track_match_delta_y_low(-6.07562), 
-      // Data FEE
-      /*top_cluster_track_match_delta_x_low(-5.86232), // data
-      top_cluster_track_match_delta_x_high(9.11768), // data
-      bottom_cluster_track_match_delta_x_low(-5.61583), // data
-      bottom_cluster_track_match_delta_x_high(8.40442), // data
-      bottom_cluster_track_match_delta_y_high(6.381765), 
-      bottom_cluster_track_match_delta_y_low(-7.610285),
-      top_cluster_track_match_delta_y_high(7.684701),
-      top_cluster_track_match_delta_y_low(-6.228299), */
-      // Moller MC //
-      /*top_cluster_track_match_delta_x_low(-9.4235), // moller mc
-      bottom_cluster_track_match_delta_x_low(-8.6535), // moller mc
-      top_cluster_track_match_delta_x_high(12.4115), // moller mc
-      bottom_cluster_track_match_delta_x_high(12.2715), // moller mc
-      top_cluster_track_match_delta_y_low(-8.05575), // moller mc
-      bottom_cluster_track_match_delta_y_low(-13.61441), // moller mc
-      top_cluster_track_match_delta_y_high(15.01425), // moller mc
-      bottom_cluster_track_match_delta_y_high(7.92559), // moller mc */
-      // FEE
-      /*top_cluster_track_match_delta_x_low(-5.731), // fee mc
-      top_cluster_track_match_delta_x_high(8.519), // fee mc
-      bottom_cluster_track_match_delta_x_low(-5.86232), // fee mc
-      bottom_cluster_track_match_delta_x_high(9.11768), // fee mc
-      top_cluster_track_match_delta_y_low(-6.2283), // fee mc
-      top_cluster_track_match_delta_y_high(7.6847), // fee mc
-      bottom_cluster_track_match_delta_y_low(-7.530397), // fee mc
-      bottom_cluster_track_match_delta_y_high(6.258603), // fee mc */
       enable_plots(false), 
       use_field_map(false) {
     this->bookHistograms(); 
@@ -126,6 +99,53 @@ void TrackClusterMatcher::findAllMatches(HpsEvent* event) {
             }
         }
     }
+}
+
+bool TrackClusterMatcher::isGoodMatch(HpsParticle* particle) { 
+
+   if (particle->getClusters()->GetEntriesFast() == 0) { 
+        std::cout << "[ TrackClusterMatcher ]: Particle does not have an ECal cluster associated with it." << std::endl;
+        return false; 
+   }
+   
+   EcalCluster* cluster = (EcalCluster*) particle->getClusters()->At(0); 
+   SvtTrack* track = (SvtTrack*) particle->getTracks()->At(0);
+
+    // Get the cluster position
+    std::vector<double> cluster_pos = cluster->getPosition();
+
+    if (track->isTopTrack() && cluster_pos[1] < 0 
+            || track->isBottomTrack() && cluster_pos[1] > 0) { 
+        std::cout << "[ TrackClusterMatcher ]: Track and cluster are in opposite volumes." << std::endl;
+        return false; 
+    }
+    std::cout << "[ TrackClusterMatcher ]: Track and cluster are in the same volume." << std::endl;
+
+    std::vector<double> track_pos_at_ecal = track->getPositionAtEcal();  
+
+    //=== DEBUG
+    std::cout << "[ TrackClusterMatcher ]: Track position at Ecal: [ " << track_pos_at_ecal[0] << ", " 
+        << track_pos_at_ecal[1] << ", " << track_pos_at_ecal[2] << std::endl; 
+    //=== DEBUG
+
+    double delta_x = cluster_pos[0] - track_pos_at_ecal[0];
+    double delta_y = cluster_pos[1] - track_pos_at_ecal[1];
+
+    std::cout << "[ TrackClusterMatcher ]: dx: " << delta_x << std::endl;
+    std::cout << "[ TrackClusterMatcher ]: dy: " << delta_y << std::endl;
+
+    // Check that dx and dy between the extrapolated track and cluster
+    // positions is reasonable
+    if ((track->isTopTrack() && (delta_x > top_cluster_track_match_delta_x_high ||
+                    delta_x < top_cluster_track_match_delta_x_low)) ||
+        (track->isBottomTrack() && (delta_x > bottom_cluster_track_match_delta_x_high ||
+                                   delta_x < bottom_cluster_track_match_delta_x_low ))) return false;
+
+    if ((track->isTopTrack() && (delta_y > top_cluster_track_match_delta_y_high ||
+                    delta_y < top_cluster_track_match_delta_y_low)) ||
+        (track->isBottomTrack() && (delta_y > bottom_cluster_track_match_delta_y_high ||
+                                    delta_y < bottom_cluster_track_match_delta_y_low))) return false;  
+   return true; 
 }
 
 void TrackClusterMatcher::saveHistograms() { 

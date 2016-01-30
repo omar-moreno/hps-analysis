@@ -57,6 +57,11 @@ class TrackClusterMatcher {
         void findAllMatches(HpsEvent* event);
 
         /**
+         *
+         */
+        bool  isGoodMatch(HpsParticle* particle); 
+
+        /**
          * Get a track that is matched to the given cluster.
          *
          * @param cluster : The Ecal cluster of interest 
