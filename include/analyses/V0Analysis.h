@@ -17,6 +17,7 @@
 //------------------//
 #include <HpsAnalysis.h>
 #include <EcalUtils.h>
+#include <TrackClusterMatcher.h>
 
 class V0Analysis : public HpsAnalysis { 
 
@@ -51,6 +52,9 @@ class V0Analysis : public HpsAnalysis {
 
         /** A set of Ecal utilities */
         EcalUtils* ecal_utils;
+
+        /** */
+        TrackClusterMatcher* matcher; 
 
         /** Name of the class */
         std::string class_name; 
