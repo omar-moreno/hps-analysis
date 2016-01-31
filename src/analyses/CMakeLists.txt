@@ -91,3 +91,9 @@ target_link_libraries(V0Analysis
     ${HPS_EVENT_LIBRARY}
     FlatTupleMaker
 )
+
+add_library(V0DataAnalysis V0DataAnalysis.cxx)
+target_link_libraries(V0DataAnalysis 
+    V0Analysis
+)
+
