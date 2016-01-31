@@ -15,8 +15,9 @@
 //------------------//
 //   HPS Analysis   //
 //------------------//
-#include <HpsAnalysis.h>
 #include <EcalUtils.h>
+#include <HpsAnalysis.h>
+#include <FlatTupleMaker.h>
 #include <TrackClusterMatcher.h>
 
 class V0Analysis : public HpsAnalysis { 
@@ -55,6 +56,9 @@ class V0Analysis : public HpsAnalysis {
 
         /** */
         TrackClusterMatcher* matcher; 
+
+        /** */
+        FlatTupleMaker* tuple; 
 
         /** Name of the class */
         std::string class_name; 

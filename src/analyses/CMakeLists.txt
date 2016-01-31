@@ -89,4 +89,5 @@ target_link_libraries(TridentDataAnalysis
 add_library(V0Analysis V0Analysis.cxx)
 target_link_libraries(V0Analysis 
     ${HPS_EVENT_LIBRARY}
+    FlatTupleMaker
 )
