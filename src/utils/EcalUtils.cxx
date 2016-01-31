@@ -21,30 +21,52 @@ bool EcalUtils::hasGoodClusterPair(HpsParticle* particle) {
     // Check that the mother particle has exactly two daughters. If not, return
     // false.
     if (daughter_particles->GetEntriesFast() != 2) return false;
-
-    std::cout << "Mother has two daughters" << std::endl;
-
+    
     // Check that the two daughters have an Ecal cluster associated with them.
     // If not, return false.
-    if (((HpsParticle*) daughter_particles->At(0))->getClusters()->GetEntriesFast() != 1 || 
-            ((HpsParticle*) daughter_particles->At(1))->getClusters()->GetEntriesFast() != 1) return false;
-   
-    std::cout << "Both daughters have clusters associated with them." << std::endl;
-
+    if (particle->getClusters()->GetEntriesFast() != 2) return false; 
+    
+    //=== DEBUG
+    //std::cout << "[ EcalUtils ]: Both daughters have clusters associated with them." << std::endl;
+    //=== DEBUG
+    
     std::vector<EcalCluster*> clusters = { 
-        (EcalCluster*) ((HpsParticle*) daughter_particles->At(0))->getClusters()->At(0),
-        (EcalCluster*) ((HpsParticle*) daughter_particles->At(0))->getClusters()->At(0)
+        (EcalCluster*) ((HpsParticle*) particle->getClusters()->At(0)),
+        (EcalCluster*) ((HpsParticle*) particle->getClusters()->At(1))
     };
     
-    //if (clusters[0]->getPosition()[1]*clusters[1]->getPosition()[1] > 0) return false;
-   
-    //std::cout << "Clusters are in opposite volumes." << std::endl;
+
+ 
+    //=== DEBUG
+    //std::cout << "[ EcalUtils ]: Cluster position: [" << clusters[0]->getPosition()[0] << ", " 
+    //          << clusters[0]->getPosition()[1] << ", " 
+    //          << clusters[0]->getPosition()[2] << "]" << std::endl; 
+    //std::cout << "[ EcalUtils ]: Cluster position: [" << clusters[1]->getPosition()[0] << ", " 
+    //          << clusters[1]->getPosition()[1] << ", " 
+    //          << clusters[1]->getPosition()[2] << "]" << std::endl; 
+    //=== DEBUG
+    
+    if (clusters[0]->getPosition()[1]*clusters[1]->getPosition()[1] > 0) {
+        //=== DEBUG
+        //std::cout << "[ EcalUtils ]: Clusters are in same detector volume." << std::endl;
+        //=== DEBUG
+        return false;
+    }
+    //=== DEBUG
+    //std::cout << "[ EcalUtils ]: Clusters are in opposite volumes." << std::endl;
+    //=== DEBUG
 
     double delta_cluster_time = clusters[0]->getClusterTime() - clusters[1]->getClusterTime();
     
+    //=== DEBUG
+    //std::cout << "[ EcalUtils ]: Cluster dt: " << delta_cluster_time << std::endl;
+    //=== DEBUG
+    
     if (delta_cluster_time < delta_t_lower_bound || delta_cluster_time > delta_t_upper_bound) return false;
-
-    std::cout << "Clusters are coincident" << std::endl;
+    
+    //=== DEBUG
+    //std::cout << "[ EcalUtils ]: Clusters are coincident" << std::endl;
+    //=== DEBUG
 
     return true; 
 }
@@ -59,8 +81,10 @@ std::vector<EcalCluster*> EcalUtils::getClusterPair(HpsEvent* event) {
     // consisting of null pointers. 
     if (event->getNumberOfEcalClusters() < 2) return cluster_pair; 
 
+    //=== DEBUG
     //std::cout << "[ EcalUtils ]: Searching for best cluster pair " << std::endl;
     //std::cout << "[ EcalUtils ]: Number of clusters: " << event->getNumberOfEcalClusters() << std::endl;
+    //=== DEBUG
 
     // Loop through all clusters in an event and find the best pair
     for (int first_cluster_n = 0; first_cluster_n < event->getNumberOfEcalClusters(); ++first_cluster_n) { 

@@ -104,7 +104,9 @@ void TrackClusterMatcher::findAllMatches(HpsEvent* event) {
 bool TrackClusterMatcher::isGoodMatch(HpsParticle* particle) { 
 
    if (particle->getClusters()->GetEntriesFast() == 0) { 
-        std::cout << "[ TrackClusterMatcher ]: Particle does not have an ECal cluster associated with it." << std::endl;
+        //=== DEBUG
+        //std::cout << "[ TrackClusterMatcher ]: Particle does not have an ECal cluster associated with it." << std::endl;
+        //=== DEBUG
         return false; 
    }
    
@@ -116,23 +118,27 @@ bool TrackClusterMatcher::isGoodMatch(HpsParticle* particle) {
 
     if (track->isTopTrack() && cluster_pos[1] < 0 
             || track->isBottomTrack() && cluster_pos[1] > 0) { 
-        std::cout << "[ TrackClusterMatcher ]: Track and cluster are in opposite volumes." << std::endl;
+        //=== DEBUG
+        //std::cout << "[ TrackClusterMatcher ]: Track and cluster are in opposite volumes." << std::endl;
+        //=== DEBUG
         return false; 
     }
-    std::cout << "[ TrackClusterMatcher ]: Track and cluster are in the same volume." << std::endl;
+    //std::cout << "[ TrackClusterMatcher ]: Track and cluster are in the same volume." << std::endl;
 
     std::vector<double> track_pos_at_ecal = track->getPositionAtEcal();  
 
     //=== DEBUG
-    std::cout << "[ TrackClusterMatcher ]: Track position at Ecal: [ " << track_pos_at_ecal[0] << ", " 
-        << track_pos_at_ecal[1] << ", " << track_pos_at_ecal[2] << std::endl; 
+    //std::cout << "[ TrackClusterMatcher ]: Track position at Ecal: [ " << track_pos_at_ecal[0] << ", " 
+    //          << track_pos_at_ecal[1] << ", " << track_pos_at_ecal[2] << std::endl; 
     //=== DEBUG
 
     double delta_x = cluster_pos[0] - track_pos_at_ecal[0];
     double delta_y = cluster_pos[1] - track_pos_at_ecal[1];
 
-    std::cout << "[ TrackClusterMatcher ]: dx: " << delta_x << std::endl;
-    std::cout << "[ TrackClusterMatcher ]: dy: " << delta_y << std::endl;
+    //=== DEBUG
+    //std::cout << "[ TrackClusterMatcher ]: dx: " << delta_x << std::endl;
+    //std::cout << "[ TrackClusterMatcher ]: dy: " << delta_y << std::endl;
+    //=== DEBUG
 
     // Check that dx and dy between the extrapolated track and cluster
     // positions is reasonable
