@@ -218,18 +218,18 @@ void MollerAnalysis::processEvent(HpsEvent* event) {
             //std::cout << "Total TC candidates: " << event->getNumberOfParticles(HpsParticle::TC_MOLLER_CANDIDATE) << std::endl;
             if (gbl_tracks[0] == nullptr || gbl_tracks[1] == nullptr) continue;
             //std::cout << "GBL particle found" << std::endl; 
-            plotter->get1DHistogram("invariant mass - mollers - GBL TC")->Fill(particle->Mass());
+            plotter->get1DHistogram("invariant mass - mollers - GBL TC")->Fill(particle->getMass());
         
             plotter->get1DHistogram("v_{x} - mollers - GBL TC")->Fill(particle->getVertexPosition()[0]); 
             plotter->get1DHistogram("v_{y} - mollers - GBL TC")->Fill(particle->getVertexPosition()[1]); 
             plotter->get1DHistogram("v_{z} - mollers - GBL TC")->Fill(particle->getVertexPosition()[2]); 
 
-            plotter->get2DHistogram("invariant mass : cluster pair x sum - mollers - GBL TC")->Fill(particle->Mass(), cluster_x_sum); 
-            plotter->get2DHistogram("invariant mass : cluster pair delta - mollers - GBL TC")->Fill(particle->Mass(), cluster_x_diff);
+            plotter->get2DHistogram("invariant mass : cluster pair x sum - mollers - GBL TC")->Fill(particle->getMass(), cluster_x_sum); 
+            plotter->get2DHistogram("invariant mass : cluster pair delta - mollers - GBL TC")->Fill(particle->getMass(), cluster_x_diff);
 
-            plotter->get2DHistogram("invariant mass : Vextex x - mollers - GBL TC")->Fill(particle->Mass(), particle->getVertexPosition()[0]);
-            plotter->get2DHistogram("invariant mass : Vextex y - mollers - GBL TC")->Fill(particle->Mass(), particle->getVertexPosition()[1]);
-            plotter->get2DHistogram("invariant mass : Vextex #Chi^{2} - mollers - GBL TC")->Fill(particle->Mass(), particle->getVertexFitChi2());
+            plotter->get2DHistogram("invariant mass : Vextex x - mollers - GBL TC")->Fill(particle->getMass(), particle->getVertexPosition()[0]);
+            plotter->get2DHistogram("invariant mass : Vextex y - mollers - GBL TC")->Fill(particle->getMass(), particle->getVertexPosition()[1]);
+            plotter->get2DHistogram("invariant mass : Vextex #Chi^{2} - mollers - GBL TC")->Fill(particle->getMass(), particle->getVertexFitChi2());
 
             continue;
         } 
@@ -238,18 +238,18 @@ void MollerAnalysis::processEvent(HpsEvent* event) {
                 *daughter_particles->IndexOf(tracks[1]->getParticle()) != 0) continue;        
 
         //std::cout << "Seed particle found" << std::endl;
-        plotter->get1DHistogram("invariant mass - mollers - TC")->Fill(particle->Mass());
+        plotter->get1DHistogram("invariant mass - mollers - TC")->Fill(particle->getMass());
     
         plotter->get1DHistogram("v_{x} - mollers - TC")->Fill(particle->getVertexPosition()[0]); 
         plotter->get1DHistogram("v_{y} - mollers - TC")->Fill(particle->getVertexPosition()[1]); 
         plotter->get1DHistogram("v_{z} - mollers - TC")->Fill(particle->getVertexPosition()[2]); 
 
-        plotter->get2DHistogram("invariant mass : cluster pair x sum - mollers - TC")->Fill(particle->Mass(), cluster_x_sum); 
-        plotter->get2DHistogram("invariant mass : cluster pair delta - mollers - TC")->Fill(particle->Mass(), cluster_x_diff);
+        plotter->get2DHistogram("invariant mass : cluster pair x sum - mollers - TC")->Fill(particle->getMass(), cluster_x_sum); 
+        plotter->get2DHistogram("invariant mass : cluster pair delta - mollers - TC")->Fill(particle->getMass(), cluster_x_diff);
 
-        plotter->get2DHistogram("invariant mass : Vextex x - mollers - TC")->Fill(particle->Mass(), particle->getVertexPosition()[0]);
-        plotter->get2DHistogram("invariant mass : Vextex y - mollers - TC")->Fill(particle->Mass(), particle->getVertexPosition()[1]);
-        plotter->get2DHistogram("invariant mass : Vextex #Chi^{2} - mollers - TC")->Fill(particle->Mass(), particle->getVertexFitChi2());
+        plotter->get2DHistogram("invariant mass : Vextex x - mollers - TC")->Fill(particle->getMass(), particle->getVertexPosition()[0]);
+        plotter->get2DHistogram("invariant mass : Vextex y - mollers - TC")->Fill(particle->getMass(), particle->getVertexPosition()[1]);
+        plotter->get2DHistogram("invariant mass : Vextex #Chi^{2} - mollers - TC")->Fill(particle->getMass(), particle->getVertexFitChi2());
     
     }
 
