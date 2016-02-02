@@ -20,7 +20,6 @@ V0Analysis::V0Analysis()
 
 V0Analysis::~V0Analysis() { 
     delete ecal_utils;
-    //delete tuple;
     delete matcher; 
 }
 
@@ -33,20 +32,24 @@ void V0Analysis::initialize() {
     tuple->addVariable("cluster_x_low");
     tuple->addVariable("cluster_y_low");
     tuple->addVariable("cluster_z_low");
-    tuple->addVariable("p_sum");
     tuple->addVariable("electron_px"); 
     tuple->addVariable("electron_py"); 
     tuple->addVariable("electron_pz");
+    tuple->addVariable("electron_p");
     tuple->addVariable("electron_chi2");  
+    tuple->addVariable("invariant_mass");  
+    tuple->addVariable("n_tracks");
+    tuple->addVariable("n_positrons");
     tuple->addVariable("positron_px"); 
     tuple->addVariable("positron_py"); 
-    tuple->addVariable("positron_pz"); 
+    tuple->addVariable("positron_pz");
+    tuple->addVariable("positron_p"); 
     tuple->addVariable("positron_chi2"); 
-    tuple->addVariable("invariant_mass");  
+    tuple->addVariable("v0_p");
+    tuple->addVariable("v_chi2");
     tuple->addVariable("vx");
     tuple->addVariable("vy");
     tuple->addVariable("vz");
-    tuple->addVariable("v_chi2");
 }
 
 void V0Analysis::processEvent(HpsEvent* event) { 
@@ -54,6 +57,15 @@ void V0Analysis::processEvent(HpsEvent* event) {
     /*
      * std::cout << "[ V0Analysis ]: Event: " << event->getEventNumber() << std::endl;
      */
+
+    double n_tracks = event->getNumberOfGblTracks();
+    tuple->setVariableValue("n_tracks", n_tracks);
+
+    double n_positrons = 0;
+    for (int track_n = 0; track_n < event->getNumberOfGblTracks(); ++track_n) { 
+        if (event->getGblTrack(track_n)->getCharge() == 1) n_positrons++;
+    }
+    tuple->setVariableValue("n_positrons", n_positrons);
 
     // Loop over the collection of target contrained V0 particles.
     for (int particle_n = 0; particle_n < event->getNumberOfParticles(HpsParticle::TC_V0_CANDIDATE); ++particle_n) {
@@ -119,14 +131,16 @@ void V0Analysis::processEvent(HpsEvent* event) {
 
         // Calculate the momentum of the electron and positrons 
         std::vector<double> p = particle->getMomentum(); 
-        double p_sum = AnalysisUtils::getMagnitude(p); 
+        double v0_p = AnalysisUtils::getMagnitude(p); 
         double electron_p = AnalysisUtils::getMagnitude(electron->getMomentum());
         double positron_p = AnalysisUtils::getMagnitude(positron->getMomentum());
 
-        tuple->setVariableValue("p_sum", p_sum); 
+        tuple->setVariableValue("v0_p", v0_p); 
+        tuple->setVariableValue("electron_p", electron_p);
         tuple->setVariableValue("electron_px", electron->getMomentum()[0]); 
         tuple->setVariableValue("electron_py", electron->getMomentum()[1]); 
         tuple->setVariableValue("electron_pz", electron->getMomentum()[2]); 
+        tuple->setVariableValue("positron_p", positron_p);
         tuple->setVariableValue("positron_px", positron->getMomentum()[0]); 
         tuple->setVariableValue("positron_py", positron->getMomentum()[1]); 
         tuple->setVariableValue("positron_pz", positron->getMomentum()[2]);
@@ -135,11 +149,11 @@ void V0Analysis::processEvent(HpsEvent* event) {
         tuple->setVariableValue("vx", particle->getVertexPosition()[0]);
         tuple->setVariableValue("vy", particle->getVertexPosition()[1]);
         tuple->setVariableValue("vz", particle->getVertexPosition()[2]);
+        tuple->setVariableValue("v_chi2", particle->getVertexFitChi2()); 
         tuple->setVariableValue("invariant_mass", particle->getMass()); 
 
         tuple->fill();
     }
-
 }
 
 void V0Analysis::finalize() { 
