@@ -14,58 +14,81 @@ import ROOT as r
 
 def main() : 
 
-
-    # Parse all command line arguments using the argparse module
+    # Parse all command line arguments 
     parser = argparse.ArgumentParser(description='')
-    parser.add_argument("-i", "--input",  help="ROOT file containing the histogram.")
-    parser.add_argument("-n", "--name",   help="Name of histogram to generate toy from.") 
-    parser.add_argument("-c", "--count",  help="Number of toy histograms to generate.")
-    parser.add_argument("-e", "--events", help="Number of events per histogram.")
-    parser.add_argument("-o", "--output", help="ROOT output file.")
-    parser.add_argument("-b", "--bins",   help="Number of bins the histgram should have.")
+    parser.add_argument("-i", "--ideal",  action='store_true',  
+                        help="Use an ideal distribution to generate toys") 
+    parser.add_argument("-f", "--file",
+                        help="ROOT file containing the histogram.")
+    parser.add_argument("-n", "--name", 
+                        help="Name of histogram to generate toys from.") 
+    parser.add_argument("-c", "--toy_count",
+                        help="Number of toy histograms to generate.")
+    parser.add_argument("-e", "--events",
+                        help="Number of events per histogram.")
+    parser.add_argument("-o", "--output",
+                        help="ROOT output file.")
+    parser.add_argument("-b", "--bins",
+                        help="Number of bins the histgram should have.")
     args = parser.parse_args()
 
-    if args.input is None : 
-        print '[ Generate Toys ]: A ROOT file needs to be specified!'
-        sys.exit(2)
+    # If not using an ideal distribution, check that a file and histogram name
+    # were specified.
+    root_file = None
+    histo = None
+    if not args.ideal : 
 
-    if args.name is None :
-        print "[ Generate Toys ]: A histogram name hasn't been specified."
-        sys.exit(2)
+        if args.file is None :
+            print '[ Generate Toys ]: Please specify a ROOT file to process.'
+            sys.exit(2)
+        elif args.name is None :
+            print "[ Generate Toys ]: A histogram name wasn't specified."
+            sys.exit(2)
+        else :
+            root_file = r.TFile(args.file)
+            histo = root_file.Get(args.name)
 
-    count = 1
-    if args.count is not None: count = int(args.count)
-    print '[ Generate Toys ]: Creating ' + str(count) + ' histograms.'
+    else : print "[ Generate Toys ]: Using ideal distribution."
+
+    # Set the default number of toy histograms to generate
+    toy_count = 1
+    if args.toy_count is not None: toy_count = int(args.toy_count)
+    print '[ Generate Toys ]: Creating ' + str(toy_count) + ' histograms.'
 
     events = 1000
     if args.events is not None : events = int(args.events)
     print '[ Generate Toys ]: Generating ' + str(events) + ' per histogram.'
 
     # Open the ROOT file and retrieve the histogram of interest
-    canvas = r.TCanvas("canvas", "canvas", 500, 500)
-    root_file = r.TFile(args.input)
-    histo = root_file.Get(args.name)
-    histo.Draw()
+    #histo = root_file.Get(args.name)
+    #histo.Draw()
    
     #
-    x = r.RooRealVar("x", "x", canvas.GetUxmin(), canvas.GetUxmax())
+    x = r.RooRealVar("x", "x", 170, 265)
     if args.bins is not None : x.setBins(int(args.bins))
 
-    #
-    arg_list = r.RooArgList(x)
-    histo_data = r.RooDataHist("histo_data", "histo_data", arg_list, histo)
+    pdf = None
+    if args.ideal : 
+        pdf = r.RooGenericPdf("apex_pdf", "apex_pdf", "pow(170-x, 2)*pow(265-x,2)/pow(x,4)", r.RooArgList(x))
+    else : 
+        histo_data = r.RooDataHist("histo_data", "histo_data", r.RooArgList(x), 0)
+        pdf = r.RooHistPdf("hist_pdf", "hist_pdf", r.RooArgSet(x), histo_data, 0)
 
-    #
-    arg_set = r.RooArgSet(x)
-    hist_pdf = r.RooHistPdf("hist_pdf", "hist_pdf", arg_set, histo_data, 0)
+
+    canvas = r.TCanvas("canvas", "canvas", 800, 800)
+    frame = x.frame()
+    pdf.plotOn(frame)
+    frame.Draw()
+    canvas.SaveAs("pdf.pdf")
+
 
     output_file_name = "output.root"
     if args.output is not None: output_file_name = args.output
     output_file = r.TFile(output_file_name, "RECREATE")
 
-    for hist_count in range(0, count) : 
-        generated_hist = hist_pdf.generateBinned(arg_set, events, r.RooFit.Extended(r.kTRUE))
-        generated_hist.createHistogram(histo.GetName() + "_" + str(hist_count), x).Write()
+    for hist_count in range(0, toy_count) : 
+        generated_hist = pdf.generateBinned(r.RooArgSet(x), events, r.RooFit.Extended(r.kTRUE))
+        generated_hist.createHistogram("toy_" + str(hist_count), x).Write()
 
     output_file.Close()
 
