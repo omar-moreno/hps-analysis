@@ -59,10 +59,6 @@ def main() :
     if args.events is not None : events = int(args.events)
     print '[ Generate Toys ]: Generating ' + str(events) + ' per histogram.'
 
-    # Open the ROOT file and retrieve the histogram of interest
-    #histo = root_file.Get(args.name)
-    #histo.Draw()
-   
     #
     x = r.RooRealVar("x", "x", 170, 265)
     if args.bins is not None : x.setBins(int(args.bins))
