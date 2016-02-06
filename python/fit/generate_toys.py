@@ -60,15 +60,19 @@ def main() :
     print '[ Generate Toys ]: Generating ' + str(events) + ' per histogram.'
 
     #
-    x = r.RooRealVar("x", "x", 170, 265)
+    x = None
+    if args.ideal : 
+        x = r.RooRealVar("x", "x", 171, 264)
+    else : 
+        x = r.RooRealVar("x", "x", 0, 0.1)
     if args.bins is not None : x.setBins(int(args.bins))
 
     pdf = None
     if args.ideal : 
         pdf = r.RooGenericPdf("apex_pdf", "apex_pdf", "pow(170-x, 2)*pow(265-x,2)/pow(x,4)", r.RooArgList(x))
     else : 
-        histo_data = r.RooDataHist("histo_data", "histo_data", r.RooArgList(x), 0)
-        pdf = r.RooHistPdf("hist_pdf", "hist_pdf", r.RooArgSet(x), histo_data, 0)
+        histo_data = r.RooDataHist("histo_data", "histo_data", r.RooArgList(x), histo)
+        pdf = r.RooHistPdf("hist_pdf", "hist_pdf", r.RooArgSet(x), histo_data, 7)
 
 
     canvas = r.TCanvas("canvas", "canvas", 800, 800)
