@@ -1,13 +1,16 @@
 #!/usr/bin/python
 
 import argparse
-import sys
-import root_numpy as rnp
-import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
+import numpy as np
+import root_numpy as rnp
+import ROOT as r
+import sys
+
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.patches import Ellipse
+from rootpy.io import root_open
 from scipy.stats import norm
 
 def main() : 
@@ -146,7 +149,7 @@ def main() :
         plt.close()
 
 
-        bins = np.linspace(0, 0.1, 500)
+        bins = np.linspace(0, 0.1, 800)
 
         mass_arr = results_rec["invariant_mass"]
         mass_arr_cuts = mass_arr[mass_arr < 0.1]
@@ -170,10 +173,18 @@ def main() :
              & (p_p_arr < 0.85)
              & (v0_p_arr > 0.85)]
         plt.hist(mass_arr_cuts, bins, alpha=0.8, histtype="stepfilled") 
-        #mass_arr = mass_arr[v0_p > 0.8]
 
         pdf.savefig()
         plt.close()
+
+        mass_histo = r.TH1F("invariant_mass", "invariant_mass", 800, 0., 0.1)
+        for value in np.nditer(mass_arr_cuts) : 
+            mass_histo.Fill(value)
+        
+        f = root_open('invariant_mass_final.root', 'recreate') 
+        mass_histo.Write()
+
+        f.close()
 
 
 if __name__ == "__main__" :
