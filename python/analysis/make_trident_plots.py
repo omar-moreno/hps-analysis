@@ -36,6 +36,98 @@ def main() :
 #   print '\n'.join(str(feature) for feature in features)
     
     with PdfPages("trident_plots.pdf") as pdf : 
+   
+        #
+        #  Ecal cluster positions
+        #
+
+        cluster_x_high_arr = results_rec["cluster_x_high"]
+        cluster_x_low_arr = results_rec["cluster_x_low"]
+        plt.hist2d(cluster_x_high_arr, cluster_x_low_arr, bins=300)
+        
+        pdf.savefig()
+        plt.close()
+
+        cluster_y_high_arr = results_rec["cluster_y_high"]
+        cluster_y_low_arr = results_rec["cluster_y_low"]
+        plt.hist2d(cluster_y_high_arr, cluster_y_low_arr, bins=300)
+        
+        pdf.savefig()
+        plt.close()
+
+
+        #
+        # Chi2 Distributions
+        #
+
+        fig, ((ax0, ax1), (ax2, ax3)) = plt.subplots(ncols=2, nrows=2, figsize=(15, 15))
+        
+        chi2_bins = np.linspace(0, 60, 120)
+
+        electron_chi2_arr = results_rec["electron_chi2"]
+        electron_chi2_arr_cuts = electron_chi2_arr[electron_chi2_arr < 60]
+        positron_chi2_arr = results_rec["positron_chi2"]
+        positron_chi2_arr_cuts = positron_chi2_arr[positron_chi2_arr < 60]
+        
+        ax0.hist(electron_chi2_arr_cuts, chi2_bins, alpha=0.8, histtype="stepfilled")
+        ax1.hist(positron_chi2_arr_cuts, chi2_bins, alpha=0.8, histtype="stepfilled")
+        
+        electron_chi2_arr_cuts = electron_chi2_arr[
+            (electron_chi2_arr < 15) & (positron_chi2_arr < 15)]
+        positron_chi2_arr_cuts = positron_chi2_arr[
+            (positron_chi2_arr < 15) & (electron_chi2_arr < 15)]
+
+        ax0.hist(electron_chi2_arr_cuts, chi2_bins, alpha=0.8, histtype="stepfilled")
+        ax1.hist(positron_chi2_arr_cuts, chi2_bins, alpha=0.8, histtype="stepfilled")
+
+        ax2.hist2d(electron_chi2_arr, positron_chi2_arr, chi2_bins)
+        
+        ax3.hist2d(electron_chi2_arr_cuts, positron_chi2_arr_cuts, bins=100)
+
+        pdf.savefig()
+        plt.close()
+
+        #
+        # Track momentum distributions
+        #
+        
+        fig, ((ax0, ax1), (ax2, ax3)) = plt.subplots(ncols=2, nrows=2, figsize=(15, 15))
+        p_bins = np.linspace(0, 1.5, 200)
+        
+        e_p_arr = results_rec["electron_p"]
+        p_p_arr = results_rec["positron_p"]
+        e_p_arr_cuts = e_p_arr[(e_p_arr < 1.5) & (p_p_arr < 1.5)]
+        p_p_arr_cuts = p_p_arr[(e_p_arr < 1.5) & (p_p_arr < 1.5)]
+        
+        ax0.hist(e_p_arr_cuts, p_bins, alpha=0.8, histtype="stepfilled")
+        ax1.hist(p_p_arr_cuts, p_bins, alpha=0.8, histtype="stepfilled")
+        ax2.hist2d(e_p_arr_cuts, p_p_arr_cuts, bins=300)
+
+        e_p_arr_cuts = e_p_arr[
+            (electron_chi2_arr < 15) & (positron_chi2_arr < 15) &
+            (e_p_arr < 1.5) & (p_p_arr < 1.5)]
+        p_p_arr_cuts = p_p_arr[
+            (electron_chi2_arr < 15) & (positron_chi2_arr < 15) &
+            (e_p_arr < 1.5) & (p_p_arr < 1.5)]
+        ax0.hist(e_p_arr_cuts, p_bins, alpha=0.8, histtype="stepfilled")
+        ax1.hist(p_p_arr_cuts, p_bins, alpha=0.8, histtype="stepfilled")
+
+        e_p_arr_cuts = e_p_arr[
+            (electron_chi2_arr < 15) & (positron_chi2_arr < 15) &
+            (e_p_arr < 0.85) & (p_p_arr < 0.85)]
+        p_p_arr_cuts = p_p_arr[
+            (electron_chi2_arr < 15) & (positron_chi2_arr < 15) &
+            (e_p_arr < 0.85) & (p_p_arr < 0.85)]
+        ax0.hist(e_p_arr_cuts, p_bins, alpha=0.8, histtype="stepfilled")
+        ax1.hist(p_p_arr_cuts, p_bins, alpha=0.8, histtype="stepfilled")
+
+        ax3.hist2d(e_p_arr_cuts, p_p_arr_cuts, bins=300)
+        pdf.savefig()
+        plt.close()
+
+        #
+        # Vertex distributions
+        #
 
         fig, ((ax0, ax1), (ax2, ax3)) = plt.subplots(ncols=2, nrows=2, figsize=(15, 15))
 
@@ -51,30 +143,38 @@ def main() :
         vy_arr_cuts = vy_arr[abs(vy_arr) < 0.1]
         ax1.hist(vy_arr_cuts, vy_bins, alpha=0.8, histtype="stepfilled")
         ax1.set_xlim(-0.1, 0.1)
-        
-        vx_arr_cuts = vx_arr[((vx_arr*vx_arr/(0.04)) + (vy_arr*vy_arr/(0.0025))) < 1]
+
+        vx_arr_cuts = vx_arr[
+            (electron_chi2_arr < 15) & (positron_chi2_arr < 15)]
         ax0.hist(vx_arr_cuts, vx_bins, alpha=0.8, histtype="stepfilled")
 
-        vy_arr_cuts = vy_arr[((vx_arr*vx_arr/(0.04)) + (vy_arr*vy_arr/(0.0025))) < 1]
+        vx_arr_cuts = vx_arr[
+            (electron_chi2_arr < 15) & (positron_chi2_arr < 15) &
+            (e_p_arr < 0.85) & (p_p_arr < 0.85)]
+        ax0.hist(vx_arr_cuts, vx_bins, alpha=0.8, histtype="stepfilled")
+
+        vx_arr_cuts = vx_arr[
+            (electron_chi2_arr < 15) & (positron_chi2_arr < 15) &
+            (e_p_arr < 0.85) & (p_p_arr < 0.85) &
+            (((vx_arr*vx_arr/(0.04)) + (vy_arr*vy_arr/(0.0025))) < 1)]
+        ax0.hist(vx_arr_cuts, vx_bins, alpha=0.8, histtype="stepfilled")
+
+        vy_arr_cuts = vy_arr[
+            (electron_chi2_arr < 15) & (positron_chi2_arr < 15)]
+        ax1.hist(vy_arr_cuts, vy_bins, alpha=0.8, histtype="stepfilled")
+
+        vy_arr_cuts = vy_arr[
+            (electron_chi2_arr < 15) & (positron_chi2_arr < 15) &
+            (e_p_arr < 0.85) & (p_p_arr < 0.85)]
+        ax1.hist(vy_arr_cuts, vy_bins, alpha=0.8, histtype="stepfilled")
+
+        vy_arr_cuts = vy_arr[
+            (electron_chi2_arr < 15) & (positron_chi2_arr < 15) &
+            (e_p_arr < 0.85) & (p_p_arr < 0.85) &
+            (((vx_arr*vx_arr/(0.04)) + (vy_arr*vy_arr/(0.0025))) < 1)]
         ax1.hist(vy_arr_cuts, vy_bins, alpha=0.8, histtype="stepfilled")
 
         ax2.hist2d(vx_arr_cuts, vy_arr_cuts, bins=300)
-        ax2.set_xlim(-0.2, 0.2)
-        ax2.set_ylim(-0.05, 0.05)
-
-        #mu = 0.013918
-        #sigma = 0.0844949
-        #xmin, xmax = ax0.get_xlim()
-        #x = np.linspace(xmin, xmax, 100)
-        #p = norm.pdf(x, mu, sigma)
-        #ax0.plot(x, p, linewidth=2)
-
-        #mu = -0.00363552
-        #sigma = 0.0209185
-        #xmin, xmax = ax1.get_xlim()
-        #x = np.linspace(xmin, xmax, 100)
-        #p = norm.pdf(x, mu, sigma)
-        #ax1.plot(x, p, linewidth=2)
  
         ax3.hist2d(results_rec["vx"], results_rec["vy"], bins=500)
         ax3.set_xlim(-0.5, 0.5)
@@ -85,69 +185,39 @@ def main() :
         
         pdf.savefig()
         plt.close()
-
-        
-        fig, ((ax0, ax1), (ax2, ax3)) = plt.subplots(ncols=2, nrows=2, figsize=(15, 15))
-        p_bins = np.linspace(0, 1.5, 200)
-        
-        e_p_arr = results_rec["electron_p"]
-        p_p_arr = results_rec["positron_p"]
-        e_p_arr_cuts = e_p_arr[(e_p_arr < 1.5) & (p_p_arr < 1.5)]
-        p_p_arr_cuts = p_p_arr[(e_p_arr < 1.5) & (p_p_arr < 1.5)]
-        
-        ax0.hist(e_p_arr_cuts, p_bins, alpha=0.8, histtype="stepfilled")
-        ax1.hist(p_p_arr_cuts, p_bins, alpha=0.8, histtype="stepfilled")
-        ax2.hist2d(e_p_arr_cuts, p_p_arr_cuts, bins=300)
-
-        e_p_arr_cuts = e_p_arr[
-               (((vx_arr*vx_arr/(0.04)) + (vy_arr*vy_arr/(0.0025))) < 1)
-             & (e_p_arr < 1.5) 
-             & (p_p_arr < 1.5)]
-        p_p_arr_cuts = p_p_arr[
-               (((vx_arr*vx_arr/(0.04)) + (vy_arr*vy_arr/(0.0025))) < 1)
-             & (e_p_arr < 1.5) 
-             & (p_p_arr < 1.5)]
-        ax0.hist(e_p_arr_cuts, p_bins, alpha=0.8, histtype="stepfilled")
-        ax1.hist(p_p_arr_cuts, p_bins, alpha=0.8, histtype="stepfilled")
-
-        e_p_arr_cuts = e_p_arr[
-               (((vx_arr*vx_arr/(0.04)) + (vy_arr*vy_arr/(0.0025))) < 1)
-             & (e_p_arr < 0.85) 
-             & (p_p_arr < 0.85)]
-        p_p_arr_cuts = p_p_arr[
-               (((vx_arr*vx_arr/(0.04)) + (vy_arr*vy_arr/(0.0025))) < 1)
-             & (e_p_arr < 0.85) 
-             & (p_p_arr < 0.85)]
-        ax0.hist(e_p_arr_cuts, p_bins, alpha=0.8, histtype="stepfilled")
-        ax1.hist(p_p_arr_cuts, p_bins, alpha=0.8, histtype="stepfilled")
-
-        ax3.hist2d(e_p_arr_cuts, p_p_arr_cuts, bins=300)
-        pdf.savefig()
-        plt.close()
+       
+        #
+        # V0 p
+        #
 
         bins = np.linspace(0, 1.5, 500)
         v0_p_arr = results_rec["v0_p"]
         plt.hist(v0_p_arr, bins, alpha=0.8, histtype="stepfilled")
         
-        v0_p_arr_cuts = v0_p_arr[(((vx_arr*vx_arr/(0.04)) + (vy_arr*vy_arr/(0.0025))) < 1)]
+        v0_p_arr_cuts = v0_p_arr[
+            (electron_chi2_arr < 15) & (positron_chi2_arr < 15)]
         plt.hist(v0_p_arr_cuts, bins, alpha=0.8, histtype="stepfilled")
 
         v0_p_arr_cuts = v0_p_arr[
-             (((vx_arr*vx_arr/(0.04)) + (vy_arr*vy_arr/(0.0025))) < 1)
-             & (e_p_arr < 0.85) 
-             & (p_p_arr < 0.85)]
+            (electron_chi2_arr < 15) & (positron_chi2_arr < 15) &
+            (e_p_arr < 0.85) & (p_p_arr < 0.85)]
         plt.hist(v0_p_arr_cuts, bins, alpha=0.8, histtype="stepfilled")
 
         v0_p_arr_cuts = v0_p_arr[
-             (((vx_arr*vx_arr/(0.04)) + (vy_arr*vy_arr/(0.0025))) < 1)
-             & (e_p_arr < 0.85) 
-             & (p_p_arr < 0.85)
-             & (v0_p_arr > 0.85)]
+            (electron_chi2_arr < 15) & (positron_chi2_arr < 15) &
+            (e_p_arr < 0.85) & (p_p_arr < 0.85) &
+            (((vx_arr*vx_arr/(0.04)) + (vy_arr*vy_arr/(0.0025))) < 1)]
+        plt.hist(v0_p_arr_cuts, bins, alpha=0.8, histtype="stepfilled")
+
+        v0_p_arr_cuts = v0_p_arr[
+            (electron_chi2_arr < 15) & (positron_chi2_arr < 15) &
+            (e_p_arr < 0.85) & (p_p_arr < 0.85) &
+            (((vx_arr*vx_arr/(0.04)) + (vy_arr*vy_arr/(0.0025))) < 1) &
+            (v0_p_arr > 0.85)]
         plt.hist(v0_p_arr_cuts, bins, alpha=0.8, histtype="stepfilled")
 
         pdf.savefig()
         plt.close()
-
 
         bins = np.linspace(0, 0.1, 800)
 
@@ -157,34 +227,98 @@ def main() :
         plt.xlabel("Invariant Mass M(e^-e^+) (GeV)")
         plt.ylabel("Events/.2")
         plt.xlim(0, 0.1)
-       
-        mass_arr_cuts = mass_arr[((vx_arr*vx_arr/(0.04)) + (vy_arr*vy_arr/(0.0025))) < 1]
+      
+        mass_arr_cuts = mass_arr[
+            (electron_chi2_arr < 15) & (positron_chi2_arr < 15)]
         plt.hist(mass_arr_cuts, bins, alpha=0.8, histtype="stepfilled") 
 
         mass_arr_cuts = mass_arr[
-               (((vx_arr*vx_arr/(0.04)) + (vy_arr*vy_arr/(0.0025))) < 1)
-             & (e_p_arr < 0.85) 
-             & (p_p_arr < 0.85)]
+            (electron_chi2_arr < 15) & (positron_chi2_arr < 15) &
+            (e_p_arr < 0.85) & (p_p_arr < 0.85)]
+        plt.hist(mass_arr_cuts, bins, alpha=0.8, histtype="stepfilled") 
+        
+        mass_arr_cuts = mass_arr[
+            (electron_chi2_arr < 15) & (positron_chi2_arr < 15) &
+            (e_p_arr < 0.85) & (p_p_arr < 0.85) &
+            (((vx_arr*vx_arr/(0.04)) + (vy_arr*vy_arr/(0.0025))) < 1)]
         plt.hist(mass_arr_cuts, bins, alpha=0.8, histtype="stepfilled") 
 
         mass_arr_cuts = mass_arr[
-               (((vx_arr*vx_arr/(0.04)) + (vy_arr*vy_arr/(0.0025))) < 1)
-             & (e_p_arr < 0.85) 
-             & (p_p_arr < 0.85)
-             & (v0_p_arr > 0.85)]
+            (electron_chi2_arr < 15) & (positron_chi2_arr < 15) &
+            (e_p_arr < 0.85) & (p_p_arr < 0.85) &
+            (((vx_arr*vx_arr/(0.04)) + (vy_arr*vy_arr/(0.0025))) < 1) &
+            (v0_p_arr > 0.85)]
         plt.hist(mass_arr_cuts, bins, alpha=0.8, histtype="stepfilled") 
 
         pdf.savefig()
         plt.close()
 
-        mass_histo = r.TH1F("invariant_mass", "invariant_mass", 800, 0., 0.1)
-        for value in np.nditer(mass_arr_cuts) : 
-            mass_histo.Fill(value)
-        
-        f = root_open('invariant_mass_final.root', 'recreate') 
-        mass_histo.Write()
+        bins = np.linspace(0, 1.5, 500)
+        v0_p_arr_cuts = v0_p_arr[
+            (electron_chi2_arr < 15) & (positron_chi2_arr < 15) &
+            (e_p_arr < 0.85) & (p_p_arr < 0.85) &
+            (((vx_arr*vx_arr/(0.04)) + (vy_arr*vy_arr/(0.0025))) < 1)]
+        plt.hist(v0_p_arr_cuts, bins, alpha=0.8, histtype="stepfilled")
 
-        f.close()
+        v0_p_arr_cuts = v0_p_arr[
+            (electron_chi2_arr < 15) & (positron_chi2_arr < 15) &
+            (e_p_arr < 0.85) & (p_p_arr < 0.85) &
+            (abs(cluster_y_high_arr) > 30) & (abs(cluster_y_low_arr) > 30) &
+            (((vx_arr*vx_arr/(0.04)) + (vy_arr*vy_arr/(0.0025))) < 1)]
+        plt.hist(v0_p_arr_cuts, bins, alpha=0.8, histtype="stepfilled")
+
+
+        v0_p_arr_cuts = v0_p_arr[
+            (electron_chi2_arr < 15) & (positron_chi2_arr < 15) &
+            (e_p_arr < 0.85) & (p_p_arr < 0.85) &
+            (abs(cluster_y_high_arr) > 50) & (abs(cluster_y_low_arr) > 50) &
+            (((vx_arr*vx_arr/(0.04)) + (vy_arr*vy_arr/(0.0025))) < 1)]
+        plt.hist(v0_p_arr_cuts, bins, alpha=0.8, histtype="stepfilled")
+        
+        v0_p_arr_cuts = v0_p_arr[
+            (electron_chi2_arr < 15) & (positron_chi2_arr < 15) &
+            (e_p_arr < 0.85) & (p_p_arr < 0.85) &
+            (abs(cluster_y_high_arr) > 70) & (abs(cluster_y_low_arr) > 70) &
+            (((vx_arr*vx_arr/(0.04)) + (vy_arr*vy_arr/(0.0025))) < 1)]
+        plt.hist(v0_p_arr_cuts, bins, alpha=0.8, histtype="stepfilled")
+
+        pdf.savefig()
+        plt.close()
+
+        bins = np.linspace(0, 1.5, 500)
+        v0_p_arr_cuts = v0_p_arr[
+            (electron_chi2_arr < 15) & (positron_chi2_arr < 15) &
+            (e_p_arr < 0.85) & (p_p_arr < 0.85) &
+            (((vx_arr*vx_arr/(0.04)) + (vy_arr*vy_arr/(0.0025))) < 1)]
+        plt.hist(v0_p_arr_cuts, bins, alpha=0.8, histtype="stepfilled")
+
+
+        v0_p_arr_cuts = v0_p_arr[
+            (electron_chi2_arr < 15) & (positron_chi2_arr < 15) &
+            (e_p_arr < 0.85) & (p_p_arr < 0.85) &
+            (abs(cluster_y_high_arr) > 50) & (abs(cluster_x_low_arr) > 50) &
+            (((vx_arr*vx_arr/(0.04)) + (vy_arr*vy_arr/(0.0025))) < 1)]
+        plt.hist(v0_p_arr_cuts, bins, alpha=0.8, histtype="stepfilled")
+
+        v0_p_arr_cuts = v0_p_arr[
+            (electron_chi2_arr < 15) & (positron_chi2_arr < 15) &
+            (e_p_arr < 0.85) & (p_p_arr < 0.85) &
+            (abs(cluster_y_high_arr) > 100) & (abs(cluster_x_low_arr) > 100) &
+            (((vx_arr*vx_arr/(0.04)) + (vy_arr*vy_arr/(0.0025))) < 1)]
+        plt.hist(v0_p_arr_cuts, bins, alpha=0.8, histtype="stepfilled")
+
+        pdf.savefig()
+        plt.close()
+
+
+    #mass_histo = r.TH1F("invariant_mass", "invariant_mass", 800, 0., 0.1)
+    #for value in np.nditer(mass_arr_cuts) : 
+    #    mass_histo.Fill(value)
+        
+    #f = root_open('invariant_mass_final.root', 'recreate') 
+    #mass_histo.Write()
+
+    #f.close()
 
 
 if __name__ == "__main__" :
