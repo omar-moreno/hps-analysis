@@ -32,6 +32,8 @@ void V0Analysis::initialize() {
     tuple->addVariable("cluster_x_low");
     tuple->addVariable("cluster_y_low");
     tuple->addVariable("cluster_z_low");
+    tuple->addVariable("event");
+    tuple->addVariable("electron_hit_n");
     tuple->addVariable("electron_px"); 
     tuple->addVariable("electron_py"); 
     tuple->addVariable("electron_pz");
@@ -40,6 +42,8 @@ void V0Analysis::initialize() {
     tuple->addVariable("invariant_mass");  
     tuple->addVariable("n_tracks");
     tuple->addVariable("n_positrons");
+    tuple->addVariable("n_v0");
+    tuple->addVariable("positron_hit_n");
     tuple->addVariable("positron_px"); 
     tuple->addVariable("positron_py"); 
     tuple->addVariable("positron_pz");
@@ -50,6 +54,11 @@ void V0Analysis::initialize() {
     tuple->addVariable("vx");
     tuple->addVariable("vy");
     tuple->addVariable("vz");
+
+    for (int layer_n  = 0; layer_n < 12; ++layer_n) { 
+        tuple->addVariable("electron_layer_" + std::to_string(layer_n + 1) + "_iso"); 
+        tuple->addVariable("positron_layer_" + std::to_string(layer_n + 1) + "_iso"); 
+    }
 }
 
 void V0Analysis::processEvent(HpsEvent* event) { 
@@ -57,6 +66,7 @@ void V0Analysis::processEvent(HpsEvent* event) {
     /*
      * std::cout << "[ V0Analysis ]: Event: " << event->getEventNumber() << std::endl;
      */
+    tuple->setVariableValue("event", event->getEventNumber());
 
     double n_tracks = event->getNumberOfGblTracks();
     tuple->setVariableValue("n_tracks", n_tracks);
@@ -65,8 +75,13 @@ void V0Analysis::processEvent(HpsEvent* event) {
     for (int track_n = 0; track_n < event->getNumberOfGblTracks(); ++track_n) { 
         if (event->getGblTrack(track_n)->getCharge() == 1) n_positrons++;
     }
+    
+    if (n_positrons != 1) return;
     tuple->setVariableValue("n_positrons", n_positrons);
 
+    tuple->setVariableValue("n_v0", event->getNumberOfParticles(HpsParticle::TC_V0_CANDIDATE)); 
+    double min_v0_chi2 = 1000;
+    bool good_v0_found = false;  
     // Loop over the collection of target contrained V0 particles.
     for (int particle_n = 0; particle_n < event->getNumberOfParticles(HpsParticle::TC_V0_CANDIDATE); ++particle_n) {
 
@@ -106,6 +121,11 @@ void V0Analysis::processEvent(HpsEvent* event) {
         if (!matcher->isGoodMatch((HpsParticle*) daughter_particles->At(0)) 
                 ||!matcher->isGoodMatch((HpsParticle*) daughter_particles->At(1))) continue; 
 
+
+        if (particle->getVertexFitChi2() > min_v0_chi2) continue;
+        min_v0_chi2 = particle->getVertexFitChi2(); 
+        good_v0_found = true; 
+
         SvtTrack* electron = (SvtTrack*) particle->getTracks()->At(0); 
         SvtTrack* positron = (SvtTrack*) particle->getTracks()->At(1);
         if (positron->getCharge() == -1) { 
@@ -136,10 +156,12 @@ void V0Analysis::processEvent(HpsEvent* event) {
         double positron_p = AnalysisUtils::getMagnitude(positron->getMomentum());
 
         tuple->setVariableValue("v0_p", v0_p); 
+        tuple->setVariableValue("electron_hit_n", electron->getSvtHits()->GetEntriesFast());
         tuple->setVariableValue("electron_p", electron_p);
         tuple->setVariableValue("electron_px", electron->getMomentum()[0]); 
         tuple->setVariableValue("electron_py", electron->getMomentum()[1]); 
         tuple->setVariableValue("electron_pz", electron->getMomentum()[2]); 
+        tuple->setVariableValue("positron_hit_n", positron->getSvtHits()->GetEntriesFast());
         tuple->setVariableValue("positron_p", positron_p);
         tuple->setVariableValue("positron_px", positron->getMomentum()[0]); 
         tuple->setVariableValue("positron_py", positron->getMomentum()[1]); 
@@ -152,8 +174,16 @@ void V0Analysis::processEvent(HpsEvent* event) {
         tuple->setVariableValue("v_chi2", particle->getVertexFitChi2()); 
         tuple->setVariableValue("invariant_mass", particle->getMass()); 
 
-        tuple->fill();
+        for (int layer_n  = 0; layer_n < 12; ++layer_n) { 
+            tuple->setVariableValue("electron_layer_" + std::to_string(layer_n + 1) + "_iso",
+                    electron->getIsolation(layer_n)); 
+            tuple->setVariableValue("positron_layer_" + std::to_string(layer_n + 1) + "_iso",
+                    positron->getIsolation(layer_n)); 
+        }
     }
+        
+    if (good_v0_found) tuple->fill();
+
 }
 
 void V0Analysis::finalize() { 
