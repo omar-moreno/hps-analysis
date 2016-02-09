@@ -392,14 +392,16 @@ def main() :
         plt.close()
 
 
+    file = r.TFile("invariant_mass_final.root", "recreate")
+    
     mass_histo = r.TH1F("invariant_mass", "invariant_mass", 800, 0., 0.1)
     for value in np.nditer(mass_arr_cuts) : 
         mass_histo.Fill(value)
         
-    f = root_open('invariant_mass_final.root', 'recreate') 
     mass_histo.Write()
 
-    f.close()
+    f.Close()
+
 
 
 if __name__ == "__main__" :
