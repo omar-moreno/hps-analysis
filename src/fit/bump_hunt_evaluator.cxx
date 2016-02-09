@@ -35,10 +35,13 @@ int main(int argc, char **argv) {
     double window_size = 0.020; 
 
     // Default start position of the mass window
-    double window_start = 0.03;
+    double window_begin = 0.03;
 
     // Maximum position of the end of the mass window
     double window_end = 0.050;
+
+    // Step size
+    double step_size = 0.001;
 
     // Only fit the background
     bool bkg_only = false; 
@@ -51,15 +54,16 @@ int main(int argc, char **argv) {
         {"number",     required_argument, 0, 'n'},
         {"order",      required_argument, 0, 'o'},
         {"window",     required_argument, 0, 'w'},
-        {"start",      required_argument, 0, 's'},
+        {"begin",      required_argument, 0, 't'},
         {"end",        required_argument, 0, 'e'},
+        {"step",       required_argument, 0, 's'},
         {"help",       no_argument,       0, 'h'},
         {0, 0, 0, 0}
     };
     
     int option_index = 0;
     int option_char; 
-    while ((option_char = getopt_long(argc, argv, "bi:n:o:w:s:e:h", long_options, &option_index)) != -1) {
+    while ((option_char = getopt_long(argc, argv, "bi:n:o:w:t:e:s:h", long_options, &option_index)) != -1) {
 
         switch(option_char) {
             case 'b': 
@@ -77,11 +81,14 @@ int main(int argc, char **argv) {
             case 'w':
                 window_size = atof(optarg);
                 break;
-            case 's':
-                window_start = atof(optarg);
+            case 't':
+                window_begin = atof(optarg);
                 break;
             case 'e':
                 window_end = atof(optarg);
+                break;
+            case 's':
+                step_size = atof(optarg);
                 break;
             case 'h':
                 return EXIT_SUCCESS; 
@@ -139,7 +146,7 @@ int main(int argc, char **argv) {
         // Process only the maximum number of histograms present. 
         if (hist_counter == hist_count) break;
 
-        map<double, RooFitResult*> results = bump_hunter->fit(hist, window_start, window_end, 0.001);
+        map<double, RooFitResult*> results = bump_hunter->fit(hist, window_begin, window_end, step_size);
        
         for (auto& result : results) { 
            
