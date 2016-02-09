@@ -10,85 +10,65 @@
 #ifndef __MOLLER_ANALYSIS_H__
 #define __MOLLER_ANALYSIS_H__
 
-#include <cmath>
-
-//--------------------//
-//--- HPS Analysis ---//
-//--------------------//
-#include <HpsAnalysis.h>
-#include <Plotter.h>
-#include <AnalysisUtils.h>
-#include <TrackExtrapolator.h>
-#include <TrackClusterMatcher.h>
+//------------------//
+//   HPS Analysis   //
+//------------------//
 #include <EcalUtils.h>
+#include <HpsAnalysis.h>
+#include <FlatTupleMaker.h>
+#include <AnalysisUtils.h>
+#include <TrackClusterMatcher.h>
 
-//---------------//
-//--- HPS DST ---//
-//---------------//
+//-------------//
+//   HPS DST   //
+//-------------//
 #include <SvtTrack.h>
 
 class MollerAnalysis : public HpsAnalysis { 
 
     public: 
 
-        /**
-         * Constructor
-         */
+        /** Constructor */
         MollerAnalysis();
 
-        /**
-         * Destructor
-         */
+        /** Destructor */
         ~MollerAnalysis();
-
-        /**
-         *  Method used to initialize an HPS analysis.
-         */
+        
+        /** Initialize an HPS analysis. */
         void initialize();
 
         /**
-         *  Method containing the code used to process an HpsEvent.
+         * Process an HpsEvent.
          *
-         *  @param event : HpsEvent that will be processed
+         * @param event HpsEvent that will be processed.
          */
         void processEvent(HpsEvent* event);
 
-        /**
-         *  Method used to finalize an HPS analysis.
-         */
+        /** Finalize an HPS analysis. */
         void finalize();
 
-        /**
-         *  Method used to initialize any histograms used by the analysis.
-         */
-        // TODO:  This should use a histogram factory instead
+        /** Initialize histograms used in this analysis. */
         void bookHistograms();
 
-        /**
-         *  Provide a string representation of this analysis.
-         *
-         *  @return String representation of this analysis.
-         */
+        /** @return A string representation of this analysis. */
         std::string toString();
    
     protected: 
 
-        // Name of the class
+        /** Name of the class */
         std::string class_name; 
 
     private:
 
-        // TODO: Move this class to a utility class
-        std::vector<EcalCluster*> getClusterPair(HpsEvent* event);
+        /** A set of Ecal utilities */
+        EcalUtils* ecal_utils;
 
-        bool isMatch(EcalCluster* cluster, SvtTrack* track);
-        
-        Plotter* plotter;
-        
-        TrackClusterMatcher* matcher;
+        /** */
+        TrackClusterMatcher* matcher; 
 
-        EcalUtils* ecal_utils; 
-
+        /** */
+        FlatTupleMaker* tuple; 
+ 
         //-- Event counters --//
         //--------------------//
         

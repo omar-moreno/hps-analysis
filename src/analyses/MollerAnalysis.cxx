@@ -10,9 +10,9 @@
 #include <MollerAnalysis.h>
 
 MollerAnalysis::MollerAnalysis()
-    : plotter(new Plotter()),
+    : ecal_utils(new EcalUtils()),
+      tuple(new FlatTupleMaker("moller_analysis.root", "results")), 
       matcher(new TrackClusterMatcher()),
-      ecal_utils(new EcalUtils()),
       class_name("MollerAnalysis"), 
       event_counter(0),
       bias_on_counter(0), 
@@ -23,18 +23,144 @@ MollerAnalysis::MollerAnalysis()
 }
 
 MollerAnalysis::~MollerAnalysis() {
-    delete plotter;
     delete matcher; 
     delete ecal_utils; 
 }
 
 void MollerAnalysis::initialize() { 
-    this->bookHistograms(); 
-    matcher->enablePlots(true);
+
+    tuple->addVariable("cluster_energy_high");
+    tuple->addVariable("cluster_energy_low");
+    tuple->addVariable("cluster_x_high");
+    tuple->addVariable("cluster_y_high");
+    tuple->addVariable("cluster_z_high");
+    tuple->addVariable("cluster_x_low");
+    tuple->addVariable("cluster_y_low");
+    tuple->addVariable("cluster_z_low");
+    tuple->addVariable("event");
+    tuple->addVariable("electron_high_hit_n");
+    tuple->addVariable("electron_high_px"); 
+    tuple->addVariable("electron_high_py"); 
+    tuple->addVariable("electron_high_pz");
+    tuple->addVariable("electron_high_p");
+    tuple->addVariable("electron_high_chi2");  
+    tuple->addVariable("electron_low_hit_n");
+    tuple->addVariable("electron_low_px"); 
+    tuple->addVariable("electron_low_py"); 
+    tuple->addVariable("electron_low_pz");
+    tuple->addVariable("electron_low_p");
+    tuple->addVariable("electron_low_chi2");  
+    tuple->addVariable("invariant_mass");  
+    tuple->addVariable("n_tracks");
+    tuple->addVariable("n_v0");
+    tuple->addVariable("v0_p");
+    tuple->addVariable("v_chi2");
+    tuple->addVariable("vx");
+    tuple->addVariable("vy");
+    tuple->addVariable("vz");
+
+    for (int layer_n  = 0; layer_n < 12; ++layer_n) { 
+        tuple->addVariable("electron_high_layer_" + std::to_string(layer_n + 1) + "_iso"); 
+        tuple->addVariable("electron_low_layer_" + std::to_string(layer_n + 1) + "_iso"); 
+    }
+
 }
 
 void MollerAnalysis::processEvent(HpsEvent* event) { 
+  
+    tuple->setVariableValue("event", event->getEventNumber());
+
+    double n_tracks = event->getNumberOfGblTracks();
+    tuple->setVariableValue("n_tracks", n_tracks);
+
+    tuple->setVariableValue("n_v0", event->getNumberOfParticles(HpsParticle::TC_MOLLER_CANDIDATE)); 
+    double min_v0_chi2 = 1000;
+    bool good_v0_found = false;  
+    // Loop over the collection of target contrained V0 particles.
+    for (int particle_n = 0; particle_n < event->getNumberOfParticles(HpsParticle::TC_MOLLER_CANDIDATE); ++particle_n) {
+        
+        // Get the nth V0 particle from the event.
+        HpsParticle* particle = event->getParticle(HpsParticle::TC_MOLLER_CANDIDATE, particle_n);
+
+        if (particle->getType() < 32) continue;
+
+        // Require each of the tracks associated with a V0 particle to have 
+        // Ecal clusters matched to them.  Also require that the two clusters:
+        // 1) Are coincident to within 1.6 ns
+        // 2) Are in opposite Ecal volumes
+        if (!ecal_utils->hasGoodClusterPair(particle)) continue;
+          
+        // Get the daughter particles
+        TRefArray* daughter_particles = particle->getParticles(); 
+
+        // Check that each of the particles has a good track match.
+        if (!matcher->isGoodMatch((HpsParticle*) daughter_particles->At(0)) 
+                ||!matcher->isGoodMatch((HpsParticle*) daughter_particles->At(1))) continue; 
+
+        if (particle->getVertexFitChi2() > min_v0_chi2) continue;
+        min_v0_chi2 = particle->getVertexFitChi2(); 
+        good_v0_found = true; 
+    
+        SvtTrack* electron_high = (SvtTrack*) particle->getTracks()->At(0); 
+        SvtTrack* electron_low = (SvtTrack*) particle->getTracks()->At(1);
+        if (electron_low->getMomentum()[2] > electron_high->getMomentum()[2]) { 
+            electron_high = (SvtTrack*) particle->getTracks()->At(1);
+            electron_low = (SvtTrack*) particle->getTracks()->At(0); 
+        }
+
+        EcalCluster* cluster_high = (EcalCluster*) particle->getClusters()->At(0);
+        EcalCluster* cluster_low  = (EcalCluster*) particle->getClusters()->At(1);
+        if (cluster_high->getEnergy() < cluster_low->getEnergy()) { 
+            cluster_high = (EcalCluster*) particle->getClusters()->At(1);
+            cluster_low  = (EcalCluster*) particle->getClusters()->At(0);
+        }
+
+        tuple->setVariableValue("cluster_energy_high", cluster_high->getEnergy());
+        tuple->setVariableValue("cluster_energy_low", cluster_low->getEnergy());
+        tuple->setVariableValue("cluster_x_high", cluster_high->getPosition()[0]);
+        tuple->setVariableValue("cluster_y_high", cluster_high->getPosition()[1]);
+        tuple->setVariableValue("cluster_z_high", cluster_high->getPosition()[2] );
+        tuple->setVariableValue("cluster_x_low",  cluster_low->getPosition()[0]);
+        tuple->setVariableValue("cluster_y_low",  cluster_low->getPosition()[1]);
+        tuple->setVariableValue("cluster_z_low",  cluster_low->getPosition()[2]);
+
+        // Calculate the momentum of the electron and positrons 
+        std::vector<double> p = particle->getMomentum(); 
+        double v0_p = AnalysisUtils::getMagnitude(p); 
+        double electron_high_p = AnalysisUtils::getMagnitude(electron_high->getMomentum());
+        double electron_low_p = AnalysisUtils::getMagnitude(electron_low->getMomentum());
    
+        tuple->setVariableValue("v0_p", v0_p); 
+        tuple->setVariableValue("electron_high_hit_n", electron_high->getSvtHits()->GetEntriesFast());
+        tuple->setVariableValue("electron_high_p", electron_high_p);
+        tuple->setVariableValue("electron_high_px", electron_high->getMomentum()[0]); 
+        tuple->setVariableValue("electron_high_py", electron_high->getMomentum()[1]); 
+        tuple->setVariableValue("electron_high_pz", electron_high->getMomentum()[2]); 
+        tuple->setVariableValue("electron_low_hit_n", electron_low->getSvtHits()->GetEntriesFast());
+        tuple->setVariableValue("electron_low_p", electron_low_p);
+        tuple->setVariableValue("electron_low_px", electron_low->getMomentum()[0]); 
+        tuple->setVariableValue("electron_low_py", electron_low->getMomentum()[1]); 
+        tuple->setVariableValue("electron_low_pz", electron_low->getMomentum()[2]);
+        tuple->setVariableValue("electron_high_chi2", electron_high->getChi2());
+        tuple->setVariableValue("electron_low_chi2", electron_low->getChi2());
+        tuple->setVariableValue("vx", particle->getVertexPosition()[0]);
+        tuple->setVariableValue("vy", particle->getVertexPosition()[1]);
+        tuple->setVariableValue("vz", particle->getVertexPosition()[2]);
+        tuple->setVariableValue("v_chi2", particle->getVertexFitChi2()); 
+        tuple->setVariableValue("invariant_mass", particle->getMass()); 
+
+        for (int layer_n  = 0; layer_n < 12; ++layer_n) { 
+            tuple->setVariableValue("electron_high_layer_" + std::to_string(layer_n + 1) + "_iso",
+                    electron_high->getIsolation(layer_n)); 
+            tuple->setVariableValue("electron_low_layer_" + std::to_string(layer_n + 1) + "_iso",
+                    electron_low->getIsolation(layer_n)); 
+        }
+    }
+
+    if (good_v0_found) tuple->fill();
+    
+    /*
+
     // Increment the total events counter
     event_counter++; 
 
@@ -252,6 +378,7 @@ void MollerAnalysis::processEvent(HpsEvent* event) {
         plotter->get2DHistogram("invariant mass : Vextex #Chi^{2} - mollers - TC")->Fill(particle->getMass(), particle->getVertexFitChi2());
     
     }
+    */
 
     /*
 
@@ -262,15 +389,12 @@ void MollerAnalysis::processEvent(HpsEvent* event) {
 
 void MollerAnalysis::finalize() {
 
-    ecal_utils->saveHistograms();
-    matcher->saveHistograms();
-
-    plotter->saveToPdf("moller_analysis.pdf");
-    plotter->saveToRootFile("moller_analysis.root");
+    tuple->close(); 
 }
 
 
 void MollerAnalysis::bookHistograms() {
+/*
 
     TH1* plot = nullptr; 
 
@@ -393,6 +517,7 @@ void MollerAnalysis::bookHistograms() {
     plotter->build2DHistogram("invariant mass : Vextex #Chi^{2} - mollers - GBL TC", 100, 0, 0.1, 100, 0, 50);
 
     plotter->build2DHistogram("cluster position - moller", 200, -200, 200, 100, -100, 100);
+    */
 } 
 
 std::string MollerAnalysis::toString() { 
