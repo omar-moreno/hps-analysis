@@ -6,13 +6,11 @@
 #   Imports   #
 ###############
 import ROOT as r
-import gc
+
 
 class BumpHunter :
 
     def __init__(self, poly_order) : 
-
-        gc.set_debug(gc.DEBUG_LEAK)
 
         # Create the object used to define the observable
         self.invariant_mass = r.RooRealVar("Invariant Mass",
@@ -33,7 +31,7 @@ class BumpHunter :
         # descibe the A' signal.  These values are set constant during the fit.
         self.ap_mass_mean = r.RooRealVar("ap_mass_mean", "ap_mass_mean", .03)
         #self.ap_mass_mean.setConstant(r.kTRUE)
-        self.ap_mass_sigma = r.RooRealVar("ap_mass_sigma", "ap_mass_sigma", 0.003)
+        self.ap_mass_sigma = r.RooRealVar("ap_mass_sigma", "ap_mass_sigma", 0.00167)
         #self.ap_mass_sigma.setConstant(r.kTRUE)
 
         # Define the Gaussian model used to describe the A' signal.
@@ -49,7 +47,7 @@ class BumpHunter :
         self.arg_list = r.RooArgList()
 
         for order in range(1, poly_order+1) :
-            self.t.append(r.RooRealVar("t"+str(order), "t"+str(order), 0, -10, 10))
+            self.t.append(r.RooRealVar("t"+str(order), "t"+str(order), 0, -10000, 10000))
             self.arg_list.add(self.t[order - 1])
 
         # Define the polynomial model used to describe the background in some
@@ -58,8 +56,8 @@ class BumpHunter :
 
         # Create the objects that will represent the number of signal and 
         # background events in a given window.
-        self.nsig = r.RooRealVar("nsig","signal fraction", 0, -10000., 10000)
-        self.nbkg = r.RooRealVar("nbkg","background fraction", 10000., 0.,10000000)
+        self.nsig = r.RooRealVar("nsig","signal fraction", 0, -1000., 1000)
+        self.nbkg = r.RooRealVar("nbkg","background fraction", 10000., 0.,1000000000)
 
         # Build a composite model 
         self.model = r.RooAddPdf("model", "model", 
@@ -77,26 +75,23 @@ class BumpHunter :
         # Loop over 
         while mass_start <= mass_end - self.mass_window_size : 
 
-            print "Count: " + str(gc.get_count())
-            #print "Objects: " + str(gc.get_objects())
-
             ap_mass = mass_start + self.mass_window_size/2
-            #self.ap_mass_mean.setVal(ap_mass)
+            self.ap_mass_mean.setVal(ap_mass)
             
-            #self.invariant_mass.setRange("A' mass = " + str(ap_mass),
-            #                             mass_start, mass_start + self.mass_window_size)
+            self.invariant_mass.setRange("A' mass = " + str(ap_mass),
+                                         mass_start, mass_start + self.mass_window_size)
 
-            #nll = self.model.createNLL(histogram_data, 
-            #                           r.RooFit.Extended(r.kTRUE), 
-            #                           r.RooFit.SumCoefRange("A' mass = " + str(ap_mass)),
-            #                           r.RooFit.Range("A' mass = " + str(ap_mass)))
+            nll = self.model.createNLL(histogram_data, 
+                                       r.RooFit.Extended(r.kTRUE), 
+                                       r.RooFit.SumCoefRange("A' mass = " + str(ap_mass)),
+                                       r.RooFit.Range("A' mass = " + str(ap_mass)))
             #print "NLL object + " + str(nll)
             #print "Model " + str(self.model)
             #print "iv object: " + str(self.invariant_mass)
 
-            #m = r.RooMinuit(nll)
+            m = r.RooMinuit(nll)
 
-            #m.migrad()
+            m.migrad()
 
             #m.improve()
 
@@ -104,16 +99,15 @@ class BumpHunter :
 
             #m.minos()
 
-            #result = m.save()
+            result = m.save()
             #result = self.model.fitTo(histogram_data, 
             #                           r.RooFit.SumCoefRange("A' mass = " + str(ap_mass)),
             #                           r.RooFit.Range("A' mass = " + str(ap_mass)),
             #                          r.RooFit.Extended(r.kTRUE),
             #                           r.RooFit.Save())
 
-            #self.reset_params(result.floatParsInit())
-
-            #results.append(result)
+            results.append(result)
+            self.reset_params(result.floatParsInit())
 
             mass_start += mass_step
     
