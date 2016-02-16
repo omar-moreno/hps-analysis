@@ -19,6 +19,11 @@ target_link_libraries(TagProbeAnalysis
     Plotter
 )
 
+add_library(TagProbeDataAnalysis TagProbeDataAnalysis.cxx)
+target_link_libraries(TagProbeDataAnalysis
+    TagProbeAnalysis
+)
+
 add_library(TrackClusterMatchingEfficiencyAnalysis TrackClusterMatchingEfficiencyAnalysis.cxx)
 target_link_libraries(TrackClusterMatchingEfficiencyAnalysis
     ${HPS_EVENT_LIBRARY}
