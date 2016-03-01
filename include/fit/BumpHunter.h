@@ -36,6 +36,17 @@ class BumpHunter {
 
     private: 
 
+        /**
+         * Get the HPS mass resolution at the given mass.  The functional form 
+         * of the mass resolution was determined using MC.
+         *
+         * @param mass The mass of interest.
+         * @return The mass resolution at the given mass.
+         */
+        inline double getMassResolution(double mass) { 
+            return -6.166*mass*mass*mass + 0.9069*mass*mass -0.00297*mass + 0.000579; 
+        };
+    
         void resetParameters(RooArgList initial_params); 
 
         std::map <std::string, RooRealVar*> variable_map; 
