@@ -37,8 +37,8 @@ BumpHunter::BumpHunter(int poly_order)
         name = "t" + std::to_string(order);
         variable_map[name] = new RooRealVar(name.c_str(), name.c_str(), 0, -1, 1);
         arg_list.add(*variable_map[name]);
-    }
-    
+    } 
+
     bkg = new RooChebychev("bkg", "bkg", *variable_map["invariant mass"], arg_list);
 
     //   Composite Models   //
@@ -53,6 +53,8 @@ BumpHunter::BumpHunter(int poly_order)
     bkg_model = new RooAddPdf("bkg model", "bkg model", 
                               RooArgList(*bkg), RooArgList(*variable_map["bkg yield"]));
     model = comp_model;
+
+    ofs = new std::ofstream("results.txt", std::ofstream::out); 
 }
 
 
@@ -66,6 +68,7 @@ BumpHunter::~BumpHunter() {
     delete signal;
     delete bkg;
     delete comp_model; 
+    ofs->close();
 }
 
 std::map<double, RooFitResult*> BumpHunter::fit(TH1* histogram, double start, double end, double window_step) { 
@@ -112,6 +115,7 @@ std::map<double, RooFitResult*> BumpHunter::fit(TH1* histogram, double start, do
 
         RooFitResult* result = m.save(); 
         results[ap_hypothesis] = result; 
+        result->printMultiline(*ofs, 0, kTRUE, "");
 
         start += window_step; 
 
