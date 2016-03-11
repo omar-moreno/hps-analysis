@@ -105,14 +105,15 @@ std::map<double, RooFitResult*> BumpHunter::fit(TH1* histogram, double start, do
                 RooFit::Extended(kTRUE), 
                 RooFit::SumCoefRange(range_name.c_str()), 
                 RooFit::Range(range_name.c_str()),
-                RooFit::Verbose(kFALSE));
+                RooFit::Verbose(kFALSE),
+                RooFit::NumCPU(2));
 
         RooMinuit m(*nll);
 
         m.setPrintLevel(-1000);
 
         // Set the Minuit strategy
-        m.setStrategy(1);
+        //m.setStrategy(1);
 
         if (m.migrad() != 0) { 
             m.simplex();
