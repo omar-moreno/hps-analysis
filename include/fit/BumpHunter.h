@@ -12,7 +12,8 @@
 
 //----------------//   
 //   C++ StdLib   //
-//----------------//   
+//----------------//  
+#include <cstdio> 
 #include <vector>
 #include <map>
 #include <fstream>
@@ -62,6 +63,9 @@ class BumpHunter {
         /** Fit using a background only model. */
         void fitBkgOnly();
 
+        /** Write the fit results to a text file */
+        void writeResults(); 
+
     private: 
 
         /**
@@ -105,8 +109,13 @@ class BumpHunter {
         /** Output file stream */
         std::ofstream* ofs;
 
+        /** Size of the background window that will be used to fit. */
         double window_size;
 
+        /** Polynomial order used to model the background. */
+        int bkg_poly_order;
+
+        /** Use a model that only includes the background. */
         bool bkg_only;  
 };
 

@@ -12,9 +12,17 @@
 #include <BumpHunter.h>
 
 BumpHunter::BumpHunter(int poly_order) 
-    : window_size(0.01) {
+    : comp_model(nullptr), 
+      bkg_model(nullptr),
+      model(nullptr),
+      signal(nullptr), 
+      bkg(nullptr),
+      ofs(nullptr), 
+      window_size(0.01),
+      bkg_poly_order(poly_order), 
+      bkg_only(false) {
 
-    RooMsgService::instance().setGlobalKillBelow(RooFit::WARNING);
+    RooMsgService::instance().setGlobalKillBelow(RooFit::ERROR);
 
     // Independent variable
     variable_map["invariant mass"] = new RooRealVar("Invariant Mass", "Invariant Mass (GeV)", 0., 0.1);
@@ -33,9 +41,9 @@ BumpHunter::BumpHunter(int poly_order)
     //-------------//
 
     std::string name;
-    for (int order = 1; order <= poly_order; ++order) {
+    for (int order = 1; order <= bkg_poly_order; ++order) {
         name = "t" + std::to_string(order);
-        variable_map[name] = new RooRealVar(name.c_str(), name.c_str(), 0, -1, 1);
+        variable_map[name] = new RooRealVar(name.c_str(), name.c_str(), 0, -2, 2);
         arg_list.add(*variable_map[name]);
     } 
 
@@ -53,8 +61,6 @@ BumpHunter::BumpHunter(int poly_order)
     bkg_model = new RooAddPdf("bkg model", "bkg model", 
                               RooArgList(*bkg), RooArgList(*variable_map["bkg yield"]));
     model = comp_model;
-
-    ofs = new std::ofstream("results.txt", std::ofstream::out); 
 }
 
 
@@ -68,7 +74,7 @@ BumpHunter::~BumpHunter() {
     delete signal;
     delete bkg;
     delete comp_model; 
-    ofs->close();
+    if (ofs != nullptr) ofs->close();
 }
 
 std::map<double, RooFitResult*> BumpHunter::fit(TH1* histogram, double start, double end, double window_step) { 
@@ -102,20 +108,26 @@ std::map<double, RooFitResult*> BumpHunter::fit(TH1* histogram, double start, do
                 RooFit::Verbose(kFALSE));
 
         RooMinuit m(*nll);
-        m.setPrintLevel(-1000);
-        m.setWarnLevel(-1);
 
-        m.migrad();
+        m.setPrintLevel(-1000);
+
+        // Set the Minuit strategy
+        m.setStrategy(1);
+
+        if (m.migrad() != 0) { 
+            m.simplex();
+            m.migrad();
+        }
 
         m.improve();
 
         m.hesse();
 
-        m.minos();
+        m.minos(*variable_map["signal yield"]);
 
         RooFitResult* result = m.save(); 
         results[ap_hypothesis] = result; 
-        result->printMultiline(*ofs, 0, kTRUE, "");
+        if (ofs != nullptr) result->printMultiline(*ofs, 0, kTRUE, "");
 
         start += window_step; 
 
@@ -144,4 +156,14 @@ void BumpHunter::resetParameters(RooArgList initial_params) {
 void BumpHunter::fitBkgOnly() { 
     this->bkg_only = true; 
     model = bkg_model; 
+}
+
+void BumpHunter::writeResults() { 
+    
+    // Create the output file name string
+    char buffer[100];
+    sprintf(buffer, "results_order%i_window%i.txt", bkg_poly_order, window_size*1000);
+
+    // Create a file stream  
+    ofs = new std::ofstream(buffer, std::ofstream::out); 
 }
