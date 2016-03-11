@@ -43,6 +43,9 @@ int main(int argc, char **argv) {
     // Only fit the background
     bool bkg_only = false; 
 
+    // Log fit results
+    bool log_fit = false; 
+
     // Parse all the command line arguments.  If there are no valid command
     // line arguments passed, print the usage and exit the application
     static struct option long_options[] = {
@@ -53,13 +56,14 @@ int main(int argc, char **argv) {
         {"window",     required_argument, 0, 'w'},
         {"start",      required_argument, 0, 's'},
         {"end",        required_argument, 0, 'e'},
+        {"log",        no_argument,       0, 'l'},
         {"help",       no_argument,       0, 'h'},
         {0, 0, 0, 0}
     };
     
     int option_index = 0;
     int option_char; 
-    while ((option_char = getopt_long(argc, argv, "bi:n:o:w:s:e:h", long_options, &option_index)) != -1) {
+    while ((option_char = getopt_long(argc, argv, "bi:n:o:w:s:e:lh", long_options, &option_index)) != -1) {
 
         switch(option_char) {
             case 'b': 
@@ -83,6 +87,9 @@ int main(int argc, char **argv) {
             case 'e':
                 window_end = atof(optarg);
                 break;
+            case 'l': 
+                log_fit = true;
+                break; 
             case 'h':
                 return EXIT_SUCCESS; 
             default: 
@@ -113,7 +120,8 @@ int main(int argc, char **argv) {
     // Create a new Bump Hunter instance and set the given properties.
     BumpHunter* bump_hunter = new BumpHunter(poly_order);
     bump_hunter->setWindowSize(window_size);
-    if (bkg_only) bump_hunter->fitBkgOnly();  
+    if (bkg_only) bump_hunter->fitBkgOnly(); 
+    if (log_fit) bump_hunter->writeResults();  
 
     // Build the string that will be used for the results file name
     string output_file = "order" + to_string(poly_order) + "_window" + to_string(int(window_size*1000)) + "mev"; 
