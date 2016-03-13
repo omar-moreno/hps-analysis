@@ -105,8 +105,8 @@ std::map<double, RooFitResult*> BumpHunter::fit(TH1* histogram, double start, do
                 RooFit::Extended(kTRUE), 
                 RooFit::SumCoefRange(range_name.c_str()), 
                 RooFit::Range(range_name.c_str()),
-                RooFit::Verbose(kFALSE),
-                RooFit::NumCPU(2));
+                RooFit::Verbose(kFALSE));
+                //RooFit::NumCPU(2));
 
         RooMinuit m(*nll);
 
