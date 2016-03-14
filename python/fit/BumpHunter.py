@@ -6,13 +6,10 @@
 #   Imports   #
 ###############
 import ROOT as r
-import gc
 
 class BumpHunter :
 
     def __init__(self, poly_order) : 
-
-        gc.set_debug(gc.DEBUG_LEAK)
 
         # Create the object used to define the observable
         self.invariant_mass = r.RooRealVar("Invariant Mass",
@@ -58,7 +55,7 @@ class BumpHunter :
 
         # Create the objects that will represent the number of signal and 
         # background events in a given window.
-        self.nsig = r.RooRealVar("nsig","signal fraction", 0, -10000., 10000)
+        self.nsig = r.RooRealVar("nsig","signal fraction", 0, -100000000., 100000000)
         self.nbkg = r.RooRealVar("nbkg","background fraction", 10000., 0.,10000000)
 
         # Build a composite model 
@@ -77,51 +74,40 @@ class BumpHunter :
         # Loop over 
         while mass_start <= mass_end - self.mass_window_size : 
 
-            print "Count: " + str(gc.get_count())
-            #print "Objects: " + str(gc.get_objects())
-
             ap_mass = mass_start + self.mass_window_size/2
-            #self.ap_mass_mean.setVal(ap_mass)
+            self.ap_mass_mean.setVal(ap_mass)
             
-            #self.invariant_mass.setRange("A' mass = " + str(ap_mass),
-            #                             mass_start, mass_start + self.mass_window_size)
+            self.invariant_mass.setRange("A' mass = " + str(ap_mass),
+                                         mass_start, mass_start + self.mass_window_size)
 
-            #nll = self.model.createNLL(histogram_data, 
-            #                           r.RooFit.Extended(r.kTRUE), 
-            #                           r.RooFit.SumCoefRange("A' mass = " + str(ap_mass)),
-            #                           r.RooFit.Range("A' mass = " + str(ap_mass)))
-            #print "NLL object + " + str(nll)
-            #print "Model " + str(self.model)
-            #print "iv object: " + str(self.invariant_mass)
+            nll = self.model.createNLL(histogram_data, 
+                                       r.RooFit.Extended(r.kTRUE), 
+                                       r.RooFit.SumCoefRange("A' mass = " + str(ap_mass)),
+                                       r.RooFit.Range("A' mass = " + str(ap_mass)))
 
-            #m = r.RooMinuit(nll)
+            m = r.RooMinuit(nll)
 
             #m.migrad()
 
-            #m.improve()
+            m.improve()
 
-            #m.hesse()
+            m.hesse()
 
             #m.minos()
 
-            #result = m.save()
+            result = m.save()
             #result = self.model.fitTo(histogram_data, 
             #                           r.RooFit.SumCoefRange("A' mass = " + str(ap_mass)),
             #                           r.RooFit.Range("A' mass = " + str(ap_mass)),
             #                          r.RooFit.Extended(r.kTRUE),
             #                           r.RooFit.Save())
 
-            #self.reset_params(result.floatParsInit())
+            self.reset_params(result.floatParsInit())
 
-            #results.append(result)
+            results.append(result)
 
             mass_start += mass_step
     
-            #gc.collect()
-            #print "Refs: " + str(gc.get_referrers(nll)[0])
-
-            #print "After removal Refs: " + str(gc.get_referrers(nll))
-
         return results
 
     
