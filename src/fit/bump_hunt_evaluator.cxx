@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
     double window_size = 0.020; 
 
     // Default start position of the mass window
-    double window_begin = 0.03;
+    double window_start = 0.03;
 
     // Maximum position of the end of the mass window
     double window_end = 0.050;
@@ -46,6 +46,9 @@ int main(int argc, char **argv) {
     // Only fit the background
     bool bkg_only = false; 
 
+    // Log fit results
+    bool log_fit = false; 
+
     // Parse all the command line arguments.  If there are no valid command
     // line arguments passed, print the usage and exit the application
     static struct option long_options[] = {
@@ -54,17 +57,17 @@ int main(int argc, char **argv) {
         {"number",     required_argument, 0, 'n'},
         {"order",      required_argument, 0, 'o'},
         {"window",     required_argument, 0, 'w'},
-        {"begin",      required_argument, 0, 't'},
+        {"start",      required_argument, 0, 's'},
         {"end",        required_argument, 0, 'e'},
-        {"step",       required_argument, 0, 's'},
+        {"step",       required_argument, 0, 'd'},
+        {"log",        no_argument,       0, 'l'},
         {"help",       no_argument,       0, 'h'},
         {0, 0, 0, 0}
     };
     
     int option_index = 0;
     int option_char; 
-    while ((option_char = getopt_long(argc, argv, "bi:n:o:w:t:e:s:h", long_options, &option_index)) != -1) {
-
+    while ((option_char = getopt_long(argc, argv, "bi:n:o:w:s:e:d:lh", long_options, &option_index)) != -1) {
         switch(option_char) {
             case 'b': 
                 bkg_only = true;
@@ -81,15 +84,18 @@ int main(int argc, char **argv) {
             case 'w':
                 window_size = atof(optarg);
                 break;
-            case 't':
-                window_begin = atof(optarg);
+            case 's':
+                window_start = atof(optarg);
                 break;
             case 'e':
                 window_end = atof(optarg);
                 break;
-            case 's':
+            case 'd':
                 step_size = atof(optarg);
                 break;
+            case 'l': 
+                log_fit = true;
+                break; 
             case 'h':
                 return EXIT_SUCCESS; 
             default: 
@@ -120,7 +126,8 @@ int main(int argc, char **argv) {
     // Create a new Bump Hunter instance and set the given properties.
     BumpHunter* bump_hunter = new BumpHunter(poly_order);
     bump_hunter->setWindowSize(window_size);
-    if (bkg_only) bump_hunter->fitBkgOnly();  
+    if (bkg_only) bump_hunter->fitBkgOnly(); 
+    if (log_fit) bump_hunter->writeResults();  
 
     // Build the string that will be used for the results file name
     string output_file = "order" + to_string(poly_order) + "_window" + to_string(int(window_size*1000)) + "mev"; 
@@ -146,7 +153,7 @@ int main(int argc, char **argv) {
         // Process only the maximum number of histograms present. 
         if (hist_counter == hist_count) break;
 
-        map<double, RooFitResult*> results = bump_hunter->fit(hist, window_begin, window_end, step_size);
+        map<double, RooFitResult*> results = bump_hunter->fit(hist, window_start, window_end, step_size);
        
         for (auto& result : results) { 
            

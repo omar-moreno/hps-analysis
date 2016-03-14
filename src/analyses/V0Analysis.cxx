@@ -13,9 +13,12 @@
 
 V0Analysis::V0Analysis() 
     : ecal_utils(new EcalUtils()),
-      tuple(new FlatTupleMaker("trident_analysis.root", "results")), 
+      tuple(new FlatTupleMaker("v0_analysis.root", "results")), 
       matcher(new TrackClusterMatcher()),  
-      class_name("V0Analysis") {
+      class_name("V0Analysis"),
+      event_count(0),
+      single_p_count(0),
+      good_v0_count(0) {
 }
 
 V0Analysis::~V0Analysis() { 
@@ -26,29 +29,35 @@ V0Analysis::~V0Analysis() {
 void V0Analysis::initialize() {
     tuple->addVariable("cluster_energy_high");
     tuple->addVariable("cluster_energy_low");
+    tuple->addVariable("cluster_time_high");
     tuple->addVariable("cluster_x_high");
     tuple->addVariable("cluster_y_high");
     tuple->addVariable("cluster_z_high");
+    tuple->addVariable("cluster_time_low");
     tuple->addVariable("cluster_x_low");
     tuple->addVariable("cluster_y_low");
     tuple->addVariable("cluster_z_low");
     tuple->addVariable("event");
+    tuple->addVariable("electron_chi2"); 
+    tuple->addVariable("electron_ep");
     tuple->addVariable("electron_hit_n");
+    tuple->addVariable("electron_p");
     tuple->addVariable("electron_px"); 
     tuple->addVariable("electron_py"); 
     tuple->addVariable("electron_pz");
-    tuple->addVariable("electron_p");
-    tuple->addVariable("electron_chi2");  
+    tuple->addVariable("electron_time");
     tuple->addVariable("invariant_mass");  
     tuple->addVariable("n_tracks");
     tuple->addVariable("n_positrons");
     tuple->addVariable("n_v0");
+    tuple->addVariable("positron_chi2"); 
+    tuple->addVariable("positron_ep");
     tuple->addVariable("positron_hit_n");
+    tuple->addVariable("positron_p"); 
     tuple->addVariable("positron_px"); 
     tuple->addVariable("positron_py"); 
     tuple->addVariable("positron_pz");
-    tuple->addVariable("positron_p"); 
-    tuple->addVariable("positron_chi2"); 
+    tuple->addVariable("positron_time");
     tuple->addVariable("v0_p");
     tuple->addVariable("v_chi2");
     tuple->addVariable("vx");
@@ -63,6 +72,7 @@ void V0Analysis::initialize() {
 
 void V0Analysis::processEvent(HpsEvent* event) { 
 
+    ++event_count; 
     /*
      * std::cout << "[ V0Analysis ]: Event: " << event->getEventNumber() << std::endl;
      */
@@ -77,6 +87,7 @@ void V0Analysis::processEvent(HpsEvent* event) {
     }
     
     if (n_positrons != 1) return;
+    ++single_p_count;
     tuple->setVariableValue("n_positrons", n_positrons);
 
     tuple->setVariableValue("n_v0", event->getNumberOfParticles(HpsParticle::TC_V0_CANDIDATE)); 
@@ -128,13 +139,20 @@ void V0Analysis::processEvent(HpsEvent* event) {
 
         SvtTrack* electron = (SvtTrack*) particle->getTracks()->At(0); 
         SvtTrack* positron = (SvtTrack*) particle->getTracks()->At(1);
+        EcalCluster* cluster_high = (EcalCluster*) particle->getClusters()->At(0);
+        EcalCluster* cluster_low  = (EcalCluster*) particle->getClusters()->At(1);
+    
+        double electron_ep = cluster_high->getEnergy()/AnalysisUtils::getMagnitude(electron->getMomentum()); 
+        double positron_ep = cluster_low->getEnergy()/AnalysisUtils::getMagnitude(positron->getMomentum()); 
+
         if (positron->getCharge() == -1) { 
             electron = (SvtTrack*) particle->getTracks()->At(1);
             positron = (SvtTrack*) particle->getTracks()->At(0); 
+            double tmp = electron_ep; 
+            electron_ep = positron_ep;
+            positron_ep = tmp; 
         }
 
-        EcalCluster* cluster_high = (EcalCluster*) particle->getClusters()->At(0);
-        EcalCluster* cluster_low  = (EcalCluster*) particle->getClusters()->At(1);
         if (cluster_high->getEnergy() < cluster_low->getEnergy()) { 
             cluster_high = (EcalCluster*) particle->getClusters()->At(1);
             cluster_low  = (EcalCluster*) particle->getClusters()->At(0);
@@ -142,9 +160,11 @@ void V0Analysis::processEvent(HpsEvent* event) {
 
         tuple->setVariableValue("cluster_energy_high", cluster_high->getEnergy());
         tuple->setVariableValue("cluster_energy_low", cluster_low->getEnergy());
+        tuple->setVariableValue("cluster_time_high", cluster_high->getClusterTime());
         tuple->setVariableValue("cluster_x_high", cluster_high->getPosition()[0]);
         tuple->setVariableValue("cluster_y_high", cluster_high->getPosition()[1]);
         tuple->setVariableValue("cluster_z_high", cluster_high->getPosition()[2] );
+        tuple->setVariableValue("cluster_time_low", cluster_low->getClusterTime());
         tuple->setVariableValue("cluster_x_low",  cluster_low->getPosition()[0]);
         tuple->setVariableValue("cluster_y_low",  cluster_low->getPosition()[1]);
         tuple->setVariableValue("cluster_z_low",  cluster_low->getPosition()[2]);
@@ -156,18 +176,22 @@ void V0Analysis::processEvent(HpsEvent* event) {
         double positron_p = AnalysisUtils::getMagnitude(positron->getMomentum());
 
         tuple->setVariableValue("v0_p", v0_p); 
+        tuple->setVariableValue("electron_chi2", electron->getChi2());
+        tuple->setVariableValue("electron_ep", electron_ep);
         tuple->setVariableValue("electron_hit_n", electron->getSvtHits()->GetEntriesFast());
         tuple->setVariableValue("electron_p", electron_p);
         tuple->setVariableValue("electron_px", electron->getMomentum()[0]); 
         tuple->setVariableValue("electron_py", electron->getMomentum()[1]); 
-        tuple->setVariableValue("electron_pz", electron->getMomentum()[2]); 
+        tuple->setVariableValue("electron_pz", electron->getMomentum()[2]);
+        tuple->setVariableValue("electron_time", electron->getTrackTime()); 
+        tuple->setVariableValue("positron_chi2", positron->getChi2());
+        tuple->setVariableValue("positron_ep", positron_ep);
         tuple->setVariableValue("positron_hit_n", positron->getSvtHits()->GetEntriesFast());
         tuple->setVariableValue("positron_p", positron_p);
         tuple->setVariableValue("positron_px", positron->getMomentum()[0]); 
         tuple->setVariableValue("positron_py", positron->getMomentum()[1]); 
         tuple->setVariableValue("positron_pz", positron->getMomentum()[2]);
-        tuple->setVariableValue("electron_chi2", electron->getChi2());
-        tuple->setVariableValue("positron_chi2", positron->getChi2());
+        tuple->setVariableValue("positron_time", positron->getTrackTime()); 
         tuple->setVariableValue("vx", particle->getVertexPosition()[0]);
         tuple->setVariableValue("vy", particle->getVertexPosition()[1]);
         tuple->setVariableValue("vz", particle->getVertexPosition()[2]);
@@ -182,7 +206,10 @@ void V0Analysis::processEvent(HpsEvent* event) {
         }
     }
         
-    if (good_v0_found) tuple->fill();
+    if (good_v0_found) {
+        ++good_v0_count;
+        tuple->fill();
+    }
 
 }
 

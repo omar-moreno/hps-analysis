@@ -18,7 +18,7 @@ def main() :
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='')
     parser.add_argument("-l", "--input_list", help="ROOT file")
-    parser.add_argument("-b", "--bkg_only", help="Process a file generated with a bkg only fit.")
+    parser.add_argument("-b", "--bkg_only", action='store_true', default=False, help="Process a file generated with a bkg only fit.")
     args = parser.parse_args()
 
     # If a list of input files has not been specified, warn the user and exit
@@ -51,7 +51,10 @@ def main() :
     variable_map = { 
         "bkg_mean"  : [],
         "bkg_sigma" : [],
-        "bkg_pull"  : []
+        "bkg_pull"  : [],
+        "sig_mean"  : [], 
+        "sig_sigma" : [], 
+        "sig_pull"  : []
 
     }
 
@@ -71,6 +74,9 @@ def main() :
         variable_map["bkg_mean"].append([])
         variable_map["bkg_sigma"].append([])
         variable_map["bkg_pull"].append([])
+        variable_map["sig_mean"].append([])
+        variable_map["sig_sigma"].append([])
+        variable_map["sig_pull"].append([])
 
         split_string = line.split('_', 2)
         #print split_string
@@ -136,9 +142,57 @@ def main() :
             pdf.savefig()
             plt.close()
         
-        for index in range(0, len(variable_map["bkg_mean"])) : 
+            if not args.bkg_only : 
 
-            bkg_yield_mean_a = np.array(variable_map["bkg_mean"][index])
+                fig, (ax0, ax1, ax2) = plt.subplots(ncols=3, figsize=(15, 5))
+            
+                index = 0
+                for results in results_list : 
+            
+                    sig_yield_a = results[:,index_map["sig_yield"]][results[:,index_map["ap_mass"]] == ap_mass]
+                    sig_yield_err_a = results[:,index_map["sig_yield_error"]][results[:,index_map["ap_mass"]] == ap_mass]
+            
+                    ax0.hist(sig_yield_a, bins=50, alpha=0.8, histtype="stepfilled", normed=True, label=name_list[index])
+                    ax0.set_xlabel('Signal Yield', fontsize=8)
+                    ax0.set_ylabel('AU', fontsize=8)
+                    ax0.set_title("$A'$ mass hypothesis = " + str(ap_mass), fontsize=8)
+                    ax0.legend()
+
+                    mu, sigma = norm.fit(sig_yield_a) 
+                    variable_map["sig_mean"][index].append(mu)
+                    variable_map["sig_sigma"][index].append(sigma)
+
+                    xmin, xmax = ax0.get_xlim()
+                    x = np.linspace(xmin, xmax, 100)
+                    p = norm.pdf(x, mu, sigma)
+                    ax0.plot(x, p, linewidth=2)
+
+                    ax1.hist(sig_yield_err_a, bins=50, alpha=0.8, histtype="stepfilled", normed=True, label=name_list[index])
+                    ax1.set_xlabel('Signal Yield Fit Error', fontsize=8)
+                    ax1.set_ylabel('AU', fontsize=8)
+                    ax1.set_title("$A'$ mass hypothesis = " + str(ap_mass), fontsize=8)
+                    ax1.legend()
+
+                    ax2.hist(sig_yield_a/sig_yield_err_a, bins=50, alpha=0.8, histtype="stepfilled", normed=True, label=name_list[index])
+                    ax2.set_xlabel('Signal Yield Pull', fontsize=8)
+                    ax2.set_ylabel('AU', fontsize=8)
+                    ax2.set_title("$A'$ mass hypothesis = " + str(ap_mass),fontsize=8)
+                    ax2.legend()
+
+                    mu, sigma = norm.fit(sig_yield_a/sig_yield_err_a)
+                    variable_map["sig_pull"][index].append(mu)
+
+                    xmin, xmax = ax2.get_xlim()
+                    x = np.linspace(xmin, xmax, 100)
+                    p = norm.pdf(x, mu, sigma)
+                    ax2.plot(x, p, linewidth=2)
+
+                    index += 1
+
+                pdf.savefig()
+                plt.close()
+
+        for index in range(0, len(variable_map["bkg_mean"])) : 
 
             plt.plot(ap_masses, variable_map["bkg_mean"][index], 'o-', label=name_list[index])
             plt.xlabel("$A'$ mass hypothesis")
@@ -159,6 +213,31 @@ def main() :
 
         pdf.savefig()
         plt.close()
+
+        if not args.bkg_only : 
+        
+            for index in range(0, len(variable_map["sig_mean"])) : 
+
+                plt.plot(ap_masses, variable_map["sig_mean"][index], 'o-', label=name_list[index])
+                plt.xlabel("$A'$ mass hypothesis")
+                plt.ylabel("Signal Yield")
+                plt.legend()
+                #plt.fill_between(ap_masses, yield_mean_array - yield_sigma_array, yield_mean_array + yield_sigma_array)
+            
+            pdf.savefig()
+            plt.close()
+
+            for index in range(0, len(variable_map["sig_mean"])) : 
+        
+                plt.plot(ap_masses, variable_map["sig_pull"][index], 'o-', label=name_list[index])
+                plt.xlabel("$A'$ mass hypothesis")
+                plt.ylabel("Signal Yield Pull")
+                plt.ylim([-5, 5])
+                plt.legend()
+
+            pdf.savefig()
+            plt.close()
+
 
 if __name__ == "__main__" : 
     main()

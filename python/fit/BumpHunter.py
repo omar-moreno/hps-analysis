@@ -30,7 +30,7 @@ class BumpHunter :
         # descibe the A' signal.  These values are set constant during the fit.
         self.ap_mass_mean = r.RooRealVar("ap_mass_mean", "ap_mass_mean", .03)
         #self.ap_mass_mean.setConstant(r.kTRUE)
-        self.ap_mass_sigma = r.RooRealVar("ap_mass_sigma", "ap_mass_sigma", 0.003)
+        self.ap_mass_sigma = r.RooRealVar("ap_mass_sigma", "ap_mass_sigma", 0.00167)
         #self.ap_mass_sigma.setConstant(r.kTRUE)
 
         # Define the Gaussian model used to describe the A' signal.
@@ -46,7 +46,7 @@ class BumpHunter :
         self.arg_list = r.RooArgList()
 
         for order in range(1, poly_order+1) :
-            self.t.append(r.RooRealVar("t"+str(order), "t"+str(order), 0, -10, 10))
+            self.t.append(r.RooRealVar("t"+str(order), "t"+str(order), 0, -10000, 10000))
             self.arg_list.add(self.t[order - 1])
 
         # Define the polynomial model used to describe the background in some
@@ -55,8 +55,8 @@ class BumpHunter :
 
         # Create the objects that will represent the number of signal and 
         # background events in a given window.
-        self.nsig = r.RooRealVar("nsig","signal fraction", 0, -100000000., 100000000)
-        self.nbkg = r.RooRealVar("nbkg","background fraction", 10000., 0.,10000000)
+        self.nsig = r.RooRealVar("nsig","signal fraction", 0, -1000., 1000)
+        self.nbkg = r.RooRealVar("nbkg","background fraction", 10000., 0.,1000000000)
 
         # Build a composite model 
         self.model = r.RooAddPdf("model", "model", 
@@ -84,10 +84,9 @@ class BumpHunter :
                                        r.RooFit.Extended(r.kTRUE), 
                                        r.RooFit.SumCoefRange("A' mass = " + str(ap_mass)),
                                        r.RooFit.Range("A' mass = " + str(ap_mass)))
-
             m = r.RooMinuit(nll)
 
-            #m.migrad()
+            m.migrad()
 
             m.improve()
 
@@ -102,9 +101,8 @@ class BumpHunter :
             #                          r.RooFit.Extended(r.kTRUE),
             #                           r.RooFit.Save())
 
-            self.reset_params(result.floatParsInit())
-
             results.append(result)
+            self.reset_params(result.floatParsInit())
 
             mass_start += mass_step
     

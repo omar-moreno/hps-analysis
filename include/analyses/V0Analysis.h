@@ -62,6 +62,11 @@ class V0Analysis : public HpsAnalysis {
 
         /** Name of the class */
         std::string class_name; 
+        
+        /** Counters */
+        double event_count;
+        double single_p_count;
+        double good_v0_count; 
 };
 
 
