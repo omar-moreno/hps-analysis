@@ -56,6 +56,24 @@ class BumpHunter {
         std::map<double, RooFitResult*> fit(TH1* histogram, double window_start, double window_end, double window_step);
 
         /**
+         * Fit the given histogram in the window with range 
+         * (window_start, window_start + window_size).  
+         * 
+         * @param data The RooFit histogram to fit.
+         * @param window_start The start of the fit window.
+         */
+        RooFitResult* fit(RooDataHist* data, double window_start);
+
+        /**
+         * Fit the given histogram in the window with range 
+         * (window_start, window_start + window_size).  
+         * 
+         * @param histogram The histogram to fit.
+         * @param window_start The start of the fit window.
+         */
+        RooFitResult* fit(TH1* histogram, double window_start);
+
+        /**
          * 
          */
         void setWindowSize(double window_size) { this->window_size = window_size; }; 
