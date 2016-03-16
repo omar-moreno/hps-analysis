@@ -177,8 +177,8 @@ RooFitResult* BumpHunter::fit(RooDataHist* data, double window_start) {
             RooFit::Extended(kTRUE), 
             RooFit::SumCoefRange(range_name.c_str()), 
             RooFit::Range(range_name.c_str()),
-            RooFit::Verbose(kFALSE),
-            RooFit::NumCPU(2));
+            RooFit::Verbose(kFALSE));
+    //        RooFit::NumCPU(2));
 
     // Instantiate minuit using the constructed likelihood above
     RooMinuit m(*nll);
