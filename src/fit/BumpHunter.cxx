@@ -251,6 +251,8 @@ void BumpHunter::calculatePValue(RooDataHist* data, HpsFitResult* result, std::s
     result->setPValue(p_value); 
     
     variable_map["signal yield"]->setConstant(kFALSE);
+
+    delete null_result; 
 }
 
 void BumpHunter::resetParameters(RooArgList initial_params) { 
@@ -312,20 +314,20 @@ void BumpHunter::calculateUpperLimit(double alpha, RooDataHist* data, HpsFitResu
 }*/
 
 double BumpHunter::getChi2Prob(double min_nll_null, double min_nll) {
-    std::cout << std::fixed << "Null NLL: " << min_nll_null << std::endl;
-    std::cout << std::fixed << "Min NLL: " << min_nll << std::endl;
+    //std::cout << std::fixed << "Null NLL: " << min_nll_null << std::endl;
+    //std::cout << std::fixed << "Min NLL: " << min_nll << std::endl;
     
     min_nll *= -1;
     min_nll_null *= -1;
 
     double diff = min_nll - min_nll_null;
-    std::cout << "Difference: " << diff << std::endl;
+    //std::cout << "Difference: " << diff << std::endl;
     
     double q0 = 2*diff;
-    std::cout << "q0: " << q0 << std::endl;
+    //std::cout << "q0: " << q0 << std::endl;
     
     double prob = TMath::Prob(q0, 1); 
-    std::cout << "Probability: " << prob << std::endl;
+    //std::cout << "Probability: " << prob << std::endl;
 
     return prob; 
 }
