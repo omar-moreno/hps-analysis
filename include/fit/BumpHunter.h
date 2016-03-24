@@ -22,6 +22,7 @@
 //   ROOT   //
 //----------//   
 #include <TH1.h>
+#include <TMath.h>
 
 //------------//
 //   RooFit   //
@@ -34,6 +35,12 @@
 #include <RooAddPdf.h>
 #include <RooMinuit.h>
 #include <RooFitResult.h>
+#include <RooProfileLL.h>
+#include <TCanvas.h>
+#include <RooPlot.h>
+
+//---//
+#include <HpsFitResult.h>
 
 class BumpHunter {
 
@@ -53,7 +60,7 @@ class BumpHunter {
          * @param window_end
          * @param window_step 
          */
-        std::map<double, RooFitResult*> fit(TH1* histogram, double window_start, double window_end, double window_step);
+        std::map<double, HpsFitResult*> fitWindow(TH1* histogram, double window_start, double window_end, double window_step);
 
         /**
          * Fit the given histogram in the window with range 
@@ -62,7 +69,7 @@ class BumpHunter {
          * @param data The RooFit histogram to fit.
          * @param window_start The start of the fit window.
          */
-        RooFitResult* fit(RooDataHist* data, double window_start);
+        HpsFitResult* fitWindow(RooDataHist* data, double window_start);
 
         /**
          * Fit the given histogram in the window with range 
@@ -71,15 +78,33 @@ class BumpHunter {
          * @param histogram The histogram to fit.
          * @param window_start The start of the fit window.
          */
-        RooFitResult* fit(TH1* histogram, double window_start);
+        HpsFitResult* fitWindow(TH1* histogram, double window_start);
+
+        
+        /**
+         * Fit the given histogram. If a range is specified, only fit within the 
+         * range of interest.
+         *
+         * @param data The RooFit histogram to fit.
+         * @param migrad_only If true, only run migrad.
+         * @param range_name The range to fit.
+         */        
+        HpsFitResult* fit(RooDataHist* data, bool migrad_only, std::string range_name); 
+    
+        /**
+         *
+         */
+        void calculatePValue(RooDataHist* data, HpsFitResult* result, std::string range_name, double alpha); 
+
+
+        /** Fit using a background only model. */
+        void fitBkgOnly();
 
         /**
          * 
          */
         void setWindowSize(double window_size) { this->window_size = window_size; }; 
 
-        /** Fit using a background only model. */
-        void fitBkgOnly();
 
         /** Write the fit results to a text file */
         void writeResults(); 
@@ -103,6 +128,16 @@ class BumpHunter {
          * @param initial_params A list containing the fit parameters.
          */ 
         void resetParameters(RooArgList initial_params); 
+
+        /**
+         * Calculate the upper limit on the signal yield.
+         */
+        //void calculateUpperLimit(double alpha, RooDataHist* data, HpsFitResult* result, std::string range_name);
+
+        /**
+         *
+         */
+        double getChi2Prob(double min_nll_null, double min_nll); 
 
         std::map <std::string, RooRealVar*> variable_map; 
 
