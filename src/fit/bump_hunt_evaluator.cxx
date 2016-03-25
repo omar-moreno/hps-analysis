@@ -137,15 +137,19 @@ int main(int argc, char **argv) {
     // Create a new flat ntuple and define the variables it will encapsulate.
     FlatTupleMaker* tuple = new FlatTupleMaker(output_file, "results"); 
 
+    tuple->addVariable("hist_n");
     tuple->addVariable("ap_mass"); 
     tuple->addVariable("sig_yield"); 
-    tuple->addVariable("sig_yield_error"); 
+    tuple->addVariable("sig_yield_error_hi");
+    tuple->addVariable("signal_yield_error_low"); 
     tuple->addVariable("bkg_yield"); 
     tuple->addVariable("bkg_yield_error"); 
     tuple->addVariable("nll");
     tuple->addVariable("invalid_nll"); 
     tuple->addVariable("minuit_status");
-    tuple->addVariable("edm"); 
+    tuple->addVariable("edm");
+    tuple->addVariable("p_value"); 
+    tuple->addVariable("upper_limit");
 
     int hist_counter = 0; 
     for (auto& hist : reader->get1DHistograms()) {
@@ -153,19 +157,20 @@ int main(int argc, char **argv) {
         // Process only the maximum number of histograms present. 
         if (hist_counter == hist_count) break;
 
-        map<double, RooFitResult*> results = bump_hunter->fit(hist, window_start, window_end, step_size);
+        tuple->setVariableValue("hist_n", (hist_counter + 1)); 
+        map<double, HpsFitResult*> results = bump_hunter->fitWindow(hist, window_start, window_end, step_size);
        
         for (auto& result : results) { 
            
-            RooFitResult* fit_result = result.second; 
+            HpsFitResult* fit_result = result.second; 
           
             // Retrieve all of the result of interest. 
-            double bkg_yield = ((RooRealVar*) fit_result->floatParsFinal().find("bkg yield"))->getVal();
-            double bkg_yield_error = ((RooRealVar*) fit_result->floatParsFinal().find("bkg yield"))->getError();
-            double nll = fit_result->minNll();
-            double invalid_nll = fit_result->numInvalidNLL();
-            double minuit_status = fit_result->status();
-            double edm = fit_result->edm(); 
+            double bkg_yield = ((RooRealVar*) fit_result->getRooFitResult()->floatParsFinal().find("bkg yield"))->getVal();
+            double bkg_yield_error = ((RooRealVar*) fit_result->getRooFitResult()->floatParsFinal().find("bkg yield"))->getError();
+            double nll = fit_result->getRooFitResult()->minNll();
+            double invalid_nll = fit_result->getRooFitResult()->numInvalidNLL();
+            double minuit_status = fit_result->getRooFitResult()->status();
+            double edm = fit_result->getRooFitResult()->edm(); 
 
             // Set the values of the results that will be written to the ntuple.
             tuple->setVariableValue("ap_mass", result.first);  
@@ -178,12 +183,15 @@ int main(int argc, char **argv) {
 
             // If this isn't a background only fit evaluation, skip it.
             if (!bkg_only) {
-                double signal_yield = ((RooRealVar*) fit_result->floatParsFinal().find("signal yield"))->getVal();
-                double signal_yield_error = ((RooRealVar*) fit_result->floatParsFinal().find("signal yield"))->getError();
+                double signal_yield = ((RooRealVar*) fit_result->getRooFitResult()->floatParsFinal().find("signal yield"))->getVal();
+                double signal_yield_error_hi = ((RooRealVar*) fit_result->getRooFitResult()->floatParsFinal().find("signal yield"))->getAsymErrorHi();
+                double signal_yield_error_low = ((RooRealVar*) fit_result->getRooFitResult()->floatParsFinal().find("signal yield"))->getAsymErrorLo();
                 tuple->setVariableValue("sig_yield", signal_yield);  
-                tuple->setVariableValue("sig_yield_error", signal_yield_error);
+                tuple->setVariableValue("sig_yield_error_hi", signal_yield_error_hi);
+                tuple->setVariableValue("sig_yield_error_low", signal_yield_error_low);
+                tuple->setVariableValue("p_value", fit_result->getPValue()); 
+                tuple->setVariableValue("upper_limit", fit_result->getUpperLimit());
             }
-
               
             // Fill the ntuple
             tuple->fill(); 
