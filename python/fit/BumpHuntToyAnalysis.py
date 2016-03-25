@@ -25,11 +25,24 @@ class BumpHuntToyAnalysis :
         
         # Create an array containing a unique list of histogram numbers
         histogram_numbers = np.unique(self.results["hist_n"])
-        print histogram_numbers
+        #print histogram_numbers
 
-        #with PdfPages("bump_hunt_analysis.pdf") as pdf :
+        hist_n = self.results["hist_n"]
+        q0 = self.results["q0"]
+        q0_max = []
 
-            # Find the largest
+        with PdfPages("bump_hunt_analysis.pdf") as pdf :
+
+            # Find the largest q0 from all of the fits to a single histogram
+            for histogram_number in histogram_numbers :
+
+                q0_max.append(np.amax(q0[hist_n == histogram_number]))
+            
+            print q0_max
+            bins = np.linspace(0, 10, 100)
+            plt.hist(q0_max, bins, alpha=0.8, histtype="stepfilled")
+            pdf.savefig()
+            plt.close()
 
 
 
