@@ -2,15 +2,17 @@
 #include <HpsFitResult.h>
 
 HpsFitResult::HpsFitResult() 
-    : result(nullptr), 
-      upper_limit(0), 
-      p_value(0) { 
+    : result(nullptr),
+      q0(0),  
+      p_value(0),
+      upper_limit(0) { 
 }
 
-HpsFitResult::HpsFitResult(RooFitResult* result, double upper_limit, double p_value)  
+HpsFitResult::HpsFitResult(RooFitResult* result, double q0, double p_value, double upper_limit)  
     : result(result), 
-      upper_limit(upper_limit), 
-      p_value(p_value) { 
+      q0(q0),
+      p_value(p_value),
+      upper_limit(upper_limit) { 
 }
 
 HpsFitResult::~HpsFitResult() { 

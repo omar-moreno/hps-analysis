@@ -21,22 +21,34 @@ class HpsFitResult {
         HpsFitResult(); 
 
         /** */
-        HpsFitResult(RooFitResult* result, double upper_limit = 0, double p_value = 0); 
+        HpsFitResult(RooFitResult* result, double q0 = 0, double p_value = 0, double upper_limit = 0);
 
         ~HpsFitResult(); 
 
+        /** */
+        double getQ0() { return q0; };
+
+        /** */
         double getPValue() { return p_value; };
 
-        /** 
-         *
-         */
+        /** */
         double getParameterVal(std::string parameter_name); 
 
-
+        /** */
         RooFitResult* getRooFitResult() { return result; };  
 
+        /** */
         double getUpperLimit() { return upper_limit; };
         
+        /** */
+        double setQ0(double q0) { this->q0 = q0; };
+
+        /** */
+        void setPValue(double p_value) { this->p_value = p_value; };  
+        
+        /** */
+        void setRooFitResult(RooFitResult* result) { this->result = result; }; 
+
         /**
          * Set the 2 sigma upper limit.
          *
@@ -44,23 +56,20 @@ class HpsFitResult {
          */
         void setUpperLimit(double upper_limit) { this->upper_limit = upper_limit; };
 
-        /**
-         *
-         */
-        void setPValue(double p_value) { this->p_value = p_value; };  
-
-        void setRooFitResult(RooFitResult* result) { this->result = result; }; 
 
     private: 
 
         /** Result associated with RooFit. */
         RooFitResult* result; 
 
-        /** 2 sigma upper limit on the signal. */
-        double upper_limit; 
-
+        /** q0 value */
+        double q0;
+        
         /** p value. */
         double p_value;
+
+        /** 2 sigma upper limit on the signal. */
+        double upper_limit; 
 
 }; // HpsFitResult
 

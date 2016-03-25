@@ -137,7 +137,7 @@ class BumpHunter {
         /**
          *
          */
-        double getChi2Prob(double min_nll_null, double min_nll); 
+        void getChi2Prob(double min_nll_null, double min_nll, double &q0, double &p_value); 
 
         std::map <std::string, RooRealVar*> variable_map; 
 

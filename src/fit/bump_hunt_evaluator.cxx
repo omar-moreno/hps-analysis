@@ -148,6 +148,7 @@ int main(int argc, char **argv) {
     tuple->addVariable("invalid_nll"); 
     tuple->addVariable("minuit_status");
     tuple->addVariable("edm");
+    tuple->addVariable("q0"); 
     tuple->addVariable("p_value"); 
     tuple->addVariable("upper_limit");
 
@@ -189,7 +190,8 @@ int main(int argc, char **argv) {
                 tuple->setVariableValue("sig_yield", signal_yield);  
                 tuple->setVariableValue("sig_yield_error_hi", signal_yield_error_hi);
                 tuple->setVariableValue("sig_yield_error_low", signal_yield_error_low);
-                tuple->setVariableValue("p_value", fit_result->getPValue()); 
+                tuple->setVariableValue("p_value", fit_result->getPValue());
+                tuple->setVariableValue("q0", fit_result->getQ0()); 
                 tuple->setVariableValue("upper_limit", fit_result->getUpperLimit());
             }
               

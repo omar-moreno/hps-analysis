@@ -243,12 +243,15 @@ void BumpHunter::calculatePValue(RooDataHist* data, HpsFitResult* result, std::s
     // 1) Calculate the likelihood ratio whose underlying distribution is a 
     //    chi2.
     // 2) From the chi2, calculate the p-value.
-    double p_value = this->getChi2Prob(min_nll_null, min_nll);  
+    double q0 = 0; 
+    double p_value = 0; 
+    this->getChi2Prob(min_nll_null, min_nll, q0, p_value);  
 
     // If P-value is less than the significance, alpha, a bump was found.
     if (p_value < alpha) std::cout << "WTF, a Bump was found!" << std::endl;
 
-    result->setPValue(p_value); 
+    result->setPValue(p_value);
+    result->setQ0(q0);  
     
     variable_map["signal yield"]->setConstant(kFALSE);
 
@@ -313,7 +316,7 @@ void BumpHunter::calculateUpperLimit(double alpha, RooDataHist* data, HpsFitResu
     
 }*/
 
-double BumpHunter::getChi2Prob(double min_nll_null, double min_nll) {
+void BumpHunter::getChi2Prob(double min_nll_null, double min_nll, double &q0, double &p_value) {
     //std::cout << std::fixed << "Null NLL: " << min_nll_null << std::endl;
     //std::cout << std::fixed << "Min NLL: " << min_nll << std::endl;
     
@@ -323,13 +326,11 @@ double BumpHunter::getChi2Prob(double min_nll_null, double min_nll) {
     double diff = min_nll - min_nll_null;
     //std::cout << "Difference: " << diff << std::endl;
     
-    double q0 = 2*diff;
+    q0 = 2*diff;
     //std::cout << "q0: " << q0 << std::endl;
     
-    double prob = TMath::Prob(q0, 1); 
+    p_value = TMath::Prob(q0, 1); 
     //std::cout << "Probability: " << prob << std::endl;
-
-    return prob; 
 }
 
 void BumpHunter::fitBkgOnly() { 
