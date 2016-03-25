@@ -25,6 +25,9 @@ int main(int argc, char **argv) {
     // Name of file to process
     string file_name;
 
+    // Output file name
+    string output_file = "";
+
     // Default number of histograms to process
     int hist_count = 10;
 
@@ -53,51 +56,55 @@ int main(int argc, char **argv) {
     // line arguments passed, print the usage and exit the application
     static struct option long_options[] = {
         {"bkg_only",   required_argument, 0, 'b'},
-        {"file_name",  required_argument, 0, 'i'},
-        {"number",     required_argument, 0, 'n'},
-        {"order",      required_argument, 0, 'o'},
-        {"window",     required_argument, 0, 'w'},
-        {"start",      required_argument, 0, 's'},
         {"end",        required_argument, 0, 'e'},
-        {"step",       required_argument, 0, 'd'},
-        {"log",        no_argument,       0, 'l'},
+        {"file_name",  required_argument, 0, 'i'},
         {"help",       no_argument,       0, 'h'},
+        {"log",        no_argument,       0, 'l'},
+        {"number",     required_argument, 0, 'n'},
+        {"output",     required_argument, 0, 'o'},
+        {"poly",       required_argument, 0, 'p'},
+        {"start",      required_argument, 0, 's'},
+        {"step",       required_argument, 0, 'd'},
+        {"window",     required_argument, 0, 'w'},
         {0, 0, 0, 0}
     };
     
     int option_index = 0;
     int option_char; 
-    while ((option_char = getopt_long(argc, argv, "bi:n:o:w:s:e:d:lh", long_options, &option_index)) != -1) {
+    while ((option_char = getopt_long(argc, argv, "be:i:lhn:o:p:s:d:w:", long_options, &option_index)) != -1) {
         switch(option_char) {
             case 'b': 
                 bkg_only = true;
                 break; 
+            case 'e':
+                window_end = atof(optarg);
+                break;
             case 'i': 
                 file_name = optarg;
                 break;
+            case 'h':
+                return EXIT_SUCCESS; 
+            case 'l': 
+                log_fit = true;
+                break; 
             case 'n':
                 hist_count = atoi(optarg);
                 break;
-            case 'o': 
-                poly_order = atoi(optarg);
+            case 'o':
+                output_file = optarg;
                 break;
-            case 'w':
-                window_size = atof(optarg);
+            case 'p': 
+                poly_order = atoi(optarg);
                 break;
             case 's':
                 window_start = atof(optarg);
                 break;
-            case 'e':
-                window_end = atof(optarg);
-                break;
             case 'd':
                 step_size = atof(optarg);
                 break;
-            case 'l': 
-                log_fit = true;
-                break; 
-            case 'h':
-                return EXIT_SUCCESS; 
+            case 'w':
+                window_size = atof(optarg);
+                break;
             default: 
                 return EXIT_FAILURE;
         }
@@ -130,9 +137,11 @@ int main(int argc, char **argv) {
     if (log_fit) bump_hunter->writeResults();  
 
     // Build the string that will be used for the results file name
-    string output_file = "order" + to_string(poly_order) + "_window" + to_string(int(window_size*1000)) + "mev"; 
-    if (bkg_only) output_file += "_bkg_fit_result.root"; 
-    else output_file += "_sig_fit_result.root"; 
+    if (output_file.empty()) { 
+        output_file = "order" + to_string(poly_order) + "_window" + to_string(int(window_size*1000)) + "mev"; 
+        if (bkg_only) output_file += "_bkg_fit_result.root"; 
+        else output_file += "_sig_fit_result.root"; 
+    }
 
     // Create a new flat ntuple and define the variables it will encapsulate.
     FlatTupleMaker* tuple = new FlatTupleMaker(output_file, "results"); 
