@@ -146,13 +146,14 @@ int main(int argc, char **argv) {
     // Create a new flat ntuple and define the variables it will encapsulate.
     FlatTupleMaker* tuple = new FlatTupleMaker(output_file, "results"); 
 
-    tuple->addVariable("hist_n");
     tuple->addVariable("ap_mass"); 
-    tuple->addVariable("sig_yield"); 
-    tuple->addVariable("sig_yield_error_hi");
-    tuple->addVariable("signal_yield_error_low"); 
+    tuple->addVariable("hist_n");
+    tuple->addVariable("sig_yield");
+    tuple->addVariable("sig_yield_err");
+    tuple->addVariable("sig_yield_minos_err_hi");
+    tuple->addVariable("sig_yield_minos_err_low"); 
     tuple->addVariable("bkg_yield"); 
-    tuple->addVariable("bkg_yield_error"); 
+    tuple->addVariable("bkg_yield_err"); 
     tuple->addVariable("nll");
     tuple->addVariable("invalid_nll"); 
     tuple->addVariable("minuit_status");
@@ -168,6 +169,7 @@ int main(int argc, char **argv) {
         if (hist_counter == hist_count) break;
 
         tuple->setVariableValue("hist_n", (hist_counter + 1)); 
+        bump_hunter->setWindowSize(window_size);
         map<double, HpsFitResult*> results = bump_hunter->fitWindow(hist, window_start, window_end, step_size);
        
         for (auto& result : results) { 
@@ -194,9 +196,11 @@ int main(int argc, char **argv) {
             // If this isn't a background only fit evaluation, skip it.
             if (!bkg_only) {
                 double signal_yield = ((RooRealVar*) fit_result->getRooFitResult()->floatParsFinal().find("signal yield"))->getVal();
+                double signal_yield_error = ((RooRealVar*) fit_result->getRooFitResult()->floatParsFinal().find("signal yield"))->getError();
                 double signal_yield_error_hi = ((RooRealVar*) fit_result->getRooFitResult()->floatParsFinal().find("signal yield"))->getAsymErrorHi();
                 double signal_yield_error_low = ((RooRealVar*) fit_result->getRooFitResult()->floatParsFinal().find("signal yield"))->getAsymErrorLo();
                 tuple->setVariableValue("sig_yield", signal_yield);  
+                tuple->setVariableValue("sig_yield_err", signal_yield_error);
                 tuple->setVariableValue("sig_yield_error_hi", signal_yield_error_hi);
                 tuple->setVariableValue("sig_yield_error_low", signal_yield_error_low);
                 tuple->setVariableValue("p_value", fit_result->getPValue());
