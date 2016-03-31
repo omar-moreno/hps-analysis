@@ -213,11 +213,11 @@ HpsFitResult* BumpHunter::fit(RooDataHist* data, bool migrad_only = false, std::
     //    migrad ends up finding a local minium instead of a global one.
     // 2) Run hesse
     // 3) Run minos in order to optimize the errors the signal yield.
-    /*if (!migrad_only && status == 0) { 
+    if (!migrad_only && status == 0) { 
         m.improve();
         m.hesse();
-        m.minos(*variable_map["signal yield"]); 
-    }*/
+    //    m.minos(*variable_map["signal yield"]); 
+    }
 
     // Save the results of the fit
     RooFitResult* result = m.save(); 
