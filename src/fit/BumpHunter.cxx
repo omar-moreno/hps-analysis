@@ -20,7 +20,8 @@ BumpHunter::BumpHunter(int poly_order)
       ofs(nullptr), 
       window_size(0.01),
       bkg_poly_order(poly_order), 
-      bkg_only(false) {
+      bkg_only(false), 
+      fix_window(false) {
 
     // Turn off all messages except errors
     RooMsgService::instance().setGlobalKillBelow(RooFit::ERROR);
@@ -77,7 +78,7 @@ BumpHunter::~BumpHunter() {
     if (ofs != nullptr) ofs->close();
 }
 
-std::map<double, HpsFitResult*> BumpHunter::fitWindow(TH1* histogram, double start, double end, double window_step) {
+std::map<double, HpsFitResult*> BumpHunter::fitWindow(TH1* histogram, double start, double end, double step) {
 
     // Set the range of the mass variable based on the range of the histogram. 
     variable_map["invariant mass"]->setRange(histogram->GetXaxis()->GetXmin(), histogram->GetXaxis()->GetXmax()); 
@@ -90,15 +91,18 @@ std::map<double, HpsFitResult*> BumpHunter::fitWindow(TH1* histogram, double sta
     
     while (start <= (end - window_size)) { 
      
-        // Fit the histogram within a window (start, start + window_size) and
-        // save the result to the map of results.
-        double ap_hypothesis = start + window_size/2;
+        // Construct a window of size x*(A' mass resolution) around the A' mass
+        // hypothesis and do a Poisson likelihood fit within the window range. 
         HpsFitResult* result = this->fitWindow(data, start);
-        results[ap_hypothesis] = result; 
+
+        // Save the result to the map of results
+        results[start] = result; 
         if (ofs != nullptr) result->getRooFitResult()->printMultiline(*ofs, 0, kTRUE, "");
 
-        start += window_step; 
-
+        // Increment the A' mass hypothesis
+        start += step; 
+    
+        // Reset all of the parameters to their original values
         this->resetParameters(result->getRooFitResult()->floatParsInit()); 
     }
     
@@ -107,7 +111,7 @@ std::map<double, HpsFitResult*> BumpHunter::fitWindow(TH1* histogram, double sta
     return results;  
 } 
 
-HpsFitResult* BumpHunter::fitWindow(TH1* histogram, double window_start) { 
+HpsFitResult* BumpHunter::fitWindow(TH1* histogram, double ap_hypothesis) { 
 
     // Set the range of the mass variable based on the range of the histogram. 
     variable_map["invariant mass"]->setRange(histogram->GetXaxis()->GetXmin(), histogram->GetXaxis()->GetXmax()); 
@@ -115,8 +119,9 @@ HpsFitResult* BumpHunter::fitWindow(TH1* histogram, double window_start) {
     // Create a histogram object compatible with RooFit.
     RooDataHist* data = new RooDataHist("data", "data", RooArgList(*variable_map["invariant mass"]), histogram);
 
-    // Fit the result within a window (window_start, window_start + window_size)
-    HpsFitResult* result = this->fitWindow(data, window_start);
+    // Construct a window of size x*(A' mass resolution) around the A' mass
+    // hypothesis and do a Poisson likelihood fit within the window range. 
+    HpsFitResult* result = this->fitWindow(data, ap_hypothesis);
     
     // Delete the histogram object from memory
     delete data;
@@ -125,13 +130,26 @@ HpsFitResult* BumpHunter::fitWindow(TH1* histogram, double window_start) {
     return result;
 }
 
-HpsFitResult* BumpHunter::fitWindow(RooDataHist* data, double window_start) { 
+HpsFitResult* BumpHunter::fitWindow(RooDataHist* data, double ap_hypothesis) { 
 
-    // Set the A' mass hypothesis to the middle of the windowd 
-    // Should there be a check to make sure the A' mass hypothesis is not set to
-    // the edge of a bin?
-    double ap_hypothesis = (window_start + window_size/2); 
+    double mass_resolution = this->getMassResolution(ap_hypothesis);
+    if (!fix_window) { 
+        window_size = std::trunc(mass_resolution*15*10000)/10000 + 0.00005;
+    }
+    double window_start = ap_hypothesis - window_size/2;
+    
+    /*
+    std::cout << std::trunc(mass_resolution*15*10000) << std::endl;
+    std::cout << "A' mass: " << ap_hypothesis << std::endl;
+    std::cout << "Mass resolution: " << mass_resolution << std::endl;
+    std::cout << "Window size: " << window_size << std::endl;
+    std::cout << "Window start: " << window_start << std::endl;
+    */
+
+    // Set the mean of the Gaussian signal distribution
     variable_map["A' mass"]->setVal(ap_hypothesis);
+    
+    // Set the width of the Gaussian signal distribution
     variable_map["A' mass resolution"]->setVal(this->getMassResolution(ap_hypothesis)); 
     
     // Set the range that will be used in the fit
@@ -195,11 +213,11 @@ HpsFitResult* BumpHunter::fit(RooDataHist* data, bool migrad_only = false, std::
     //    migrad ends up finding a local minium instead of a global one.
     // 2) Run hesse
     // 3) Run minos in order to optimize the errors the signal yield.
-    if (!migrad_only && status == 0) { 
+    /*if (!migrad_only && status == 0) { 
         m.improve();
         m.hesse();
         m.minos(*variable_map["signal yield"]); 
-    }
+    }*/
 
     // Save the results of the fit
     RooFitResult* result = m.save(); 

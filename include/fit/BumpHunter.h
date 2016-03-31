@@ -17,6 +17,7 @@
 #include <vector>
 #include <map>
 #include <fstream>
+#include <math.h>
 
 //----------//
 //   ROOT   //
@@ -100,11 +101,13 @@ class BumpHunter {
         /** Fit using a background only model. */
         void fitBkgOnly();
 
+        /** Fix the size of the window that will be fit. */
+        void fixWindowSize(bool fix_window = true) { this->fix_window = fix_window; }; 
+
         /**
          * 
          */
         void setWindowSize(double window_size) { this->window_size = window_size; }; 
-
 
         /** Write the fit results to a text file */
         void writeResults(); 
@@ -169,7 +172,10 @@ class BumpHunter {
         int bkg_poly_order;
 
         /** Use a model that only includes the background. */
-        bool bkg_only;  
+        bool bkg_only; 
+
+        /** Fix the size of the window that will be fit. */
+        bool fix_window; 
 };
 
 #endif // __BUMP_HUNTER_H__
