@@ -18,6 +18,7 @@
 #include <map>
 #include <fstream>
 #include <math.h>
+#include <exception>
 
 //----------//
 //   ROOT   //
@@ -104,6 +105,12 @@ class BumpHunter {
         /** Fix the size of the window that will be fit. */
         void fixWindowSize(bool fix_window = true) { this->fix_window = fix_window; }; 
 
+        /** Set the histogram bounds. */
+        void setBounds(double low_bound, double high_bound); 
+
+        /** Enable/disable debug */
+        void setDebug(bool debug = true) { this->debug = debug; }; 
+
         /**
          * 
          */
@@ -124,7 +131,15 @@ class BumpHunter {
         inline double getMassResolution(double mass) { 
             return -6.166*mass*mass*mass + 0.9069*mass*mass -0.00297*mass + 0.000579; 
         };
-   
+  
+        /** 
+         * Print debug statement.
+         *
+         * @param message Debug statement to print.
+         */
+        void printDebug(std::string message); 
+         
+
         /**
          * Reset the fit parameters to their initial values.
          *
@@ -165,6 +180,12 @@ class BumpHunter {
         /** Output file stream */
         std::ofstream* ofs;
 
+        /** The histogram boundary on the lower end. */
+        double low_bound;
+
+        /** The histogram boundary on the higher end. */
+        double high_bound;
+
         /** Size of the background window that will be used to fit. */
         double window_size;
 
@@ -173,6 +194,9 @@ class BumpHunter {
 
         /** Use a model that only includes the background. */
         bool bkg_only; 
+
+        /** Debug flag */
+        bool debug;
 
         /** Fix the size of the window that will be fit. */
         bool fix_window; 

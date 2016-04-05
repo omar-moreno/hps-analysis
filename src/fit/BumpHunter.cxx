@@ -17,10 +17,13 @@ BumpHunter::BumpHunter(int poly_order)
       model(nullptr),
       signal(nullptr), 
       bkg(nullptr),
-      ofs(nullptr), 
+      ofs(nullptr),
+      low_bound(-9999), 
+      high_bound(-9999), 
       window_size(0.01),
       bkg_poly_order(poly_order), 
-      bkg_only(false), 
+      bkg_only(false),
+      debug(true), 
       fix_window(false) {
 
     // Turn off all messages except errors
@@ -89,7 +92,7 @@ std::map<double, HpsFitResult*> BumpHunter::fitWindow(TH1* histogram, double sta
     // Create a container for the results from the fit to each window.
     std::map<double, HpsFitResult*> results; 
     
-    while (start <= (end - window_size)) { 
+    while (start <= end) { 
      
         // Construct a window of size x*(A' mass resolution) around the A' mass
         // hypothesis and do a Poisson likelihood fit within the window range. 
@@ -132,14 +135,41 @@ HpsFitResult* BumpHunter::fitWindow(TH1* histogram, double ap_hypothesis) {
 
 HpsFitResult* BumpHunter::fitWindow(RooDataHist* data, double ap_hypothesis) { 
 
+    // If the A' hypothesis is below the lower bound, throw an exception.  A 
+    // fit cannot be performed using an invalid value for the A' hypothesis.
+    this->printDebug("A' mass hypothesis: " + std::to_string(ap_hypothesis)); 
+    if (ap_hypothesis < low_bound) throw std::runtime_error("A' hypothesis is less than the lower bound!"); 
+
+    // Get the mass resolution at the mass hypothesis
     double mass_resolution = this->getMassResolution(ap_hypothesis);
+
+    // If the window is being allowed to vary, calculate the window size based
+    // on the mass resolution.
     if (!fix_window) { 
         window_size = std::trunc(mass_resolution*15*10000)/10000 + 0.00005;
     }
+
+    // Find the starting position of the window
     double window_start = ap_hypothesis - window_size/2;
     
+    // Check that the starting edge of the window is above the boundary.  If not
+    // set the starting edge of the window to the boundary.  In this case, the
+    // A' hypothesis will not be set to the middle of the window.
+    if ((this->low_bound != -9999) && (window_start < this->low_bound)) { 
+        this->printDebug("Starting edge of window " + std::to_string(window_start) + " is below lower bound.");
+        this->printDebug("Setting edge to lower bound, " + std::to_string(this->low_bound)); 
+        window_start = this->low_bound;
+    }
+
+    // Check that the end edge of the window is within the high bound.  If not,
+    // set the starting edge such that end edge is equal to the high bound.
+    if ((this->high_bound != -9999) && ((window_start + window_size) > this->high_bound)) { 
+        this->printDebug("End of window " + std::to_string(window_start + window_size) + " is above high bound.");
+        this->printDebug("Setting starting edge to " + std::to_string(high_bound - window_size)); 
+        window_start = high_bound - window_size;  
+    }
+
     /*
-    std::cout << std::trunc(mass_resolution*15*10000) << std::endl;
     std::cout << "A' mass: " << ap_hypothesis << std::endl;
     std::cout << "Mass resolution: " << mass_resolution << std::endl;
     std::cout << "Window size: " << window_size << std::endl;
@@ -213,11 +243,11 @@ HpsFitResult* BumpHunter::fit(RooDataHist* data, bool migrad_only = false, std::
     //    migrad ends up finding a local minium instead of a global one.
     // 2) Run hesse
     // 3) Run minos in order to optimize the errors the signal yield.
-    if (!migrad_only && status == 0) { 
+    /*if (!migrad_only && status == 0) { 
         m.improve();
         m.hesse();
     //    m.minos(*variable_map["signal yield"]); 
-    }
+    }*/
 
     // Save the results of the fit
     RooFitResult* result = m.save(); 
@@ -276,6 +306,10 @@ void BumpHunter::calculatePValue(RooDataHist* data, HpsFitResult* result, std::s
     delete null_result; 
 }
 
+void BumpHunter::printDebug(std::string message) { 
+    if (debug) std::cout << "[ BumpHunter ]: " << message << std::endl;
+}
+
 void BumpHunter::resetParameters(RooArgList initial_params) { 
     
     for (auto& element : variable_map) { 
@@ -289,8 +323,7 @@ void BumpHunter::resetParameters(RooArgList initial_params) {
     }
 }
 
-/*
-void BumpHunter::calculateUpperLimit(double alpha, RooDataHist* data, HpsFitResult* result, std::string range_name) { 
+/*void BumpHunter::calculateUpperLimit(double alpha, RooDataHist* data, HpsFitResult* result, std::string range_name) { 
 
     
     // Get the value of the NLL at the minimum.
@@ -354,6 +387,12 @@ void BumpHunter::getChi2Prob(double min_nll_null, double min_nll, double &q0, do
 void BumpHunter::fitBkgOnly() { 
     this->bkg_only = true; 
     model = bkg_model; 
+}
+
+void BumpHunter::setBounds(double low_bound, double high_bound) {
+    this->low_bound = low_bound; 
+    this->high_bound = high_bound;
+    printf("Fit bounds set to [ %f , %f ]\n", this->low_bound, this->high_bound);   
 }
 
 void BumpHunter::writeResults() { 

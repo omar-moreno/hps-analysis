@@ -9,6 +9,7 @@
 #include <iostream>
 #include <getopt.h>
 #include <string>
+#include <exception>
 
 #include <TFile.h>
 #include <TH1.h>
@@ -27,6 +28,9 @@ int main(int argc, char **argv) {
 
     // Output file name
     string output_file = "";
+
+    // Histogram bounds
+    string range = "";
 
     // Default number of histograms to process
     int hist_count = 10;
@@ -63,6 +67,7 @@ int main(int argc, char **argv) {
         {"number",     required_argument, 0, 'n'},
         {"output",     required_argument, 0, 'o'},
         {"poly",       required_argument, 0, 'p'},
+        {"range",      required_argument, 0, 'r'},
         {"start",      required_argument, 0, 's'},
         {"step",       required_argument, 0, 'd'},
         {"window",     required_argument, 0, 'w'},
@@ -71,7 +76,7 @@ int main(int argc, char **argv) {
     
     int option_index = 0;
     int option_char; 
-    while ((option_char = getopt_long(argc, argv, "be:i:lhn:o:p:s:d:w:", long_options, &option_index)) != -1) {
+    while ((option_char = getopt_long(argc, argv, "be:i:lhn:o:p:r:s:d:w:", long_options, &option_index)) != -1) {
         switch(option_char) {
             case 'b': 
                 bkg_only = true;
@@ -95,6 +100,9 @@ int main(int argc, char **argv) {
                 break;
             case 'p': 
                 poly_order = atoi(optarg);
+                break;
+            case 'r': 
+                range = optarg; 
                 break;
             case 's':
                 window_start = atof(optarg);
@@ -130,11 +138,28 @@ int main(int argc, char **argv) {
     RootFileReader* reader = new RootFileReader(); 
     reader->parseFile(file);
 
+
+
     // Create a new Bump Hunter instance and set the given properties.
     BumpHunter* bump_hunter = new BumpHunter(poly_order);
     bump_hunter->setWindowSize(window_size);
     if (bkg_only) bump_hunter->fitBkgOnly(); 
     if (log_fit) bump_hunter->writeResults();  
+    
+    //
+    std::vector<double> bounds(0, 2);
+    if (!range.empty()) {
+        char* values = (char*) range.c_str(); 
+        values = strtok(values, ",");
+        
+        while (values != NULL) {
+            bounds.push_back(atof(values));
+            values = strtok(NULL, ",");
+        }
+        std::cout << "Bound: " << bounds[0] << std::endl;
+        std::cout << "Bound: " << bounds[1] << std::endl;
+        bump_hunter->setBounds(bounds[0], bounds[1]);
+    }
 
     // Build the string that will be used for the results file name
     if (output_file.empty()) { 
