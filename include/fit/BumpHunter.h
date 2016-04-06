@@ -185,6 +185,9 @@ class BumpHunter {
 
         /** The histogram boundary on the higher end. */
         double high_bound;
+        
+        /** Maximum size of the window */
+        double max_window_size; 
 
         /** Size of the background window that will be used to fit. */
         double window_size;

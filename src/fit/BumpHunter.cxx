@@ -19,7 +19,8 @@ BumpHunter::BumpHunter(int poly_order)
       bkg(nullptr),
       ofs(nullptr),
       low_bound(-9999), 
-      high_bound(-9999), 
+      high_bound(-9999),
+      max_window_size(0.02205),
       window_size(0.01),
       bkg_poly_order(poly_order), 
       bkg_only(false),
@@ -147,6 +148,13 @@ HpsFitResult* BumpHunter::fitWindow(RooDataHist* data, double ap_hypothesis) {
     // on the mass resolution.
     if (!fix_window) { 
         window_size = std::trunc(mass_resolution*15*10000)/10000 + 0.00005;
+        
+        // If the window size is larger than the max size, set the window size
+        // to the max.
+        if (window_size > max_window_size) {
+            this->printDebug("Window size exceeds maximum."); 
+            window_size = max_window_size; 
+        }
     }
 
     // Find the starting position of the window
@@ -196,6 +204,9 @@ HpsFitResult* BumpHunter::fitWindow(RooDataHist* data, double ap_hypothesis) {
 
     // Fit the distribution in the given range
     HpsFitResult* result = this->fit(data, false, range_name); 
+
+    // Set the window size 
+    result->setWindowSize(window_size);
 
     // Check if the resulting fit found a significant bump
     double alpha = 0.05; 
