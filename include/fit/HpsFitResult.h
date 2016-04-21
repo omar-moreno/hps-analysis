@@ -37,6 +37,11 @@ class HpsFitResult {
         /** */
         RooFitResult* getRooFitResult() { return result; };  
 
+        double getBkgTotal() {return this->bkg_total; };
+
+        double getBkgWindowSize() { return this->bkg_window_size; };  
+
+
         /** */
         double getUpperLimit() { return upper_limit; };
 
@@ -51,6 +56,10 @@ class HpsFitResult {
         
         /** */
         void setRooFitResult(RooFitResult* result) { this->result = result; }; 
+
+        void setBkgTotal(double bkg_total) { this->bkg_total = bkg_total; };
+
+        void setBkgWindowSize(double bkg_window_size) { this->bkg_window_size = bkg_window_size; };  
 
         /**
          * Set the 2 sigma upper limit.
@@ -70,6 +79,10 @@ class HpsFitResult {
 
         /** Result associated with RooFit. */
         RooFitResult* result; 
+
+        double bkg_total;
+
+        double bkg_window_size; 
 
         /** q0 value */
         double q0;
