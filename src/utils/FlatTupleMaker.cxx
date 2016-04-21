@@ -23,8 +23,21 @@ FlatTupleMaker::~FlatTupleMaker() {
 
 void FlatTupleMaker::addVariable(std::string variable_name) { 
     
-    variables[variable_name] = 0; 
+    // Set the default value of the variable to something unrealistic 
+    variables[variable_name] = -9999;
+    
+    // Add a leaf to the ROOT tree and set its address to the address of the 
+    // newly created variable. 
     tree->Branch(variable_name.c_str(), &variables[variable_name], (variable_name + "/D").c_str()); 
+}
+
+void FlatTupleMaker::addVector(std::string variable_name) { 
+    vectors[variable_name] = {}; 
+    tree->Branch(variable_name.c_str(), &vectors[variable_name]); 
+}
+
+void FlatTupleMaker::addToVector(std::string variable_name, double value) {
+    vectors[variable_name].push_back(value); 
 }
 
 bool FlatTupleMaker::hasVariable(std::string variable_name) { 
@@ -40,3 +53,18 @@ void FlatTupleMaker::close() {
     file->Close(); 
 }
 
+
+void FlatTupleMaker::fill() { 
+    
+    // Fill the event with the current variables.
+    tree->Fill();
+
+    // Reset the variables to their original values
+    for (auto& element : variables) { 
+        element.second = -9999; 
+    }
+    
+    for (auto& element : vectors) { 
+        element.second.clear();
+    }
+}
