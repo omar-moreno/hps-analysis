@@ -39,6 +39,9 @@ class HpsFitResult {
 
         /** */
         double getUpperLimit() { return upper_limit; };
+
+        /** @return The size of the fit window used. */
+        double getWindowSize() { return this->window_size; }; 
         
         /** */
         double setQ0(double q0) { this->q0 = q0; };
@@ -56,6 +59,12 @@ class HpsFitResult {
          */
         void setUpperLimit(double upper_limit) { this->upper_limit = upper_limit; };
 
+        /**
+         * Set the size of the fit window used to get this results.
+         *
+         * @oaram window_size The size of the fit window.
+         */
+        void setWindowSize(double window_size) { this->window_size = window_size; }; 
 
     private: 
 
@@ -65,11 +74,14 @@ class HpsFitResult {
         /** q0 value */
         double q0;
         
-        /** p value. */
+        /** p-value. */
         double p_value;
 
         /** 2 sigma upper limit on the signal. */
         double upper_limit; 
+
+        /*** Size of the fit window. */
+        double window_size;
 
 }; // HpsFitResult
 
