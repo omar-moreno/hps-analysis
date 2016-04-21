@@ -17,7 +17,7 @@
 #include <vector>
 #include <map>
 #include <fstream>
-#include <math.h>
+#include <cmath>
 #include <exception>
 
 //----------//
@@ -124,6 +124,7 @@ class BumpHunter {
 
         void getUpperLimit(TH1* histogram, HpsFitResult* result, double ap_mass);
 
+        void getUpperLimit(RooDataHist* data, HpsFitResult* result, double ap_mass); 
     private: 
 
         /**
@@ -156,6 +157,12 @@ class BumpHunter {
          *
          */
         void getChi2Prob(double min_nll_null, double min_nll, double &q0, double &p_value); 
+
+        
+        /**
+         *
+         */
+        //void generateToys(double n_toys); 
 
         std::map <std::string, RooRealVar*> variable_map; 
 
