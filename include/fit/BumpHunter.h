@@ -25,6 +25,7 @@
 //----------//   
 #include <TH1.h>
 #include <TMath.h>
+#include <TCanvas.h>
 
 //------------//
 //   RooFit   //
@@ -40,6 +41,8 @@
 #include <RooProfileLL.h>
 #include <TCanvas.h>
 #include <RooPlot.h>
+
+#include <Math/ProbFunc.h>
 
 //---//
 #include <HpsFitResult.h>
@@ -119,6 +122,8 @@ class BumpHunter {
         /** Write the fit results to a text file */
         void writeResults(); 
 
+        void getUpperLimit(TH1* histogram, HpsFitResult* result, double ap_mass);
+
     private: 
 
         /**
@@ -146,11 +151,6 @@ class BumpHunter {
          * @param initial_params A list containing the fit parameters.
          */ 
         void resetParameters(RooArgList initial_params); 
-
-        /**
-         * Calculate the upper limit on the signal yield.
-         */
-        //void calculateUpperLimit(double alpha, RooDataHist* data, HpsFitResult* result, std::string range_name);
 
         /**
          *
