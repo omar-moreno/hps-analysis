@@ -116,10 +116,10 @@ int main(int argc, char **argv) {
     tuple->addVariable("ap_mass"); 
     tuple->addVariable("sig_yield");
     tuple->addVariable("sig_yield_err");
-    tuple->addVariable("sig_yield_minos_err_hi");
-    tuple->addVariable("sig_yield_minos_err_low"); 
     tuple->addVariable("bkg_yield"); 
-    tuple->addVariable("bkg_yield_err"); 
+    tuple->addVariable("bkg_yield_err");
+    tuple->addVariable("bkg_total");
+    tuple->addVariable("bkg_window_size");  
     tuple->addVariable("nll");
     tuple->addVariable("invalid_nll"); 
     tuple->addVariable("minuit_status");
@@ -127,11 +127,10 @@ int main(int argc, char **argv) {
     tuple->addVariable("q0"); 
     tuple->addVariable("p_value"); 
     tuple->addVariable("upper_limit");
+    tuple->addVariable("window_size"); 
 
     HpsFitResult* fit_result = bump_hunter->fitWindow(histogram, mass_hypo); 
    
-    bump_hunter->getUpperLimit(histogram, fit_result, mass_hypo); 
-
     // Retrieve all of the result of interest. 
     double bkg_yield = ((RooRealVar*) fit_result->getRooFitResult()->floatParsFinal().find("bkg yield"))->getVal();
     double bkg_yield_error = ((RooRealVar*) fit_result->getRooFitResult()->floatParsFinal().find("bkg yield"))->getError();
@@ -144,10 +143,13 @@ int main(int argc, char **argv) {
     tuple->setVariableValue("ap_mass", mass_hypo);  
     tuple->setVariableValue("bkg_yield", bkg_yield);  
     tuple->setVariableValue("bkg_yield_error", bkg_yield_error);
+    tuple->setVariableValue("bkg_total", fit_result->getBkgTotal()); 
+    tuple->setVariableValue("bkg_window_size", fit_result->getBkgWindowSize()); 
     tuple->setVariableValue("nll", nll); 
     tuple->setVariableValue("invalid_nll", invalid_nll); 
     tuple->setVariableValue("minuit_status", minuit_status);
-    tuple->setVariableValue("edm", edm);  
+    tuple->setVariableValue("edm", edm); 
+    tuple->setVariableValue("window_size", fit_result->getWindowSize());  
 
         
     // If this isn't a background only fit evaluation, skip it.
