@@ -339,36 +339,42 @@ void BumpHunter::getUpperLimit(TH1* histogram, HpsFitResult* result, double ap_m
     // Create a histogram object compatible with RooFit.
     RooDataHist* data = new RooDataHist("data", "data", RooArgList(*variable_map["invariant mass"]), histogram);
 
-    // Calculate the NLL when signal yield = 0, which is the null hypothesis.
-    variable_map["signal yield"]->setVal(0);
+    //  Get the signal yield obtained from the signal+bkg fit
+    double signal_yield = result->getParameterVal("signal yield");
+    this->printDebug("Signal yield @ min NLL: " + std::to_string(signal_yield));
 
-    // Reset all of the parameters to their original values
-    this->resetParameters(result->getRooFitResult()->floatParsInit()); 
-
-    // Fix the signal yield at 0.
-    variable_map["signal yield"]->setConstant(kTRUE);
-    this->printDebug("Minimizing NLL for mu = 0");
-
+    // Create the name of the range that will be used.  This assumes
+    // that the full fit was calculated before.
     std::string range_name = "ap_mass_" + std::to_string(ap_mass); 
 
-    // Do the fit
-    HpsFitResult* null_result = this->fit(data, true, range_name);
+    // Get the minimum NLL value that will be used for testing upper limits.
+    // If the signal yield (mu estimator) at the min NLL is < 0, use the NLL
+    // obtained when mu = 0.
+    double mle_nll = result->getRooFitResult()->minNll();
+    if (signal_yield < 0) {
 
-    // Get the NLL obtained from the Bkg only fit.
-    double h0_nll = null_result->getRooFitResult()->minNll(); 
-    this->printDebug("H0 nll: " + std::to_string(h0_nll));     
+        this->printDebug("Signal yield @ min NLL is < 0. Using NLL when signal yield = 0");
 
-    //  Get the signal yield obtained from the composite fit
-    double signal_yield = result->getParameterVal("signal yield");
-    this->printDebug("Signal yield @ min: " + std::to_string(signal_yield));
+        // Reset all of the parameters to their original values
+        this->resetParameters(result->getRooFitResult()->floatParsInit()); 
+    
+        // Calculate the NLL when signal yield = 0, which is the null hypothesis.
+        variable_map["signal yield"]->setVal(0);
 
-    double h1_nll = result->getRooFitResult()->minNll(); 
-    this->printDebug("H1 nll: " + std::to_string(h1_nll));
+        // Fix the signal yield at 0.
+        variable_map["signal yield"]->setConstant(kTRUE);
 
-    double q0 = 0; 
-    double p_value = 0; 
-    this->getChi2Prob(h0_nll, h1_nll, q0, p_value);
+        // Do the fit
+        HpsFitResult* null_result = this->fit(data, true, range_name);
+    
+        // Get the NLL obtained assuming the background only hypothesis
+        mle_nll = null_result->getRooFitResult()->minNll(); 
+    }
+    this->printDebug("MLE NLL: " + std::to_string(mle_nll));     
 
+    double p_value = 1;
+    signal_yield = 1;
+    double q0 = 0;  
     while(true) {
 
         // Set the signal yield constant.
@@ -377,7 +383,7 @@ void BumpHunter::getUpperLimit(TH1* histogram, HpsFitResult* result, double ap_m
         // Reset all of the parameters to their original values
         this->resetParameters(result->getRooFitResult()->floatParsInit()); 
 
-        if (p_value <= 0.11) signal_yield += 1;
+        if (p_value <= 0.13) signal_yield += 1;
         else if (p_value <= 0.2) signal_yield += 10; 
         else signal_yield += 20;  
         this->printDebug("Signal yield: " + std::to_string(signal_yield));
@@ -388,11 +394,11 @@ void BumpHunter::getUpperLimit(TH1* histogram, HpsFitResult* result, double ap_m
         
         HpsFitResult* current_result = this->fit(data, true, range_name);
         
-        double nll = current_result->getRooFitResult()->minNll(); 
+        double cond_nll = current_result->getRooFitResult()->minNll(); 
         // Set the signal yield constant.
         variable_map["signal yield"]->setConstant(kFALSE);
         
-        this->getChi2Prob(nll, h0_nll, q0, p_value);  
+        this->getChi2Prob(cond_nll, mle_nll, q0, p_value);  
 
         this->printDebug("p-value after fit: " + std::to_string(p_value)); 
         if (p_value <= 0.1) { 
@@ -417,8 +423,9 @@ void BumpHunter::getChi2Prob(double cond_nll, double mle_nll, double &q0, double
     this->printDebug("q0: " + std::to_string(q0));
     
     p_value = ROOT::Math::chisquared_cdf_c(q0, 1);
+    this->printDebug("p-value before dividing: " + std::to_string(p_value));  
     p_value *= 0.5;
-    this->printDebug("p_value: " + std::to_string(p_value)); 
+    this->printDebug("p-value: " + std::to_string(p_value)); 
 }
 
 void BumpHunter::fitBkgOnly() { 
