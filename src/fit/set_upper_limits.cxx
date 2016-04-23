@@ -138,7 +138,7 @@ int main(int argc, char **argv) {
 
     HpsFitResult* fit_result = bump_hunter->fitWindow(histogram, mass_hypo);
     
-    std::vector<HpsFitResult*> toy_results = bump_hunter->runToys(histogram, 500, fit_result, mass_hypo);  
+    std::vector<HpsFitResult*> toy_results = bump_hunter->runToys(histogram, 1000, fit_result, mass_hypo);  
    
     // Retrieve all of the result of interest. 
     double bkg_yield = ((RooRealVar*) fit_result->getRooFitResult()->floatParsFinal().find("bkg yield"))->getVal();
