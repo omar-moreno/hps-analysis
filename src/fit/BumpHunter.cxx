@@ -427,7 +427,7 @@ void BumpHunter::getUpperLimit(RooDataHist* data, HpsFitResult* result, double a
         this->getChi2Prob(cond_nll, mle_nll, q0, p_value);  
 
         this->printDebug("p-value after fit: " + std::to_string(p_value)); 
-        if (p_value <= 0.1) { 
+        if (p_value <= 0.0455) { 
             std::cout << "[ BumpHunter ]: Upper limit: " << signal_yield << std::endl;
             result->setUpperLimit(signal_yield); 
             delete current_result; 
