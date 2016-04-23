@@ -475,12 +475,35 @@ void BumpHunter::writeResults() {
     ofs = new std::ofstream(buffer, std::ofstream::out); 
 }
 
-/*void BumpHunter::generateToys(double n_toys) { 
+std::vector<RooDataHist*> BumpHunter::generateToys(TH1* histogram, double n_toys, HpsFitResult* result, double ap_hypothesis) { 
+
+    // Set the range of the mass variable based on the range of the histogram. 
+    variable_map["invariant mass"]->setRange(histogram->GetXaxis()->GetXmin(), histogram->GetXaxis()->GetXmax()); 
+
+    // Create a histogram object compatible with RooFit.
+    RooDataHist* data = new RooDataHist("data", "data", RooArgList(*variable_map["invariant mass"]), histogram);
+
+    double window_size = result->getWindowSize(); 
+    
+    // Find the starting position of the window
+    double window_start = ap_hypothesis - window_size/2;
+
+    // Set the range that will be used in the fit
+    std::string range_name = "ap_mass_" + std::to_string(ap_hypothesis); 
+    variable_map["invariant mass"]->setRange(range_name.c_str(), window_start, window_start + window_size);
 
     // Reset all of the parameters to their original values
     this->resetParameters(result->getRooFitResult()->floatParsInit()); 
-    
-    
+
+    // Estimate the background normalization within the window by integrating
+    // the histogram within the window range.  This should be close to the 
+    // background yield in the case where there is no signal present.
+    double integral = data->sumEntries(0, range_name.c_str()); 
+    variable_map["bkg yield"]->setVal(integral);
+
+    double bins = histogram->GetXaxis()->FindBin((window_start+window_size)) 
+                    - histogram->GetXaxis()->FindBin(window_start); 
+
     // Calculate the NLL when signal yield = 0, which is the null hypothesis.
     variable_map["signal yield"]->setVal(0);
 
@@ -489,13 +512,47 @@ void BumpHunter::writeResults() {
 
     // Do the fit
     HpsFitResult* null_result = this->fit(data, true, range_name);
-   
-    double bins = 
+ 
+    std::vector<RooDataHist*> datum;
+    variable_map["invariant mass"]->setRange(window_start, window_start + window_size);
+    variable_map["invariant mass"]->setBins(bins); 
     for (int toy_n = 0; toy_n < n_toys; ++toy_n) { 
-        
+          datum.push_back(comp_model->generateBinned(RooArgSet(*variable_map["invariant mass"]), 
+                          integral, RooFit::Extended(kTRUE)));  
     }
 
-    // Get the NLL obtained assuming the background only hypothesis
-    //mle_nll = null_result->getRooFitResult()->minNll(); 
+    variable_map["signal yield"]->setConstant(kFALSE);
+    
+    delete data; 
 
-}*/
+    return datum;
+}
+
+std::vector<HpsFitResult*> BumpHunter::runToys(TH1* histogram, double n_toys, HpsFitResult* result, double ap_hypothesis) { 
+    std::cout << "[ BumpHunter ]: Generating Toys" << std::endl;
+    std::vector<RooDataHist*> datum = this->generateToys(histogram, n_toys, result, ap_hypothesis);
+
+    std::vector<HpsFitResult*> results; 
+    
+    std::cout << "[ BumpHunter ]: Fitting Toys" << std::endl;
+    int index = 1;
+    TFile* file = new TFile("histograms.root", "recreate"); 
+
+    for (auto& data : datum) { 
+       
+        data->createHistogram(("toy_" + std::to_string(index)).c_str(), *variable_map["invariant mass"])->Write(); 
+        // Reset all of the parameters to their original values
+        this->resetParameters(result->getRooFitResult()->floatParsInit()); 
+
+        // Construct a window of size x*(A' mass resolution) around the A' mass
+        // hypothesis and do a Poisson likelihood fit within the window range. 
+        results.push_back(this->fitWindow(data, ap_hypothesis));
+        std::cout << "Finished toy fit " << index << std::endl;
+        index++; 
+    
+    }
+
+    file->Close(); 
+    return results;
+     
+}
