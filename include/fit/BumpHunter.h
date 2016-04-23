@@ -26,6 +26,7 @@
 #include <TH1.h>
 #include <TMath.h>
 #include <TCanvas.h>
+#include <TFile.h>
 
 //------------//
 //   RooFit   //
@@ -124,7 +125,12 @@ class BumpHunter {
 
         void getUpperLimit(TH1* histogram, HpsFitResult* result, double ap_mass);
 
-        void getUpperLimit(RooDataHist* data, HpsFitResult* result, double ap_mass); 
+        void getUpperLimit(RooDataHist* data, HpsFitResult* result, double ap_mass);
+
+        std::vector<RooDataHist*> generateToys(TH1* histogram, double n_toys, HpsFitResult* result, double ap_hypothesis);
+
+        std::vector<HpsFitResult*> runToys(TH1* histogram, double n_toys, HpsFitResult* result, double ap_hypothesis);
+         
     private: 
 
         /**

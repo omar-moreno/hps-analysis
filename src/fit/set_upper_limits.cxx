@@ -128,8 +128,17 @@ int main(int argc, char **argv) {
     tuple->addVariable("p_value"); 
     tuple->addVariable("upper_limit");
     tuple->addVariable("window_size"); 
+    
+    tuple->addVector("toy_upper_limits");
+    tuple->addVector("toy_sig_yield");  
+    tuple->addVector("toy_sig_yield_err");  
+    tuple->addVector("toy_bkg_yield");  
+    tuple->addVector("toy_bkg_yield_err");  
 
-    HpsFitResult* fit_result = bump_hunter->fitWindow(histogram, mass_hypo); 
+
+    HpsFitResult* fit_result = bump_hunter->fitWindow(histogram, mass_hypo);
+    
+    std::vector<HpsFitResult*> toy_results = bump_hunter->runToys(histogram, 1000, fit_result, mass_hypo);  
    
     // Retrieve all of the result of interest. 
     double bkg_yield = ((RooRealVar*) fit_result->getRooFitResult()->floatParsFinal().find("bkg yield"))->getVal();
@@ -155,16 +164,26 @@ int main(int argc, char **argv) {
     // If this isn't a background only fit evaluation, skip it.
     double signal_yield = ((RooRealVar*) fit_result->getRooFitResult()->floatParsFinal().find("signal yield"))->getVal();
     double signal_yield_error = ((RooRealVar*) fit_result->getRooFitResult()->floatParsFinal().find("signal yield"))->getError();
-    double signal_yield_error_hi = ((RooRealVar*) fit_result->getRooFitResult()->floatParsFinal().find("signal yield"))->getAsymErrorHi();
-    double signal_yield_error_low = ((RooRealVar*) fit_result->getRooFitResult()->floatParsFinal().find("signal yield"))->getAsymErrorLo();
     tuple->setVariableValue("sig_yield", signal_yield);  
     tuple->setVariableValue("sig_yield_err", signal_yield_error);
-    tuple->setVariableValue("sig_yield_error_hi", signal_yield_error_hi);
-    tuple->setVariableValue("sig_yield_error_low", signal_yield_error_low);
     tuple->setVariableValue("p_value", fit_result->getPValue());
     tuple->setVariableValue("q0", fit_result->getQ0()); 
     tuple->setVariableValue("upper_limit", fit_result->getUpperLimit());
-              
+             
+    for (auto& toy_result : toy_results) { 
+        bkg_yield = ((RooRealVar*) toy_result->getRooFitResult()->floatParsFinal().find("bkg yield"))->getVal();
+        bkg_yield_error = ((RooRealVar*) toy_result->getRooFitResult()->floatParsFinal().find("bkg yield"))->getError();
+        signal_yield = ((RooRealVar*) toy_result->getRooFitResult()->floatParsFinal().find("signal yield"))->getVal();
+        signal_yield_error = ((RooRealVar*) toy_result->getRooFitResult()->floatParsFinal().find("signal yield"))->getError();
+        
+        tuple->addToVector("toy_bkg_yield", bkg_yield);  
+        tuple->addToVector("toy_bkg_yield_error", bkg_yield_error);
+        tuple->addToVector("toy_sig_yield", signal_yield);  
+        tuple->addToVector("toy_sig_yield_err", signal_yield_error);
+        tuple->addToVector("toy_upper_limits", toy_result->getUpperLimit());
+            
+    }
+
     // Fill the ntuple
     tuple->fill(); 
 
