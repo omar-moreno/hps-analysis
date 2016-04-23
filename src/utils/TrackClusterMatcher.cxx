@@ -47,9 +47,25 @@ void TrackClusterMatcher::findAllMatches(HpsEvent* event) {
     // Get a set of 'good' tracks from the event
     std::vector<SvtTrack*> tracks = TrackUtils::getGoodTracksList(event); 
 
+    for (int particle_n = 0; particle_n < event->getNumberOfParticles(HpsParticle::FINAL_STATE_PARTICLE); ++particle_n) { 
+    
+        // Get the nth V0 particle from the event.
+        HpsParticle* particle = event->getParticle(HpsParticle::FINAL_STATE_PARTICLE, particle_n);
+    
+        if (particle->getType() < 32) continue; 
+    
+        if (!this->isGoodMatch(particle)) continue;
+                   
+        EcalCluster* cluster = (EcalCluster*) particle->getClusters()->At(0); 
+        SvtTrack* track = (SvtTrack*) particle->getTracks()->At(0);
+
+        cluster_map[cluster] = track;            
+        track_map[track] = cluster;
+    }
+
     // Loop over all of the tracks in the event and try to find a cluster
     // match for them
-    for (auto& track : tracks) { 
+    /*for (auto& track : tracks) { 
     
         //=== DEBUG
         //std::cout << "[ TrackClusterMatcher ]: New Track ===> Position at Ecal with field map: [ " 
@@ -98,7 +114,7 @@ void TrackClusterMatcher::findAllMatches(HpsEvent* event) {
                         - cluster_map[cluster]->getTrackTime()); 
             }
         }
-    }
+    }*/
 }
 
 bool TrackClusterMatcher::isGoodMatch(HpsParticle* particle) { 
