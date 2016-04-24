@@ -4,6 +4,8 @@ import argparse
 import sys
 import yaml
 import BumpHuntToyAnalysis
+import BumpHuntAnalysis
+import TagProbeAnalysis
 
 def parse_config(config_file) :
 
@@ -25,13 +27,17 @@ def main() :
     
     config = parse_config(args.config)
    
-    bh = BumpHuntToyAnalysis.BumpHuntToyAnalysis()
+    #bh = BumpHuntToyAnalysis.BumpHuntToyAnalysis()
+    bh = BumpHuntAnalysis.BumpHuntAnalysis()
+    #tp = TagProbeAnalysis.TagProbeAnalysis()
 
     for input_file in config["Files"] : 
         print str(input_file)
         bh.process(input_file)
+        #tp.process(input_file)
 
     bh.make_plots()
+    #tp.make_plots()
 
 if __name__ == "__main__":
     main()
