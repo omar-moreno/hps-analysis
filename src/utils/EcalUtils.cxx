@@ -2,15 +2,16 @@
 #include <EcalUtils.h>
 
 EcalUtils::EcalUtils() 
-    : plotter(new Plotter()), 
+    : tuple(new FlatTupleMaker("ecal_cluster_tuple.root", "results")),
+      event_count(0),  
       delta_t_lower_bound(-1.6),
-      delta_t_upper_bound(1.6) {
-    
-    this->bookHistograms(); 
+      delta_t_upper_bound(1.6), 
+      coin_time(1.6) {
+   
+    this->init();
 }
 
 EcalUtils::~EcalUtils() { 
-    delete plotter; 
 }
 
 bool EcalUtils::hasGoodClusterPair(HpsParticle* particle) { 
@@ -75,146 +76,85 @@ std::vector<EcalCluster*> EcalUtils::getClusterPair(HpsEvent* event) {
 
     // Initialize a vector that will be used to contain a cluster pair.  For
     // now, the clusters are set to null. 
-    std::vector<EcalCluster*> cluster_pair(2, nullptr); 
-    
+    std::vector<EcalCluster*> cluster_pair(2, nullptr);
+ 
+    std::vector<std::vector<EcalCluster*>> cluster_pairs; 
+
+    // Collection used to store all clusters in an event
+    std::vector<EcalCluster*> clusters; 
+
     // If the event has less than two clusters, return a cluster pair 
     // consisting of null pointers. 
-    if (event->getNumberOfEcalClusters() < 2) return cluster_pair; 
-
-    //=== DEBUG
-    //std::cout << "[ EcalUtils ]: Searching for best cluster pair " << std::endl;
-    //std::cout << "[ EcalUtils ]: Number of clusters: " << event->getNumberOfEcalClusters() << std::endl;
-    //=== DEBUG
-
-    // Loop through all clusters in an event and find the best pair
-    for (int first_cluster_n = 0; first_cluster_n < event->getNumberOfEcalClusters(); ++first_cluster_n) { 
+    if (event->getNumberOfEcalClusters() < 2) return cluster_pair;
     
-        // Get an Ecal cluster from the event
-        EcalCluster* current_first_cluster = event->getEcalCluster(first_cluster_n);
+    // Loop over all of the clusters in the event and filter out clusters that
+    // fall outside of a loose time window.  Clusters outside of this time 
+    // window are very likely not to have a track associated with them.  If the
+    // clusters pass the time window cut, add them to a seperate collection of
+    // clusters. 
+    for (int cluster_n = 0; cluster_n < event->getNumberOfEcalClusters(); ++cluster_n) { 
+        double cluster_time = event->getEcalCluster(cluster_n)->getClusterTime();
+        if (cluster_time < 30. || cluster_time > 60) continue;
+        clusters.push_back(event->getEcalCluster(cluster_n));
+    }
 
-        //if (first_cluster_n == 0) { 
-            //std::cout << "[ EcalUtils ]: First cluster number: " << first_cluster_n << std::endl;
-            //std::cout << "[ EcalUtils ]: First cluster time: " << current_first_cluster->getClusterTime() << std::endl;
-            //    std::cout << "[ EcalUtils ]: Ecal cluster position: [ " 
-            //        << current_first_cluster->getPosition()[0] << ", " 
-            //        << current_first_cluster->getPosition()[1] << ", " 
-             //       << current_first_cluster->getPosition()[2] << " ]" 
-            //        << std::endl;
-        //}
-
-        // Make sure that the Ecal cluster has a reasonable time associated 
-        // with it.  If not, move on to the next cluster.
-        //if (cur_first_cluster->getClusterTime() <= 20) continue;
-
-        // Loop through the rest of the clusters in the event and check if 
-        // a match can be found
-        double min_delta_cluster_time = 1000;
-        for (int second_cluster_n = (first_cluster_n + 1); second_cluster_n < event->getNumberOfEcalClusters();
-                ++second_cluster_n) { 
-
-
-            // Get the second Ecl cluster in the event
-            EcalCluster* current_second_cluster = event->getEcalCluster(second_cluster_n);
+    // Loop through the clusters and create pairs.  Two clusters are considered
+    // a pair if: 
+    // 1) They are in opposite Ecal volumes i.e. top-bottom
+    // 2) They are in coincidence within 1.6 ns.
+    double min_delta_t = 100;
+    for (int first_index = 0; first_index < clusters.size(); ++first_index) {
         
-            //if (first_cluster_n == 0) { 
-                //std::cout << "[ EcalUtils ]: Second cluster number: " << second_cluster_n << std::endl;
-                //std::cout << "[ EcalUtils ]: Second cluster time: " << current_second_cluster->getClusterTime() << std::endl;
-                //std::cout << "[ EcalUtils ]: Ecal cluster position: [ " 
-                //    << current_second_cluster->getPosition()[0] << ", " 
-                //    << current_second_cluster->getPosition()[1] << ", " 
-                //    << current_second_cluster->getPosition()[2] << " ]" 
-                //    << std::endl;
+        double cluster0_y = clusters[first_index]->getPosition()[1];
+        double cluster0_time = clusters[first_index]->getClusterTime();
+         
+        for (int second_index = (first_index + 1); second_index < clusters.size(); ++second_index) { 
+       
+            double cluster1_y = clusters[second_index]->getPosition()[1];
+            if (cluster0_y*cluster1_y >= 0) continue; 
+          
+            double cluster1_time = clusters[second_index]->getClusterTime();
+            double delta_t = cluster0_time - cluster1_time;
+            if (abs(delta_t) > coin_time) continue;
             
-            //}
-
-            plotter->get2DHistogram("cluster pair energy")->Fill(current_first_cluster->getEnergy(), 
-                    current_second_cluster->getEnergy());
-            plotter->get1DHistogram("cluster energy sum")->Fill(current_first_cluster->getEnergy()
-                   + current_second_cluster->getEnergy());  
-
-            // If the difference between the cluster time is greater than 2.5 ns, move on to the next cluster 
-            double delta_cluster_time 
-                = current_first_cluster->getClusterTime() - current_second_cluster->getClusterTime();
-
-            plotter->get1DHistogram("cluster pair #Delta t")->Fill(delta_cluster_time);
-            plotter->get2DHistogram("cluster pair time")->Fill(current_first_cluster->getClusterTime(), 
-                    current_second_cluster->getClusterTime()); 
-            plotter->get2DHistogram("cluster x vs cluster x")->Fill(current_first_cluster->getPosition()[0],
-                    current_second_cluster->getPosition()[0]);
-            plotter->get2DHistogram("cluster y vs cluster y")->Fill(current_first_cluster->getPosition()[1],
-                    current_second_cluster->getPosition()[1]);
-            plotter->get1DHistogram("cluster pair delta x")->Fill(current_first_cluster->getPosition()[0] 
-                    - current_second_cluster->getPosition()[0]); 
-            plotter->get1DHistogram("cluster pair x sum")->Fill(current_first_cluster->getPosition()[0] 
-                    + current_second_cluster->getPosition()[0]); 
-
-            // Require that the two clusters are in opposite volumes.  This cut should
-            // eventually become part of the standard pair requirement.
-            if (current_first_cluster->getPosition()[1]*current_second_cluster->getPosition()[1] > 0) { 
-                if (first_cluster_n == 0) { 
-                    //std::cout << "[ EcalUtils ]: Clusters are in same volume." << std::endl;
-                }
-                continue;
-            }
-
-            plotter->get2DHistogram("cluster pair energy - cuts: fiducial")->Fill(current_first_cluster->getEnergy(), 
-                    current_second_cluster->getEnergy()); 
-            plotter->get1DHistogram("cluster pair #Delta t - cuts: fiducial")->Fill(delta_cluster_time);
-            plotter->get2DHistogram("cluster pair time - cuts: fiducial")->Fill(current_first_cluster->getClusterTime(), 
-                    current_second_cluster->getClusterTime()); 
-            plotter->get2DHistogram("cluster x vs cluster x - cuts: fiducial")->Fill(current_first_cluster->getPosition()[0],
-                    current_second_cluster->getPosition()[0]);
-            plotter->get2DHistogram("cluster y vs cluster y - cuts: fiducial")->Fill(current_first_cluster->getPosition()[1],
-                    current_second_cluster->getPosition()[1]);
-            plotter->get1DHistogram("cluster energy sum - cuts: fiducial")->Fill(current_first_cluster->getEnergy()
-                   + current_second_cluster->getEnergy());  
-            plotter->get1DHistogram("cluster pair delta x - cuts: fiducial")->Fill(current_first_cluster->getPosition()[0] 
-                    - current_second_cluster->getPosition()[0]); 
-            plotter->get1DHistogram("cluster pair x sum - cuts: fiducial")->Fill(current_first_cluster->getPosition()[0] 
-                    + current_second_cluster->getPosition()[0]); 
-
-            if (delta_cluster_time < delta_t_lower_bound || delta_cluster_time > delta_t_upper_bound) continue;
-
-            plotter->get2DHistogram("cluster pair energy - cuts: fiducial, time")->Fill(current_first_cluster->getEnergy(), 
-                    current_second_cluster->getEnergy()); 
-            plotter->get1DHistogram("cluster pair #Delta t - cuts: fiducial, time")->Fill(delta_cluster_time);
-            plotter->get2DHistogram("cluster pair time - cuts: fiducial, time")->Fill(current_first_cluster->getClusterTime(), 
-                    current_second_cluster->getClusterTime()); 
-            plotter->get2DHistogram("cluster x vs cluster x - cuts: fiducial, time")->Fill(current_first_cluster->getPosition()[0],
-                    current_second_cluster->getPosition()[0]);
-            plotter->get2DHistogram("cluster y vs cluster y - cuts: fiducial, time")->Fill(current_first_cluster->getPosition()[1],
-                    current_second_cluster->getPosition()[1]);
-            plotter->get1DHistogram("cluster energy sum - cuts: fiducial, time")->Fill(current_first_cluster->getEnergy()
-                   + current_second_cluster->getEnergy());  
-            plotter->get1DHistogram("cluster pair delta x - cuts: fiducial, time")->Fill(current_first_cluster->getPosition()[0] 
-                    - current_second_cluster->getPosition()[0]); 
-            plotter->get1DHistogram("cluster pair x sum - cuts: fiducial, time")->Fill(current_first_cluster->getPosition()[0] 
-                    + current_second_cluster->getPosition()[0]); 
-
-            // If the difference in cluster time between the two clusters is the minimum dt in
-            // the event, keep the clusters
-            if (delta_cluster_time < min_delta_cluster_time) { 
-                min_delta_cluster_time = delta_cluster_time;
-                cluster_pair[0] = current_first_cluster; 
-                cluster_pair[1] = current_second_cluster; 
-            } 
-        }
+            if (delta_t > min_delta_t) continue;
+           
+            min_delta_t = delta_t;
+            cluster_pair[0] = clusters[first_index];
+            cluster_pair[1] = clusters[second_index]; 
+        } 
     }
     
-    if (cluster_pair[0] != nullptr && cluster_pair[1] != nullptr) {
-        //std::cout << "[ EcalUtils ]: cluster 0 time : " << cluster_pair[0]->getClusterTime() << " cluster 1 time: " << cluster_pair[1]->getClusterTime() << std::endl;
-        //std::cout << "[ EcalUtils ]: Ecal cluster 0 position: [ " << cluster_pair[0]->getPosition()[0] << ", " << cluster_pair[0]->getPosition()[1] << ", " 
-        //          << cluster_pair[0]->getPosition()[2] << " ]" << std::endl;
-        //std::cout << "[ EcalUtils ]: Ecal cluster 1 position: [ " << cluster_pair[1]->getPosition()[0] << ", " << cluster_pair[1]->getPosition()[1] << ", " 
-        //          << cluster_pair[1]->getPosition()[2] << " ]" << std::endl;
-    }
-    return cluster_pair; 
+    tuple->fill(); 
+
+    return cluster_pair;     
 }
 
-void EcalUtils::saveHistograms() { 
-    plotter->saveToRootFile("ecal_cluster_plots.root");  
+void EcalUtils::init() { 
+
+    tuple->addVariable("cluster0_energy");
+    tuple->addVariable("cluster1_energy");
+    tuple->addVariable("cluster0_x");
+    tuple->addVariable("cluster0_y");
+    tuple->addVariable("cluster1_x");
+    tuple->addVariable("cluster1_y");
+    tuple->addVariable("cluster0_time");
+    tuple->addVariable("cluster1_time");
+    tuple->addVariable("event_n"); 
+    tuple->addVariable("n_clusters");
+    tuple->addVariable("n_pairs"); 
+    tuple->addVariable("pass_cluster_n_cut");
+
+    tuple->addVector("cluster_time");
+    tuple->addVector("cluster_pair_dt");
+    tuple->addVector("cluster_pair_energy_diff"); 
+    tuple->addVector("cluster_pair_energy_sum");
+    tuple->addVector("pass_cluster_time_cut");
+    tuple->addVector("pass_geo_cut");
+    tuple->addVector("pass_coin_cut");
 }
 
+/*
 void EcalUtils::bookHistograms() { 
   
     //   Ecal cluster pair energy   //
@@ -290,4 +230,4 @@ void EcalUtils::bookHistograms() {
     plotter->get2DHistogram("cluster y vs cluster y - cuts: fiducial, time")->GetYaxis()->SetTitle("Cluster position - y (mm)");
     plotter->get2DHistogram("cluster y vs cluster y - cuts: fiducial, time")->GetYaxis()->SetTitle("Cluster position - y (mm)");
 
-}
+}*/

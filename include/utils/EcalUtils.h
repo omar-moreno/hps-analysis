@@ -10,7 +10,7 @@
 //------------------//
 //   HPS Analysis   //
 //------------------//
-#include <Plotter.h>   
+#include <FlatTupleMaker.h>
 
 //-------------//
 //   HPS DST   //
@@ -43,23 +43,28 @@ class EcalUtils {
          *
          */
         bool hasGoodClusterPair(HpsParticle* particle); 
-    
-        /** Save the histogram to a ROOT file. */
-        void saveHistograms();
+   
+        /** Close the tuple */ 
+        void saveTuple() { tuple->close(); };
+
+        /** */
+        void setCoincidenceTime(double coin_time) { this->coin_time = coin_time; };  
 
     private:
+  
+        void init(); 
 
-        /** Book histograms */
-       void bookHistograms();
+        FlatTupleMaker* tuple;
 
-        /** Plotter */
-        Plotter* plotter;  
+        double event_count; 
 
         /** */
         double delta_t_lower_bound;
         
         /** */
-        double delta_t_upper_bound; 
+        double delta_t_upper_bound;
+
+        double coin_time;  
 };
 
 #endif // __ECAL_UTILS_H__
