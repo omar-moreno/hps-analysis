@@ -38,7 +38,7 @@ void TridentAnalysis::initialize() {
 }
 
 void TridentAnalysis::processEvent(HpsEvent* event) { 
-   
+
     event_counter++; 
 
     // Get a "good" pair from the event.  If a good pair isn't found, skip
@@ -195,7 +195,6 @@ void TridentAnalysis::finalize() {
     
     // Save the track-Ecal cluster matching plots to a ROOT file
     matcher->saveHistograms();  
-    ecal_utils->saveHistograms();
     plotter->saveToRootFile("trident_analysis.root");
 
     std::cout << "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" << std::endl;
