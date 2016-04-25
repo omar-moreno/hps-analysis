@@ -4,9 +4,9 @@
 TagProbeAnalysis::TagProbeAnalysis() 
     : plotter(new Plotter()),
       ecal_utils(new EcalUtils()), 
-      matcher(new TrackClusterMatcher()),  
-      total_events(0),
-      total_trigger_events(0), 
+      matcher(new TrackClusterMatcher()),
+      tuple(new FlatTupleMaker("tag_probe_analysis.root", "results")), 
+      event_count(0),   
       good_ecal_pair_count(0), 
       fiducial_cut_pass_count(0),
       ecal_cluster_sum_cut_pass_count(0), 
@@ -25,49 +25,130 @@ TagProbeAnalysis::TagProbeAnalysis()
 TagProbeAnalysis::~TagProbeAnalysis() { 
 }
 
-void TagProbeAnalysis::initialize() { 
-    this->bookHistograms();    
-    matcher->enablePlots(true); 
-    srand(time(0)); 
+void TagProbeAnalysis::initialize() {
+   ecal_utils->setCoincidenceTime(0.5);  
+    
+   tuple->addVariable("cluster0_energy");
+   tuple->addVariable("cluster0_time");
+   tuple->addVariable("cluster0_x");
+   tuple->addVariable("cluster0_y");
+   tuple->addVariable("cluster0_z");
+   tuple->addVariable("cluster1_energy");
+   tuple->addVariable("cluster1_time"); 
+   tuple->addVariable("cluster1_x");
+   tuple->addVariable("cluster1_y");
+   tuple->addVariable("cluster1_z");
+
+   tuple->addVariable("tag_energy");
+   tuple->addVariable("tag_x");
+   tuple->addVariable("tag_y");
+   tuple->addVariable("tag_z");
+   tuple->addVariable("probe_energy");
+   tuple->addVariable("probe_x");
+   tuple->addVariable("probe_y");
+   tuple->addVariable("probe_z");
+
+   tuple->addVariable("tag_track_p"); 
+   tuple->addVariable("tag_track_px"); 
+   tuple->addVariable("tag_track_py"); 
+   tuple->addVariable("tag_track_pz"); 
+
+   tuple->addVariable("fiducial_cut"); 
+   tuple->addVariable("energy_sum_cut"); 
+   tuple->addVariable("tag_match"); 
+   tuple->addVariable("tag_charge_cut"); 
+   tuple->addVariable("probe_match"); 
 }
 
 void TagProbeAnalysis::processEvent(HpsEvent* event) {
-
-    total_events++;
-
-
-    // Only look at single 1 triggers
-    if (true) { 
-        if (!event->isSingle1Trigger()) return;
-
-        total_trigger_events++; 
-        // Only look at events with the SVT bias ON
-        if (!event->isSvtBiasOn()) return; 
     
-        // Only look at events where the SVT is closed
-        if (!event->isSvtClosed()) return; 
-    }
-    
-    total_trigger_events++;
+    // Increment the event counter
+    event_count++; 
 
     // Get a "good" pair from the event.  If a good pair isn't found, skip
     // the event.
     std::vector<EcalCluster*> pair = ecal_utils->getClusterPair(event);
     if (pair.size() != 2 || pair[0] == nullptr || pair[1] == nullptr) return;
-
     good_ecal_pair_count++; 
 
+    EcalCluster* cluster0 = pair[0]; 
+    EcalCluster* cluster1  = pair[1]; 
+    if (cluster0->getEnergy() < cluster1->getEnergy()) { 
+        cluster0 = pair[1];
+        cluster1  = pair[0]; 
+    } 
+        
+    tuple->setVariableValue("cluster0_energy", cluster0->getEnergy());
+    tuple->setVariableValue("cluster1_energy", cluster1->getEnergy());
+    tuple->setVariableValue("cluster0_x", cluster0->getPosition()[0]);
+    tuple->setVariableValue("cluster0_y", cluster0->getPosition()[1]);
+    tuple->setVariableValue("cluster0_z", cluster0->getPosition()[2] );
+    tuple->setVariableValue("cluster1_x",  cluster1->getPosition()[0]);
+    tuple->setVariableValue("cluster1_y",  cluster1->getPosition()[1]);
+    tuple->setVariableValue("cluster1_z",  cluster1->getPosition()[2]);
+    
     // Check that the clusters aren't on the same side of the Ecal
-    if (!passFiducialCut(pair[0], pair[1])) return;
+    if (!passFiducialCut(pair[0], pair[1])) tuple->setVariableValue("fiducial_cut", 0); 
+    else tuple->setVariableValue("fiducial_cut", 1); 
     fiducial_cut_pass_count++; 
 
-    std::vector<double> cluster_energy = { 
-        pair[0]->getEnergy(), 
-        pair[1]->getEnergy()
-    };
+    if (!passClusterEnergySumCut(pair[0], pair[1])) tuple->setVariableValue("energy_sum_cut", 0);
+    else tuple->setVariableValue("energy_sum_cut", 1);
+    ecal_cluster_sum_cut_pass_count++; 
+
+    // Randomly choose one of the two ECal clusters
+    double cluster_index = rand()%2;
+    EcalCluster* tag_cluster = pair[cluster_index]; 
+
+    tuple->setVariableValue("tag_energy", tag_cluster->getEnergy());
+    tuple->setVariableValue("tag_x", tag_cluster->getPosition()[0]);
+    tuple->setVariableValue("tag_y", tag_cluster->getPosition()[1]);
+    tuple->setVariableValue("tag_z", tag_cluster->getPosition()[2]);
+
+    EcalHit* tag_seed_hit = tag_cluster->getSeed();
+
+    // Get the probe cluster
+    EcalCluster* probe_cluster = NULL;
+    if (cluster_index == 0) { 
+        probe_cluster = pair[1];
+    } else {
+        probe_cluster = pair[0];
+    }
     
-    double cluster_energy_sum = cluster_energy[0] + cluster_energy[1]; 
-    double cluster_energy_diff = cluster_energy[0] - cluster_energy[1];
+    tuple->setVariableValue("probe_energy", probe_cluster->getEnergy());
+    tuple->setVariableValue("probe_x", probe_cluster->getPosition()[0]);
+    tuple->setVariableValue("probe_y", probe_cluster->getPosition()[1]);
+    tuple->setVariableValue("probe_z", probe_cluster->getPosition()[2]);
+
+    // Find all track-cluster matches in the event
+    matcher->findAllMatches(event);
+
+    // Check if a match was found for the tag cluster
+    SvtTrack* tag_track = matcher->getMatchingTrack(tag_cluster); 
+    if (tag_track == nullptr) { 
+        //std::cout << "Tag track is null" << std::endl;
+        tuple->setVariableValue("tag_match", 0);
+        tuple->setVariableValue("probe_match", 0);
+        tuple->setVariableValue("tag_charge_cut", 0); 
+        tuple->fill(); 
+        return; 
+    } else tuple->setVariableValue("tag_match", 1);  
+
+    if (tag_track->getCharge() > 0) { 
+        tuple->setVariableValue("tag_charge_cut", 0); 
+    } else tuple->setVariableValue("tag_charge_cut", 1); 
+
+    // Check if matches was found for the two clusters
+    SvtTrack* probe_track = matcher->getMatchingTrack(probe_cluster); 
+    if (probe_track == nullptr) {
+        tuple->setVariableValue("probe_match", 0);
+        tuple->fill(); 
+        return; 
+    } else tuple->setVariableValue("probe_match", 1);  
+
+    tuple->fill(); 
+
+    /*
 
     std::vector<double> cluster_time = { 
         pair[0]->getClusterTime(), 
@@ -91,6 +172,7 @@ void TagProbeAnalysis::processEvent(HpsEvent* event) {
     double cluster_y_sum = cluster_y[0] + cluster_y[1]; 
     double cluster_y_diff = cluster_y[0] - cluster_y[1]; 
 
+    
     plotter->get1DHistogram("cluster pair x sum - cuts: fiducial")->Fill(cluster_x_sum); 
     plotter->get1DHistogram("cluster pair x diff - cuts: fiducial")->Fill(cluster_x_diff); 
     plotter->get1DHistogram("cluster pair y diff - cuts: fiducial")->Fill(cluster_y_diff); 
@@ -105,8 +187,6 @@ void TagProbeAnalysis::processEvent(HpsEvent* event) {
     plotter->get2DHistogram("cluster y vs cluster y - cuts: fiducial")->Fill(cluster_y[0], cluster_y[1]);
         
 
-    if (!passClusterEnergySumCut(pair[0], pair[1])) return; 
-    ecal_cluster_sum_cut_pass_count++; 
 
     plotter->get1DHistogram("cluster time - cuts: fiducial, sum")->Fill(cluster_time[0]);
     plotter->get1DHistogram("cluster time - cuts: fiducial, sum")->Fill(cluster_time[1]);
@@ -151,12 +231,6 @@ void TagProbeAnalysis::processEvent(HpsEvent* event) {
     if (abs(pair[0]->getPosition()[1]) > 50 || abs(pair[1]->getPosition()[1]) > 50) return;
     ecal_cluster_y_cut_pass_count++; 
 
-    // Randomly choose one of the two ECal clusters
-    double cluster_index = rand()%2;
-    plotter->get1DHistogram("selected cluster")->Fill(cluster_index); 
-    EcalCluster* tag_cluster = pair[cluster_index]; 
-
-    EcalHit* tag_seed_hit = tag_cluster->getSeed();
     plotter->get2DHistogram("tag clusters")->Fill( tag_seed_hit->getXCrystalIndex(), 
             tag_seed_hit->getYCrystalIndex(), 1);
     plotter->get1DHistogram("tag cluster energy")->Fill(tag_cluster->getEnergy());
@@ -169,18 +243,7 @@ void TagProbeAnalysis::processEvent(HpsEvent* event) {
     }
     plotter->get1DHistogram("cluster size - tag")->Fill(tag_cluster->getEcalHits()->GetEntriesFast());
 
-    // Find all track-cluster matches in the event
-    matcher->findAllMatches(event);
 
-    // Check if a match was found for the tag cluster
-    SvtTrack* tag_track = matcher->getMatchingTrack(tag_cluster); 
-    if (tag_track == nullptr) return; 
-
-    // If the track is a positron, skip the event
-    if (tag_track->getCharge() > 0) {  
-        // Tag and probe requiring a positron as the tag?
-        return;
-    }
 
     double delta_t = tag_cluster->getClusterTime() - tag_track->getTrackTime(); 
    
@@ -217,13 +280,6 @@ void TagProbeAnalysis::processEvent(HpsEvent* event) {
     }
      
     
-    // Get the probe cluster
-    EcalCluster* probe_cluster = NULL;
-    if (cluster_index == 0) { 
-        probe_cluster = pair[1];
-    } else {
-        probe_cluster = pair[0];
-    }
 
     plotter->get1DHistogram("cluster pair x sum - candidates")->Fill(tag_cluster->getPosition()[0] + probe_cluster->getPosition()[0]); 
     plotter->get1DHistogram("cluster pair x diff - candidates")->Fill(tag_cluster->getPosition()[0] - probe_cluster->getPosition()[0]); 
@@ -241,8 +297,6 @@ void TagProbeAnalysis::processEvent(HpsEvent* event) {
     plotter->get1DHistogram("cluster size - probe - candidates")->Fill(probe_cluster->getEcalHits()->GetEntriesFast());
     plotter->get1DHistogram("track multiplicity - candidates")->Fill(event->getNumberOfTracks()); 
 
-    // Check if matches was found for the two clusters
-    SvtTrack* probe_track = matcher->getMatchingTrack(probe_cluster); 
     if (probe_track == nullptr) { 
         
         plotter->get2DHistogram("probe clusters - not matched")->Fill( probe_seed_hit->getXCrystalIndex(), 
@@ -297,11 +351,24 @@ void TagProbeAnalysis::processEvent(HpsEvent* event) {
     plotter->get1DHistogram("track multiplicity - matched")->Fill(event->getNumberOfTracks()); 
 
     double mass = AnalysisUtils::getInvariantMass(tag_track, probe_track);
-    plotter->get1DHistogram("invariant mass - mollers")->Fill(mass); 
+    plotter->get1DHistogram("invariant mass - mollers")->Fill(mass); */ 
 }
 
 void TagProbeAnalysis::finalize() { 
 
+    std::cout << "//---------------------------------------------------//" << std::endl;
+    std::cout << "//   TagProbeAnalysis Stats" << std::endl;
+    std::cout << "//---------------------------------------------------//" << std::endl;
+    std::cout << "//   Total event count: " << event_count << std::endl;
+    std::cout << "//   Good pairs: " << good_ecal_pair_count << std::endl;
+    std::cout << "//   Pass fiducial cuts: " << fiducial_cut_pass_count << std::endl;
+    std::cout << "//   Pass cluster sum cut: " << ecal_cluster_sum_cut_pass_count << std::endl;
+    std::cout << "//  " << (top_tag_cluster_count/top_tag_cand_cluster_count) << std::endl;
+    std::cout << "//---------------------------------------------------//" << std::endl;
+
+    tuple->close(); 
+
+    /*
     plotter->get2DHistogram("probe clusters - matched")->Divide(
             plotter->get2DHistogram("probe clusters - candidates"));
 
@@ -333,16 +400,12 @@ void TagProbeAnalysis::finalize() {
 
     plotter->saveToPdf("tag_probe_efficiency.pdf");
     plotter->saveToRootFile("tag_probe_efficiency.root");
+    */
 
-    ecal_utils->saveHistograms();
-    matcher->saveHistograms(); 
-    
-    std::cout << "//---------------------------------------------------//" << std::endl;
-    std::cout << "// Events: " << total_events << std::endl;
-    std::cout << "// Single1 Triggers: " << total_trigger_events << std::endl;
-    std::cout << "// Good pairs: " << good_ecal_pair_count << std::endl;
-    std::cout << "// Pass fiducial cuts: " << fiducial_cut_pass_count << std::endl;
-    std::cout << "// Pass cluster sum cut: " << ecal_cluster_sum_cut_pass_count << std::endl;
+    ecal_utils->saveTuple();
+    //matcher->saveHistograms(); 
+   
+   /* 
     std::cout << "// Pass cluster diff cut: " << ecal_cluster_diff_cut_pass_count << std::endl;
     std::cout << "// Pass cluster time cut: " << ecal_cluster_time_cut_pass_count << std::endl;
     std::cout << "// Pass row 1 cut: " << ecal_row1_cut_pass_count << std::endl;
@@ -353,7 +416,7 @@ void TagProbeAnalysis::finalize() {
     std::cout << "// Top tag candidate clusters: " << top_tag_cand_cluster_count << std::endl;
     std::cout << "// Bottom tag candiadate clusters: " << bottom_tag_cand_cluster_count << std::endl;
     std::cout << "//---------------------------------------------------//" << std::endl;
-
+    */
     return;
 }
 
@@ -363,10 +426,6 @@ void TagProbeAnalysis::bookHistograms() {
 
     // Cluster energy // 
 
-    plotter->build1DHistogram("Cluster pair energy sum - cuts: fiducial", 50, 0, 1.5)->GetXaxis()->SetTitle(
-            "Cluster pair energy sum (GeV)");
-    plotter->build1DHistogram("Cluster pair energy sum - cuts: fiducial, sum", 50, 0, 1.5)->GetXaxis()->SetTitle(
-            "Cluster pair energy sum (GeV)");
     plotter->build1DHistogram("Cluster pair energy sum - cuts: fiducial, sum, diff", 50, 0, 1.5)->GetXaxis()->SetTitle(
             "Cluster pair energy sum (GeV)");
     plotter->build1DHistogram("Cluster pair energy sum - candidates", 50, 0, 1.5)->GetXaxis()->SetTitle(
@@ -615,12 +674,12 @@ bool TagProbeAnalysis::passFiducialCut(EcalCluster* first_cluster, EcalCluster* 
     // Require that they are on the electron side in x
     if (first_cluster->getPosition()[0] > 0 || second_cluster->getPosition()[0] > 0) return false;
    
-    double cluster_pair_sum_x = first_cluster->getPosition()[0] + second_cluster->getPosition()[0]; 
+    /*double cluster_pair_sum_x = first_cluster->getPosition()[0] + second_cluster->getPosition()[0]; 
 
     if (cluster_pair_sum_x < -175 || cluster_pair_sum_x > -145) return false;
 
     double cluster_pair_delta_x = first_cluster->getPosition()[0] - second_cluster->getPosition()[0]; 
-    if (cluster_pair_delta_x < -80 || cluster_pair_delta_x > 80) return false; 
+    if (cluster_pair_delta_x < -80 || cluster_pair_delta_x > 80) return false; */
 
     return true;
 }

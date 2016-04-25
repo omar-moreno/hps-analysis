@@ -79,14 +79,29 @@ class TagProbeAnalysis : public HpsAnalysis {
 
         Plotter* plotter;
 
+        /** A set of Ecal utilities */
         EcalUtils* ecal_utils;
 
+        /** Track-Cluster matcher */
         TrackClusterMatcher* matcher;  
 
-        double total_events;
-        double total_trigger_events;
+        /** */
+        FlatTupleMaker* tuple; 
+        
+
+        //   Event counters   //
+        //--------------------//
+
+        /** Total number of triggers */
+        double event_count;
+        
+        /** */ 
         double good_ecal_pair_count; 
+
+        /** */
         double fiducial_cut_pass_count;
+
+
         double ecal_cluster_sum_cut_pass_count;
         double ecal_cluster_diff_cut_pass_count;
         double ecal_cluster_time_cut_pass_count;
