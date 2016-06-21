@@ -17,17 +17,23 @@
 #include <FeeAnalysis.h>
 
 class FeeDataAnalysis : public FeeAnalysis { 
-    
-    /**
-     * Process an HPS event i.e. {@link HpsEvent} object. 
-     *
-     * @param event {@link HpsEvent} object to process.
-     */
-    void processEvent(HpsEvent* event);
 
-    /** @return A string representation of this analysis. */
-    std::string toString(); 
+    public : 
 
+        FeeDataAnalysis();
+
+        /**
+         * Process an HPS event i.e. {@link HpsEvent} object. 
+         *
+         * @param event {@link HpsEvent} object to process.
+         */
+        void processEvent(HpsEvent* event);
+
+        /** @return A string representation of this analysis. */
+        std::string toString(); 
+    private : 
+
+        std::string class_name; 
 };
 
 #endif

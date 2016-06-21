@@ -10,7 +10,7 @@
 
 #include <FeeDataAnalysis.h>
 
-FeeDataAnalysis:;FeeDataAnalysis() 
+FeeDataAnalysis::FeeDataAnalysis() 
     : class_name("FeeDataAnalysis") { 
 }
 
