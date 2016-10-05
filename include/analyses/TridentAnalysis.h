@@ -16,7 +16,7 @@
 //   HPS Analysis   //
 //------------------//
 #include <HpsAnalysis.h>
-#include <Plotter.h>
+#include <FlatTupleMaker.h>
 #include <TrackClusterMatcher.h>
 #include <EcalUtils.h>
 
@@ -56,8 +56,8 @@ class TridentAnalysis : public HpsAnalysis {
     
     private: 
 
-        /** Histogram factory used to build and save histograms. */
-        Plotter* plotter;
+        /** Utility used to create ROOT ntuples. */
+        FlatTupleMaker* tuple{}; 
 
         /** Track-Ecal cluster matcher. */
         TrackClusterMatcher* matcher; 
@@ -65,7 +65,9 @@ class TridentAnalysis : public HpsAnalysis {
         /** A set of Ecal utilities */
         EcalUtils* ecal_utils;
 
-        double event_counter;
+        /** Total number of events processed */
+        double event_counter{};
+
         double good_cluster_pair_counter; 
         double matched_event_counter; 
         double v0_cand_counter;
