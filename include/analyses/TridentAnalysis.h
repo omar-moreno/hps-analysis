@@ -57,7 +57,7 @@ class TridentAnalysis : public HpsAnalysis {
     private: 
 
         /** Utility used to create ROOT ntuples. */
-        FlatTupleMaker* tuple{}; 
+        FlatTupleMaker* tuple{new FlatTupleMaker("trident_analysis.root", "results")}; 
 
         /** Track-Ecal cluster matcher. */
         TrackClusterMatcher* matcher; 
