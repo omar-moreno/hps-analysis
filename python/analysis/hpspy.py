@@ -1,12 +1,9 @@
 #!/usr/bin/python
 
 import argparse
+import importlib
 import sys
 import yaml
-import BumpHuntToyAnalysis
-import BumpHuntAnalysis
-import TagProbeAnalysis
-import FeeAnalysis
 
 def parse_config(config_file) :
 
@@ -27,21 +24,24 @@ def main() :
         sys.exit(2)
     
     config = parse_config(args.config)
-   
-    #bh = BumpHuntToyAnalysis.BumpHuntToyAnalysis()
-    #bh = BumpHuntAnalysis.BumpHuntAnalysis()
-    #tp = TagProbeAnalysis.TagProbeAnalysis()
-    fee = FeeAnalysis.FeeAnalysis()
+    
+    analyses = config["Analyses"]
+    analyses_instances = []
+    for analysis in analyses : 
+        analysis_module_name, analysis_class_name = analysis.rsplit(".", 1)
+        print "[ hpspy ]: Adding analysis ==> Module: " + str(analysis_module_name) \
+                + " Class: " + str(analysis_class_name)
+        analysis_class = getattr(importlib.import_module(analysis_module_name), analysis_class_name)
+        analyses_instances.append(analysis_class())
 
     for input_file in config["Files"] : 
-        print str(input_file)
-        #bh.process(input_file)
-        #tp.process(input_file)
-        fee.process(input_file)
+        print 'Processing file ' + str(input_file)
 
-    #bh.make_plots()
-    #tp.make_plots()
-    fee.make_plots()
+        for analyses in analyses_instances : 
+            analyses.load_file(input_file)
+
+    for analyses in analyses_instances : 
+        analyses.process()
 
 if __name__ == "__main__":
     main()
