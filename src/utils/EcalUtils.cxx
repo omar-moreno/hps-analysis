@@ -4,9 +4,9 @@
 EcalUtils::EcalUtils() 
     : tuple(new FlatTupleMaker("ecal_cluster_tuple.root", "results")),
       event_count(0),  
-      delta_t_lower_bound(-1.6),
-      delta_t_upper_bound(1.6), 
-      coin_time(1.6) {
+      delta_t_lower_bound(-2.0),
+      delta_t_upper_bound(2.0), 
+      coin_time(3.0) {
    
     this->init();
 }
@@ -36,8 +36,6 @@ bool EcalUtils::hasGoodClusterPair(HpsParticle* particle) {
         (EcalCluster*) ((HpsParticle*) particle->getClusters()->At(1))
     };
     
-
- 
     //=== DEBUG
     //std::cout << "[ EcalUtils ]: Cluster position: [" << clusters[0]->getPosition()[0] << ", " 
     //          << clusters[0]->getPosition()[1] << ", " 
@@ -46,7 +44,8 @@ bool EcalUtils::hasGoodClusterPair(HpsParticle* particle) {
     //          << clusters[1]->getPosition()[1] << ", " 
     //          << clusters[1]->getPosition()[2] << "]" << std::endl; 
     //=== DEBUG
-    
+   
+    // Make sure the clusters are in opposite Ecal volumes. 
     if (clusters[0]->getPosition()[1]*clusters[1]->getPosition()[1] > 0) {
         //=== DEBUG
         //std::cout << "[ EcalUtils ]: Clusters are in same detector volume." << std::endl;
@@ -57,13 +56,16 @@ bool EcalUtils::hasGoodClusterPair(HpsParticle* particle) {
     //std::cout << "[ EcalUtils ]: Clusters are in opposite volumes." << std::endl;
     //=== DEBUG
 
-    double delta_cluster_time = clusters[0]->getClusterTime() - clusters[1]->getClusterTime();
+    // Calculate the coincidence time between the two clusters.
+    //double delta_cluster_time = clusters[0]->getClusterTime() - clusters[1]->getClusterTime();
     
     //=== DEBUG
     //std::cout << "[ EcalUtils ]: Cluster dt: " << delta_cluster_time << std::endl;
     //=== DEBUG
-    
-    if (delta_cluster_time < delta_t_lower_bound || delta_cluster_time > delta_t_upper_bound) return false;
+   
+    // Check that the coincidence time between the two clusters is within some 
+    // specified time window. 
+    //if (abs(delta_cluster_time) >= coin_time) return false;
     
     //=== DEBUG
     //std::cout << "[ EcalUtils ]: Clusters are coincident" << std::endl;
@@ -85,7 +87,7 @@ std::vector<EcalCluster*> EcalUtils::getClusterPair(HpsEvent* event) {
 
     // If the event has less than two clusters, return a cluster pair 
     // consisting of null pointers. 
-    if (event->getNumberOfEcalClusters() < 2) return cluster_pair;
+    if (event->getNumberOfEcalClusters() < 2) return {nullptr, nullptr};
     
     // Loop over all of the clusters in the event and filter out clusters that
     // fall outside of a loose time window.  Clusters outside of this time 
@@ -125,7 +127,7 @@ std::vector<EcalCluster*> EcalUtils::getClusterPair(HpsEvent* event) {
         } 
     }
     
-    tuple->fill(); 
+    //tuple->fill(); 
 
     return cluster_pair;     
 }
