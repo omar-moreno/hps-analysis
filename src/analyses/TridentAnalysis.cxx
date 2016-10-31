@@ -60,9 +60,9 @@ void TridentAnalysis::initialize() {
 
     tuple->addVariable("electron_cluster_energy");
     tuple->addVariable("electron_cluster_time");
-    tuple->addVariable("electron_cluster_x_high");
-    tuple->addVariable("electron_cluster_y_high");
-    tuple->addVariable("electron_cluster_z_high");
+    tuple->addVariable("electron_cluster_x");
+    tuple->addVariable("electron_cluster_y");
+    tuple->addVariable("electron_cluster_z");
 
     //--------------//
     //   Positron   //
@@ -79,9 +79,9 @@ void TridentAnalysis::initialize() {
 
     tuple->addVariable("positron_cluster_energy");
     tuple->addVariable("positron_cluster_time");
-    tuple->addVariable("positron_cluster_x_high");
-    tuple->addVariable("positron_cluster_y_high");
-    tuple->addVariable("positron_cluster_z_high");
+    tuple->addVariable("positron_cluster_x");
+    tuple->addVariable("positron_cluster_y");
+    tuple->addVariable("positron_cluster_z");
 
     // Enable track-cluster matching plots
     matcher->enablePlots();
@@ -135,7 +135,7 @@ void TridentAnalysis::processEvent(HpsEvent* event) {
         
         // Require the two tracks associated with the v0 particle to be in 
         // opposite volumes.
-        //if (first_track
+        if (first_track->getMomentum()[1]*second_track->getMomentum()[1] > 0) continue;
 
         // Only consider the v0 particle with the smallest chi2
         if (particle->getVertexFitChi2() > min_v0_chi2) continue;
@@ -176,19 +176,33 @@ void TridentAnalysis::processEvent(HpsEvent* event) {
     double positron_p = AnalysisUtils::getMagnitude(positron->getMomentum());
 
     tuple->setVariableValue("electron_chi2", electron->getChi2());
-    //tuple->setVariableValue("electron_ep", electron_ep);
     tuple->setVariableValue("electron_hit_n", electron->getSvtHits()->GetEntriesFast());
     tuple->setVariableValue("electron_p", electron_p);
     tuple->setVariableValue("electron_px", electron->getMomentum()[0]); 
     tuple->setVariableValue("electron_py", electron->getMomentum()[1]); 
     tuple->setVariableValue("electron_pz", electron->getMomentum()[2]);
     tuple->setVariableValue("electron_time", electron->getTrackTime()); 
-    //tuple->setVariableValue("positron_ep", positron_ep);
     tuple->setVariableValue("positron_hit_n", positron->getSvtHits()->GetEntriesFast());
     tuple->setVariableValue("positron_p", positron_p);
     tuple->setVariableValue("positron_px", positron->getMomentum()[0]); 
     tuple->setVariableValue("positron_py", positron->getMomentum()[1]); 
     tuple->setVariableValue("positron_time", positron->getTrackTime());
+
+    // Loop over all hits associated composing a track and check if it has a 
+    // layer 1 hit.
+    tuple->setVariableValue("electron_has_l1", 0);
+    TRefArray* hits = electron->getSvtHits(); 
+    for (int hit_index = 0; hit_index < hits->GetEntriesFast(); ++hit_index) { 
+        SvtHit* hit = (SvtHit*) hits->At(hit_index); 
+        if (hit->getLayer() == 1) tuple->setVariableValue("electron_has_l1", 1);
+    }
+
+    tuple->setVariableValue("positron_has_l1", 0);
+    hits = positron->getSvtHits(); 
+    for (int hit_index = 0; hit_index < hits->GetEntriesFast(); ++hit_index) { 
+        SvtHit* hit = (SvtHit*) hits->At(hit_index); 
+        if (hit->getLayer() == 1) tuple->setVariableValue("positron_has_l1", 1);
+    }
 
     if (v0->getClusters()->GetSize() == 2) {
     
@@ -197,15 +211,15 @@ void TridentAnalysis::processEvent(HpsEvent* event) {
     
         tuple->setVariableValue("electron_cluster_energy", electron_cluster->getEnergy());
         tuple->setVariableValue("electron_cluster_time",   electron_cluster->getClusterTime());
-        tuple->setVariableValue("electron_cluster_x_high", electron_cluster->getPosition()[0]);
-        tuple->setVariableValue("electron_cluster_y_high", electron_cluster->getPosition()[1]);
-        tuple->setVariableValue("electron_cluster_z_high", electron_cluster->getPosition()[2] );
+        tuple->setVariableValue("electron_cluster_x", electron_cluster->getPosition()[0]);
+        tuple->setVariableValue("electron_cluster_y", electron_cluster->getPosition()[1]);
+        tuple->setVariableValue("electron_cluster_z", electron_cluster->getPosition()[2] );
 
         tuple->setVariableValue("positron_cluster_energy", positron_cluster->getEnergy());
         tuple->setVariableValue("positron_cluster_time",   positron_cluster->getClusterTime());
-        tuple->setVariableValue("positron_cluster_x_high", positron_cluster->getPosition()[0]);
-        tuple->setVariableValue("positron_cluster_y_high", positron_cluster->getPosition()[1]);
-        tuple->setVariableValue("positron_cluster_z_high", positron_cluster->getPosition()[2] );
+        tuple->setVariableValue("positron_cluster_x", positron_cluster->getPosition()[0]);
+        tuple->setVariableValue("positron_cluster_y", positron_cluster->getPosition()[1]);
+        tuple->setVariableValue("positron_cluster_z", positron_cluster->getPosition()[2] );
     } 
     tuple->fill();
 }
