@@ -95,22 +95,22 @@ void TridentAnalysis::processEvent(HpsEvent* event) {
     ++event_counter;
     tuple->setVariableValue("event", event->getEventNumber());
    
+    // If the event doesn't have any tracks, skip the rest of the processing 
+    // chain.
     double n_tracks = event->getNumberOfGblTracks();
-    tuple->setVariableValue("n_tracks", n_tracks);
+    if (n_tracks == 0) return;
+    ++event_has_track;
+    tuple->setVariableValue("n_tracks", n_tracks); 
 
-    // Get the number of positrons in the event.
+    // Get the number of positrons in the event.  If the event doesn't have
+    // any positron tracks, skip the rest of the processing chain.
     double n_positrons = 0;
     for (int track_n = 0; track_n < event->getNumberOfGblTracks(); ++track_n) { 
         if (event->getGblTrack(track_n)->getCharge() == 1) n_positrons++;
     }
+    if (n_positrons == 0) return;
+    ++event_has_positron;
     tuple->setVariableValue("n_positrons", n_positrons);
-
-    // If the event doesn't have any positrons, then no tridents have been
-    // found. Skip the event.
-    if (n_positrons == 0) { 
-        tuple->fill(); 
-        return;
-    }
 
     // Get the number of target constrained V0 candidates in the event.
     int n_particles = event->getNumberOfParticles(HpsParticle::TC_V0_CANDIDATE);
@@ -226,16 +226,12 @@ void TridentAnalysis::processEvent(HpsEvent* event) {
 
 void TridentAnalysis::finalize() {
     
-    // Save the track-Ecal cluster matching plots to a ROOT file
-    matcher->saveHistograms();  
-
-    std::cout << "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" << std::endl;
-    std::cout << "Number of pair1 triggers: " << event_counter << std::endl;
-    std::cout << "Good clusters: " << good_cluster_pair_counter << "/" <<  event_counter << " = "
-              << good_cluster_pair_counter/event_counter << " %" << std::endl;
-    std::cout << "Trident's passing cuts: " << v0_cand_counter << "/" << event_counter << " = " 
-              << v0_cand_counter/event_counter << " %" << std::endl; 
-    std::cout << "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" << std::endl;
+    std::cout << std::fixed;
+    std::cout << "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" << std::endl;
+    std::cout << "% Total events processed: " << event_counter << std::endl;
+    std::cout << "% Total events with a track: " << event_has_track << std::endl;
+    std::cout << "% Total events with a positron track: " << event_has_positron << std::endl;
+    std::cout << "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" << std::endl;
 }
 
 void TridentAnalysis::bookHistograms() {  

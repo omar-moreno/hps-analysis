@@ -66,7 +66,13 @@ class TridentAnalysis : public HpsAnalysis {
         EcalUtils* ecal_utils;
 
         /** Total number of events processed */
-        double event_counter{};
+        double event_counter{0};
+
+        /** Total number of events with tracks */
+        double event_has_track{0};
+
+        /** Total number of events with a positron */
+        double event_has_positron{0};
 
         double good_cluster_pair_counter; 
         double matched_event_counter; 
