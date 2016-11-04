@@ -60,10 +60,10 @@ class TridentAnalysis : public HpsAnalysis {
         FlatTupleMaker* tuple{new FlatTupleMaker("trident_analysis.root", "results")}; 
 
         /** Track-Ecal cluster matcher. */
-        TrackClusterMatcher* matcher; 
+        TrackClusterMatcher* matcher{new TrackClusterMatcher()}; 
 
         /** A set of Ecal utilities */
-        EcalUtils* ecal_utils;
+        EcalUtils* ecal_utils{new EcalUtils()};
 
         /** Total number of events processed */
         double event_counter{0};
@@ -74,9 +74,8 @@ class TridentAnalysis : public HpsAnalysis {
         /** Total number of events with a positron */
         double event_has_positron{0};
 
-        double good_cluster_pair_counter; 
-        double matched_event_counter; 
-        double v0_cand_counter;
+        /** Total number of events with only a single positron. */
+        double event_has_single_positron{0};
 
 }; // TridentAnalysis
 

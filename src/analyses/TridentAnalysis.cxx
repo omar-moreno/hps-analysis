@@ -12,13 +12,7 @@
 #include <TridentAnalysis.h>
 
 TridentAnalysis::TridentAnalysis()
-    : 
-      ecal_utils(new EcalUtils()), 
-      matcher(new TrackClusterMatcher()), 
-      class_name("TridentAnalysis"), 
-      good_cluster_pair_counter(0),  
-      matched_event_counter(0), 
-      v0_cand_counter(0) { 
+    : class_name("TridentAnalysis") { 
 }
 
 TridentAnalysis::~TridentAnalysis() { 
@@ -34,6 +28,7 @@ void TridentAnalysis::initialize() {
     tuple->addVariable("event");
     tuple->addVariable("n_positrons");
     tuple->addVariable("n_tracks");
+    tuple->addVariable("n_v0");
 
     //-----------------//
     //   V0 particle   //
@@ -110,12 +105,15 @@ void TridentAnalysis::processEvent(HpsEvent* event) {
     }
     if (n_positrons == 0) return;
     ++event_has_positron;
+
+    if (n_positrons != 1) return;
+    ++event_has_single_positron;
     tuple->setVariableValue("n_positrons", n_positrons);
 
     // Get the number of target constrained V0 candidates in the event.
-    int n_particles = event->getNumberOfParticles(HpsParticle::TC_V0_CANDIDATE);
-    tuple->setVariableValue("n_v0", n_particles); 
-    
+    int n_v0{0};
+    int n_particles{event->getNumberOfParticles(HpsParticle::TC_V0_CANDIDATE)};
+
     // Loop over the collection of target contrained V0 particles.
     HpsParticle* v0{nullptr};
     double min_v0_chi2 = 1000000000000;
@@ -126,7 +124,8 @@ void TridentAnalysis::processEvent(HpsEvent* event) {
 
         // Only consider particles that were created from GBL tracks.
         if (particle->getType() < 32) continue;
-        
+        ++n_v0; 
+
         // Require the two tracks associated with the v0 particle to be 
         // oppositely charged.      
         SvtTrack* first_track{(SvtTrack*) particle->getTracks()->At(0)};
@@ -143,6 +142,7 @@ void TridentAnalysis::processEvent(HpsEvent* event) {
         min_v0_chi2 = particle->getVertexFitChi2();
         v0 = particle; 
     }
+    tuple->setVariableValue("n_v0", n_v0); 
     
     // If a v0 particle wasn't found, don't continue processing the event.
     if (v0 == nullptr) {
@@ -226,11 +226,13 @@ void TridentAnalysis::processEvent(HpsEvent* event) {
 
 void TridentAnalysis::finalize() {
     
+    tuple->close(); 
     std::cout << std::fixed;
     std::cout << "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" << std::endl;
     std::cout << "% Total events processed: " << event_counter << std::endl;
     std::cout << "% Total events with a track: " << event_has_track << std::endl;
     std::cout << "% Total events with a positron track: " << event_has_positron << std::endl;
+    std::cout << "% Events with a single positron track: " << event_has_single_positron << std::endl;
     std::cout << "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" << std::endl;
 }
 
