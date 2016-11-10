@@ -78,6 +78,44 @@ void TridentAnalysis::initialize() {
     tuple->addVariable("positron_cluster_y");
     tuple->addVariable("positron_cluster_z");
 
+    //---------//
+    //   Top   //
+    //---------//
+    tuple->addVariable("top_chi2"); 
+    tuple->addVariable("top_ep");
+    tuple->addVariable("top_hit_n");
+    tuple->addVariable("top_has_l1");
+    tuple->addVariable("top_p");
+    tuple->addVariable("top_px"); 
+    tuple->addVariable("top_py"); 
+    tuple->addVariable("top_pz");
+    tuple->addVariable("top_time");
+
+    tuple->addVariable("top_cluster_energy");
+    tuple->addVariable("top_cluster_time");
+    tuple->addVariable("top_cluster_x");
+    tuple->addVariable("top_cluster_y");
+    tuple->addVariable("top_cluster_z");
+
+    //---------//
+    //   Bot   //
+    //---------//
+    tuple->addVariable("bot_chi2"); 
+    tuple->addVariable("bot_ep");
+    tuple->addVariable("bot_hit_n");
+    tuple->addVariable("bot_has_l1");
+    tuple->addVariable("bot_p");
+    tuple->addVariable("bot_px"); 
+    tuple->addVariable("bot_py"); 
+    tuple->addVariable("bot_pz");
+    tuple->addVariable("bot_time");
+
+    tuple->addVariable("bot_cluster_energy");
+    tuple->addVariable("bot_cluster_time");
+    tuple->addVariable("bot_cluster_x");
+    tuple->addVariable("bot_cluster_y");
+    tuple->addVariable("bot_cluster_z");
+    
     // Enable track-cluster matching plots
     matcher->enablePlots();
     matcher->useFieldMap();  
@@ -171,7 +209,19 @@ void TridentAnalysis::processEvent(HpsEvent* event) {
         electron = (SvtTrack*) v0->getTracks()->At(electron_index);
         positron = (SvtTrack*) v0->getTracks()->At(positron_index); 
     }
-    
+
+    int top_index = 0;
+    int bot_index = 1;
+    SvtTrack* top{(SvtTrack*) v0->getTracks()->At(top_index)}; 
+    SvtTrack* bot{(SvtTrack*) v0->getTracks()->At(bot_index)};
+
+    if (bot->isTopTrack()) { 
+        top_index = 1;
+        bot_index = 0;
+        top = (SvtTrack*) v0->getTracks()->At(top_index);
+        bot = (SvtTrack*) v0->getTracks()->At(bot_index); 
+    }
+
     double electron_p = AnalysisUtils::getMagnitude(electron->getMomentum());
     double positron_p = AnalysisUtils::getMagnitude(positron->getMomentum());
 
@@ -204,6 +254,39 @@ void TridentAnalysis::processEvent(HpsEvent* event) {
         if (hit->getLayer() == 1) tuple->setVariableValue("positron_has_l1", 1);
     }
 
+    double top_p = AnalysisUtils::getMagnitude(top->getMomentum());
+    double bot_p = AnalysisUtils::getMagnitude(bot->getMomentum());
+
+    tuple->setVariableValue("top_chi2", top->getChi2());
+    tuple->setVariableValue("top_hit_n", top->getSvtHits()->GetEntriesFast());
+    tuple->setVariableValue("top_p", top_p);
+    tuple->setVariableValue("top_px", top->getMomentum()[0]); 
+    tuple->setVariableValue("top_py", top->getMomentum()[1]); 
+    tuple->setVariableValue("top_pz", top->getMomentum()[2]);
+    tuple->setVariableValue("top_time", top->getTrackTime()); 
+    tuple->setVariableValue("bot_hit_n", bot->getSvtHits()->GetEntriesFast());
+    tuple->setVariableValue("bot_p", bot_p);
+    tuple->setVariableValue("bot_px", bot->getMomentum()[0]); 
+    tuple->setVariableValue("bot_py", bot->getMomentum()[1]); 
+    tuple->setVariableValue("bot_time", bot->getTrackTime());
+
+    // Loop over all hits associated composing a track and check if it has a 
+    // layer 1 hit.
+    tuple->setVariableValue("top_has_l1", 0);
+    hits = top->getSvtHits(); 
+    for (int hit_index = 0; hit_index < hits->GetEntriesFast(); ++hit_index) { 
+        SvtHit* hit = (SvtHit*) hits->At(hit_index); 
+        if (hit->getLayer() == 1) tuple->setVariableValue("top_has_l1", 1);
+    }
+
+    tuple->setVariableValue("bot_has_l1", 0);
+    hits = bot->getSvtHits(); 
+    for (int hit_index = 0; hit_index < hits->GetEntriesFast(); ++hit_index) { 
+        SvtHit* hit = (SvtHit*) hits->At(hit_index); 
+        if (hit->getLayer() == 1) tuple->setVariableValue("bot_has_l1", 1);
+    }
+
+
     if (v0->getClusters()->GetSize() == 2) {
     
         EcalCluster* electron_cluster = (EcalCluster*) v0->getClusters()->At(electron_index);
@@ -213,13 +296,29 @@ void TridentAnalysis::processEvent(HpsEvent* event) {
         tuple->setVariableValue("electron_cluster_time",   electron_cluster->getClusterTime());
         tuple->setVariableValue("electron_cluster_x", electron_cluster->getPosition()[0]);
         tuple->setVariableValue("electron_cluster_y", electron_cluster->getPosition()[1]);
-        tuple->setVariableValue("electron_cluster_z", electron_cluster->getPosition()[2] );
+        tuple->setVariableValue("electron_cluster_z", electron_cluster->getPosition()[2]);
 
         tuple->setVariableValue("positron_cluster_energy", positron_cluster->getEnergy());
         tuple->setVariableValue("positron_cluster_time",   positron_cluster->getClusterTime());
         tuple->setVariableValue("positron_cluster_x", positron_cluster->getPosition()[0]);
         tuple->setVariableValue("positron_cluster_y", positron_cluster->getPosition()[1]);
-        tuple->setVariableValue("positron_cluster_z", positron_cluster->getPosition()[2] );
+        tuple->setVariableValue("positron_cluster_z", positron_cluster->getPosition()[2]);
+
+        EcalCluster* top_cluster = (EcalCluster*) v0->getClusters()->At(top_index);
+        EcalCluster* bot_cluster = (EcalCluster*) v0->getClusters()->At(bot_index);
+    
+        tuple->setVariableValue("top_cluster_energy", top_cluster->getEnergy());
+        tuple->setVariableValue("top_cluster_time",   top_cluster->getClusterTime());
+        tuple->setVariableValue("top_cluster_x", top_cluster->getPosition()[0]);
+        tuple->setVariableValue("top_cluster_y", top_cluster->getPosition()[1]);
+        tuple->setVariableValue("top_cluster_z", top_cluster->getPosition()[2]);
+
+        tuple->setVariableValue("bot_cluster_energy", bot_cluster->getEnergy());
+        tuple->setVariableValue("bot_cluster_time",   bot_cluster->getClusterTime());
+        tuple->setVariableValue("bot_cluster_x", bot_cluster->getPosition()[0]);
+        tuple->setVariableValue("bot_cluster_y", bot_cluster->getPosition()[1]);
+        tuple->setVariableValue("bot_cluster_z", bot_cluster->getPosition()[2]);
+
     } 
     tuple->fill();
 }
