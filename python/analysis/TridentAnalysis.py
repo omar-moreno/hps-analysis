@@ -91,9 +91,11 @@ class TridentAnalysis :
         ax.grid(which='minor', alpha=0.2)                                                
         ax.grid(which='major', alpha=0.5)        
         
-        ax.errorbar(sel_eff, 100 - np.array(rej_eff), marker='None', linestyle='-')
+        ax.errorbar(100 - np.array(rej_eff), sel_eff, marker='None', linestyle='-')
         ax.set_xlabel("Selection Efficiency (\%)")
         ax.set_ylabel("Rejection Efficiency (\%)")
+        ax.set_xlim(0, 100)
+        ax.set_ylim(0, 100)
         
 
     def plt_sig_bkg(self, ax, signal, bkg, min, max, step, invert) :
@@ -124,11 +126,40 @@ class TridentAnalysis :
         results = rnp.root2array(root_file, "results")
 
         cuts = results['electron_cluster_time'] != -9999
-        self.electron_cluster_time = results['electron_cluster_time'][cuts]
         self.electron_chi2 = results['electron_chi2'][cuts]
         self.electron_p = results['electron_p'][cuts]
-        
+        self.electron_time = results['electron_time'][cuts]
+       
+        self.electron_cluster_time = results['electron_cluster_time'][cuts]
+        self.electron_cluster_x = results['electron_cluster_x'][cuts]
+        self.electron_cluster_y = results['electron_cluster_y'][cuts]
+        self.electron_cluster_z = results['electron_cluster_z'][cuts]
+
+        self.positron_p = results['positron_p'][cuts]
+        self.positron_time = results['positron_time'][cuts]
+       
         self.positron_cluster_time = results['positron_cluster_time'][cuts]
+        self.positron_cluster_x = results['positron_cluster_x'][cuts]
+        self.positron_cluster_y = results['positron_cluster_y'][cuts]
+        self.positron_cluster_z = results['positron_cluster_z'][cuts]
+
+        self.top_chi2 = results['top_chi2'][cuts]
+        self.top_p = results['top_p'][cuts]
+        self.top_time = results['top_time'][cuts]
+       
+        self.top_cluster_time = results['top_cluster_time'][cuts]
+        self.top_cluster_x = results['top_cluster_x'][cuts]
+        self.top_cluster_y = results['top_cluster_y'][cuts]
+        self.top_cluster_z = results['top_cluster_z'][cuts]
+
+        self.bot_p = results['bot_p'][cuts]
+        self.bot_time = results['bot_time'][cuts]
+       
+        self.bot_cluster_time = results['bot_cluster_time'][cuts]
+        self.bot_cluster_x = results['bot_cluster_x'][cuts]
+        self.bot_cluster_y = results['bot_cluster_y'][cuts]
+        self.bot_cluster_z = results['bot_cluster_z'][cuts]
+
 
         self.v_chi2 = results['v_chi2'][cuts]
 
@@ -140,114 +171,127 @@ class TridentAnalysis :
         #self.p_py = np.append(self.p_py, results["positron_py"])
     
     def process(self) :
-
-        cluster_time_diff = self.electron_cluster_time - self.positron_cluster_time
-        acc_cut = np.abs(cluster_time_diff) > 3
-        sig_cut_1pt0 = np.abs(cluster_time_diff) < 1
-        sig_cut_0pt5 = np.abs(cluster_time_diff) < 0.5
         
-        electron_cluster_time_acc = self.electron_cluster_time[acc_cut]
-        positron_cluster_time_acc = self.positron_cluster_time[acc_cut]
-        cluster_time_diff_acc = electron_cluster_time_acc - positron_cluster_time_acc
+        # Define signal and background region
+        cluster_time_diff = self.top_cluster_time - self.bot_cluster_time 
+        acc_cut = np.abs(cluster_time_diff) > 3
+        sig_cut = np.abs(cluster_time_diff) < 1
+       
+        top_cluster_time_acc = self.top_cluster_time[acc_cut]
+        bot_cluster_time_acc = self.bot_cluster_time[acc_cut]
+        cluster_time_diff_acc = top_cluster_time_acc - bot_cluster_time_acc
+        
+        electron_time_acc = self.electron_time[acc_cut]
+        electron_track_cluster_time_diff_acc = electron_time_acc - top_cluster_time_acc
+        positron_time_acc = self.positron_time[acc_cut]
+        positron_track_cluster_time_diff_acc = positron_time_acc - bot_cluster_time_acc
         electron_chi2_acc = self.electron_chi2[acc_cut]
         electron_p_acc = self.electron_p[acc_cut]
         v_chi2_acc = self.v_chi2[acc_cut]
         
-        electron_cluster_time_real_1pt0 = self.electron_cluster_time[sig_cut_1pt0]
-        positron_cluster_time_real_1pt0 = self.positron_cluster_time[sig_cut_1pt0]
-        cluster_time_diff_real_1pt0 = electron_cluster_time_real_1pt0 - positron_cluster_time_real_1pt0
-        electron_chi2_real_1pt0 = self.electron_chi2[sig_cut_1pt0]
-        electron_p_real_1pt0 = self.electron_p[sig_cut_1pt0]
-        v_chi2_real_1pt0 = self.v_chi2[sig_cut_1pt0]
+        top_cluster_time_sig = self.top_cluster_time[sig_cut]
+        bot_cluster_time_sig = self.bot_cluster_time[sig_cut]
+        cluster_time_diff_sig = top_cluster_time_sig - bot_cluster_time_sig
 
-        electron_cluster_time_real_0pt5 = self.electron_cluster_time[sig_cut_0pt5]
-        positron_cluster_time_real_0pt5 = self.positron_cluster_time[sig_cut_0pt5]
-        cluster_time_diff_real_0pt5 = electron_cluster_time_real_0pt5 - positron_cluster_time_real_0pt5
-        electron_chi2_real_0pt5 = self.electron_chi2[sig_cut_0pt5]
-        electron_p_real_0pt5 = self.electron_p[sig_cut_0pt5]
-        v_chi2_real_0pt5 = self.v_chi2[sig_cut_0pt5]
+        electron_time_sig = self.electron_time[sig_cut]
+        electron_track_cluster_time_diff_sig = electron_time_sig - top_cluster_time_sig
+        
+        positron_time_sig = self.positron_time[sig_cut]
+        positron_track_cluster_time_diff_sig = positron_time_sig - bot_cluster_time_sig
+        
+        electron_chi2_sig = self.electron_chi2[sig_cut]
+        electron_p_sig = self.electron_p[sig_cut]
+
+        v_chi2_sig = self.v_chi2[sig_cut]
 
         with PdfPages("trident_plots.pdf") as pdf :
 
             fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(7.5, 7.5))   
 
             bins = np.linspace(-10, 10, 201)
-            fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(7.5, 7.5))   
             ax.hist(cluster_time_diff, bins, histtype="step", label="All")
             ax.hist(cluster_time_diff_acc, bins, histtype="step", label="$\Delta t >$ 3 ns")
-            ax.hist(cluster_time_diff_real_1pt0, bins, histtype="step", label="$\Delta t <$ 1.0 ns")
-            ax.hist(cluster_time_diff_real_0pt5, bins, histtype="step", label="$\Delta t <$ 0.5 ns")
-            ax.set_xlabel("Electron cluster time - Positron cluster time (ns)")
+            ax.hist(cluster_time_diff_sig, bins, histtype="step", label="$\Delta t <$ 1.0 ns")
+            ax.set_xlabel("Top cluster time - Bottom cluster time (ns)")
             ax.legend()
             pdf.savefig()
             plt.close()
 
             fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(7.5, 7.5))  
 
+            bins_x = np.linspace(0, 1.5, 151)
+            bins_y = np.linspace(0, 80, 161)
+            ax.hist2d(self.top_p, self.top_cluster_time, bins=[bins_x, bins_y])
+            pdf.savefig()
+            plt.close()
+           
+            fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(7.5, 7.5))  
+
+            bins_x = np.linspace(0, 1.5, 151)
+            bins_y = np.linspace(0, 80, 161)
+            ax.hist2d(self.bot_p, self.bot_cluster_time, bins=[bins_x, bins_y])
+            pdf.savefig()
+            plt.close()
+
+            fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(7.5, 7.5))  
+
             bins = np.linspace(0, 180, 361)
-            ax.hist(self.electron_cluster_time, bins, histtype="step", label="All")
-            ax.hist(electron_cluster_time_acc, bins, histtype="step", label="$\Delta t >$ 3 ns")
-            ax.hist(electron_cluster_time_real_1pt0, bins, histtype="step", label="$\Delta t >$ 1.0 ns")
-            ax.hist(electron_cluster_time_real_0pt5, bins, histtype="step", label="$\Delta t >$ 0.5 ns")
-            ax.set_xlabel("Electron cluster time (ns)")
+            ax.hist(self.top_cluster_time, bins, histtype="step", label="All")
+            ax.hist(top_cluster_time_acc, bins, histtype="step", label="$\Delta t >$ 3 ns")
+            ax.hist(top_cluster_time_sig, bins, histtype="step", label="$\Delta t >$ 1.0 ns")
+            ax.set_xlabel("Top cluster time (ns)")
             ax.legend()
             pdf.savefig()
             plt.close()
            
             fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(7.5, 7.5))   
 
-            sel_eff_1pt0 = self.plt_sel_eff(ax, electron_cluster_time_real_1pt0, electron_cluster_time_acc, 0, 180, 2, False)
-            print sel_eff_1pt0
-            sel_eff_1pt0_invert = self.plt_sel_eff(ax, electron_cluster_time_real_1pt0, electron_cluster_time_acc, 0, 180, 0.0625, True)
-            sel_eff_0pt5 = self.plt_sel_eff(ax, electron_cluster_time_real_0pt5, electron_cluster_time_acc, 0, 180, 0.0625, False)
-            sel_eff_0pt5_invert = self.plt_sel_eff(ax, electron_cluster_time_real_0pt5, electron_cluster_time_acc, 0, 180, 0.0625, True)
-            ax.set_xlabel("Electron cluster time (ns)")
+            sel_eff_1pt0 = self.plt_sel_eff(ax, top_cluster_time_sig, top_cluster_time_acc, 0, 180, 2, False)
+            sel_eff_1pt0_invert = self.plt_sel_eff(ax, top_cluster_time_sig, top_cluster_time_acc, 0, 180, 0.0625, True)
+            ax.set_xlabel("Top cluster time (ns)")
             pdf.savefig()
             plt.close()
 
             fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(7.5, 7.5))   
 
-            rej_eff_1pt0 = self.plt_rej_eff(ax, electron_cluster_time_real_1pt0, electron_cluster_time_acc, 0, 180, 2, False)
-            print rej_eff_1pt0
-            rej_eff_1pt0_invert = self.plt_rej_eff(ax, electron_cluster_time_real_1pt0, electron_cluster_time_acc, 0, 180, 0.0625, True)
-            rej_eff_0pt5 = self.plt_rej_eff(ax, electron_cluster_time_real_0pt5, electron_cluster_time_acc, 0, 180, 0.0625, False)
-            rej_eff_0pt5_invert = self.plt_rej_eff(ax, electron_cluster_time_real_0pt5, electron_cluster_time_acc, 0, 180, 0.0625, True)
-            ax.set_xlabel("Electron cluster time (ns)")
+            rej_eff_1pt0 = self.plt_rej_eff(ax, top_cluster_time_sig, top_cluster_time_acc, 0, 180, 2, False)
+            rej_eff_1pt0_invert = self.plt_rej_eff(ax, top_cluster_time_sig, top_cluster_time_acc, 0, 180, 0.0625, True)
+            ax.set_xlabel("Top cluster time (ns)")
             pdf.savefig()
             plt.close()
 
             fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(7.5, 7.5))   
             
             self.plt_roc_curve(ax, sel_eff_1pt0, rej_eff_1pt0)
-            self.plt_roc_curve(ax, sel_eff_0pt5, rej_eff_0pt5)
             pdf.savefig()
             plt.close()
 
             fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(7.5, 7.5))   
             
             self.plt_roc_curve(ax, sel_eff_1pt0_invert, rej_eff_1pt0_invert)
-            self.plt_roc_curve(ax, sel_eff_0pt5_invert, rej_eff_0pt5_invert)
             pdf.savefig()
             plt.close()
 
             fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(7.5, 7.5))   
             
-            self.plt_sig_bkg(ax, electron_cluster_time_real_1pt0, electron_cluster_time_acc, 20, 60, 0.0625, False)
-            self.plt_sig_bkg(ax, electron_cluster_time_real_1pt0, electron_cluster_time_acc, 20, 60, 0.0625, True)
-            self.plt_sig_bkg(ax, electron_cluster_time_real_0pt5, electron_cluster_time_acc, 20, 60, 0.0625, False)
-            self.plt_sig_bkg(ax, electron_cluster_time_real_0pt5, electron_cluster_time_acc, 20, 60, 0.0625, True)
+            self.plt_sig_bkg(ax, top_cluster_time_sig, top_cluster_time_acc, 20, 60, 0.0625, False)
+            self.plt_sig_bkg(ax, top_cluster_time_sig, top_cluster_time_acc, 20, 60, 0.0625, True)
             ax.set_xlabel("Electron cluster time (ns)")
             pdf.savefig()
             plt.close()
 
 
+
+            #
+            # Positron cluster time
+            #
+
             fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(7.5, 7.5))   
 
             bins = np.linspace(0, 180, 361)
-            ax.hist(self.positron_cluster_time, bins, histtype="step", label="All")
-            ax.hist(positron_cluster_time_acc, bins, histtype="step", label="$\Delta t >$ 3 ns")
-            ax.hist(positron_cluster_time_real_1pt0, bins, histtype="step", label="$\Delta t >$ 1.0 ns")
-            ax.hist(positron_cluster_time_real_0pt5, bins, histtype="step", label="$\Delta t >$ 0.5 ns")
+            ax.hist(self.bot_cluster_time, bins, histtype="step", label="All")
+            ax.hist(bot_cluster_time_acc, bins, histtype="step", label="$\Delta t >$ 3 ns")
+            ax.hist(bot_cluster_time_sig, bins, histtype="step", label="$\Delta t >$ 1.0 ns")
             ax.set_xlabel("Positron cluster time (ns)")
             ax.legend()
             pdf.savefig()
@@ -255,20 +299,16 @@ class TridentAnalysis :
 
             fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(7.5, 7.5))   
            
-            sel_eff_1pt0 = self.plt_sel_eff(ax, positron_cluster_time_real_1pt0, positron_cluster_time_acc, 20, 60, 0.0625, False)
-            sel_eff_1pt0_invert = self.plt_sel_eff(ax, positron_cluster_time_real_1pt0, positron_cluster_time_acc, 20, 60, 0.0625, True)
-            sel_eff_0pt5 = self.plt_sel_eff(ax, positron_cluster_time_real_0pt5, positron_cluster_time_acc, 20, 60, 0.0625, False)
-            sel_eff_0pt5_invert = self.plt_sel_eff(ax, positron_cluster_time_real_0pt5, positron_cluster_time_acc, 20, 60, 0.0625, True)
+            sel_eff_1pt0 = self.plt_sel_eff(ax, bot_cluster_time_sig, bot_cluster_time_acc, 20, 60, 0.0625, False)
+            sel_eff_1pt0_invert = self.plt_sel_eff(ax, bot_cluster_time_sig, bot_cluster_time_acc, 20, 60, 0.0625, True)
             ax.set_xlabel("Positron cluster time (ns)")
             pdf.savefig()
             plt.close()
 
             fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(7.5, 7.5))   
             
-            rej_eff_1pt0 = self.plt_rej_eff(ax, positron_cluster_time_real_1pt0, positron_cluster_time_acc, 20, 60, 0.0625, False)
-            rej_eff_1pt0_invert = self.plt_rej_eff(ax, positron_cluster_time_real_1pt0, positron_cluster_time_acc, 20, 60, 0.0625, True)
-            rej_eff_0pt5 = self.plt_rej_eff(ax, positron_cluster_time_real_0pt5, positron_cluster_time_acc, 20, 60, 0.0625, False)
-            rej_eff_0pt5_invert = self.plt_rej_eff(ax, positron_cluster_time_real_0pt5, positron_cluster_time_acc, 20, 60, 0.0625, True)
+            rej_eff_1pt0 = self.plt_rej_eff(ax, bot_cluster_time_sig, bot_cluster_time_acc, 20, 60, 0.0625, False)
+            rej_eff_1pt0_invert = self.plt_rej_eff(ax, bot_cluster_time_sig, bot_cluster_time_acc, 20, 60, 0.0625, True)
             ax.set_xlabel("Positron cluster time (ns)")
             pdf.savefig()
             plt.close()
@@ -276,23 +316,19 @@ class TridentAnalysis :
             fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(7.5, 7.5))   
             
             self.plt_roc_curve(ax, sel_eff_1pt0, rej_eff_1pt0)
-            self.plt_roc_curve(ax, sel_eff_0pt5, rej_eff_0pt5)
             pdf.savefig()
             plt.close()
 
             fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(7.5, 7.5))   
             
             self.plt_roc_curve(ax, sel_eff_1pt0_invert, rej_eff_1pt0_invert)
-            self.plt_roc_curve(ax, sel_eff_0pt5_invert, rej_eff_0pt5_invert)
             pdf.savefig()
             plt.close()
 
             fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(7.5, 7.5))   
             
-            self.plt_sig_bkg(ax, positron_cluster_time_real_1pt0, positron_cluster_time_acc, 20, 60, 0.0625, False)
-            self.plt_sig_bkg(ax, positron_cluster_time_real_1pt0, positron_cluster_time_acc, 20, 60, 0.0625, True)
-            self.plt_sig_bkg(ax, positron_cluster_time_real_0pt5, positron_cluster_time_acc, 20, 60, 0.0625, False)
-            self.plt_sig_bkg(ax, positron_cluster_time_real_0pt5, positron_cluster_time_acc, 20, 60, 0.0625, True)
+            self.plt_sig_bkg(ax, bot_cluster_time_sig, bot_cluster_time_acc, 20, 60, 0.0625, False)
+            self.plt_sig_bkg(ax, bot_cluster_time_sig, bot_cluster_time_acc, 20, 60, 0.0625, True)
             ax.set_xlabel("Positron cluster time (ns)")
             ax.legend()
             pdf.savefig()
@@ -303,8 +339,7 @@ class TridentAnalysis :
             bins = np.linspace(0, 100, 101)
             plt.hist(self.electron_chi2, bins, histtype="step", label="All")
             ax.hist(electron_chi2_acc, bins, histtype="step", label="$\Delta t >$ 3 ns")
-            ax.hist(electron_chi2_real_1pt0, bins, histtype="step", label="$\Delta t >$ 1.0 ns")
-            ax.hist(electron_chi2_real_0pt5, bins, histtype="step", label="$\Delta t >$ 0.5 ns")
+            ax.hist(electron_chi2_sig, bins, histtype="step", label="$\Delta t >$ 1.0 ns")
             ax.set_xlabel("Electron $\chi^2$")
             ax.legend()
             pdf.savefig()
@@ -312,15 +347,13 @@ class TridentAnalysis :
 
             fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(7.5, 7.5))   
             
-            sel_eff_1pt0 = self.plt_sel_eff(ax, electron_chi2_real_1pt0, electron_chi2_acc, 1, 100, .5, False)
-            sel_eff_0pt5 = self.plt_sel_eff(ax, electron_chi2_real_0pt5, electron_chi2_acc, 1, 100, .5, False)
+            sel_eff_1pt0 = self.plt_sel_eff(ax, electron_chi2_sig, electron_chi2_acc, 1, 100, .5, False)
             ax.set_xlabel("Electron $\chi^2$")
             ax.legend()
             pdf.savefig()
             plt.close()
 
-            rej_eff_1pt0 = self.plt_rej_eff(ax, electron_chi2_real_1pt0, electron_chi2_acc, 1, 100, .5, False)
-            rej_eff_0pt5 = self.plt_rej_eff(ax, electron_chi2_real_0pt5, electron_chi2_acc, 1, 100, .5, False)
+            rej_eff_1pt0 = self.plt_rej_eff(ax, electron_chi2_sig, electron_chi2_acc, 1, 100, .5, False)
             ax.set_xlabel("Electron $\chi^2$")
             ax.legend()
             pdf.savefig()
@@ -329,15 +362,13 @@ class TridentAnalysis :
             fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(7.5, 7.5))   
             
             self.plt_roc_curve(ax, sel_eff_1pt0, rej_eff_1pt0)
-            self.plt_roc_curve(ax, sel_eff_0pt5, rej_eff_0pt5)
             pdf.savefig()
             plt.close()
 
 
             fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(7.5, 7.5))   
             
-            self.plt_sig_bkg(ax, electron_chi2_real_1pt0, electron_chi2_acc, 1, 100, .5, False)
-            self.plt_sig_bkg(ax, electron_chi2_real_0pt5, electron_chi2_acc, 1, 100, .5, False)
+            self.plt_sig_bkg(ax, electron_chi2_sig, electron_chi2_acc, 1, 100, .5, False)
             ax.set_xlabel("Electron $\chi^2$")
             ax.legend()
             pdf.savefig()
@@ -352,8 +383,7 @@ class TridentAnalysis :
             bins = np.linspace(0, 1.5, 151)
             ax.hist(self.electron_p, bins, histtype="step", label="All")
             ax.hist(electron_p_acc, bins, histtype="step", label="$\Delta t >$ 3 ns")
-            ax.hist(electron_p_real_1pt0, bins, histtype="step", label="$\Delta t >$ 1.0 ns")
-            ax.hist(electron_p_real_0pt5, bins, histtype="step", label="$\Delta t >$ 0.5 ns")
+            ax.hist(electron_p_sig, bins, histtype="step", label="$\Delta t >$ 1.0 ns")
             ax.set_xlabel("$p(e^-)$ (GeV)")
             ax.legend()
             pdf.savefig()
@@ -361,8 +391,7 @@ class TridentAnalysis :
 
             fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(7.5, 7.5))   
             
-            sel_eff_1pt0 = self.plt_sel_eff(ax, electron_p_real_1pt0, electron_p_acc, .1, 1.4, .05, False)
-            sel_eff_0pt5 = self.plt_sel_eff(ax, electron_p_real_0pt5, electron_p_acc, .1, 1.4, .05, False)
+            sel_eff_1pt0 = self.plt_sel_eff(ax, electron_p_sig, electron_p_acc, .1, 1.4, .05, False)
             ax.set_xlabel("$p(e^-)$ (GeV)")
             ax.legend()
             pdf.savefig()
@@ -370,8 +399,7 @@ class TridentAnalysis :
 
             fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(7.5, 7.5))   
             
-            rej_eff_1pt0 = self.plt_rej_eff(ax, electron_p_real_1pt0, electron_p_acc, .1, 1.4, .05, False)
-            rej_eff_0pt5 = self.plt_rej_eff(ax, electron_p_real_0pt5, electron_p_acc, .1, 1.4, .05, False)
+            rej_eff_1pt0 = self.plt_rej_eff(ax, electron_p_sig, electron_p_acc, .1, 1.4, .05, False)
             ax.set_xlabel("$p(e^-)$ (GeV)")
             ax.legend()
             pdf.savefig()
@@ -380,14 +408,12 @@ class TridentAnalysis :
             fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(7.5, 7.5))   
             
             self.plt_roc_curve(ax, sel_eff_1pt0, rej_eff_1pt0)
-            self.plt_roc_curve(ax, sel_eff_0pt5, rej_eff_0pt5)
             pdf.savefig()
             plt.close()
 
             fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(7.5, 7.5))   
             
-            self.plt_sig_bkg(ax, electron_p_real_1pt0, electron_p_acc, .1, 1.4, .05, False)
-            self.plt_sig_bkg(ax, electron_p_real_0pt5, electron_p_acc, .1, 1.4, .05, False)
+            self.plt_sig_bkg(ax, electron_p_sig, electron_p_acc, .1, 1.4, .05, False)
             ax.set_xlabel("$p(e^-)$ (GeV)")
             ax.legend()
             pdf.savefig()
@@ -402,8 +428,7 @@ class TridentAnalysis :
             bins = np.linspace(0, 50, 51)
             ax.hist(self.v_chi2, bins, histtype="step", label="All")
             ax.hist(v_chi2_acc, bins, histtype="step", label="$\Delta t >$ 3 ns")
-            ax.hist(v_chi2_real_1pt0, bins, histtype="step", label="$\Delta t >$ 1.0 ns")
-            ax.hist(v_chi2_real_0pt5, bins, histtype="step", label="$\Delta t >$ 0.5 ns")
+            ax.hist(v_chi2_sig, bins, histtype="step", label="$\Delta t >$ 1.0 ns")
             ax.set_xlabel("Target-constrained vertex $\chi^2$")
             ax.legend()
             pdf.savefig()
@@ -411,8 +436,7 @@ class TridentAnalysis :
 
             fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(7.5, 7.5))   
             
-            sel_eff_1pt0 = self.plt_sel_eff(ax, v_chi2_real_1pt0, v_chi2_acc, 1, 50, .5, False)
-            sel_eff_0pt5 = self.plt_sel_eff(ax, v_chi2_real_0pt5, v_chi2_acc, 1, 50, .5, False)
+            sel_eff_1pt0 = self.plt_sel_eff(ax, v_chi2_sig, v_chi2_acc, 1, 50, .5, False)
             ax.set_xlabel("Target-constrained vertex $\chi^2$")
             ax.legend()
             pdf.savefig()
@@ -420,8 +444,7 @@ class TridentAnalysis :
 
             fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(7.5, 7.5))   
             
-            rej_eff_1pt0 = self.plt_rej_eff(ax, v_chi2_real_1pt0, v_chi2_acc, 1, 50, .5, False)
-            rej_eff_0pt5 = self.plt_rej_eff(ax, v_chi2_real_0pt5, v_chi2_acc, 1, 50, .5, False)
+            rej_eff_1pt0 = self.plt_rej_eff(ax, v_chi2_sig, v_chi2_acc, 1, 50, .5, False)
             ax.set_xlabel("Target-constrained vertex $\chi^2$")
             ax.legend()
             pdf.savefig()
@@ -430,14 +453,12 @@ class TridentAnalysis :
             fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(7.5, 7.5))   
             
             self.plt_roc_curve(ax, sel_eff_1pt0, rej_eff_1pt0)
-            self.plt_roc_curve(ax, sel_eff_0pt5, rej_eff_0pt5)
             pdf.savefig()
             plt.close()
 
             fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(7.5, 7.5))   
             
-            self.plt_sig_bkg(ax, v_chi2_real_1pt0, v_chi2_acc, 1, 50, .5, False)
-            self.plt_sig_bkg(ax, v_chi2_real_0pt5, v_chi2_acc, 1, 50, .5, False)
+            self.plt_sig_bkg(ax, v_chi2_sig, v_chi2_acc, 1, 50, .5, False)
             ax.set_xlabel("Target-constrained vertex $\chi^2$")
             ax.legend()
             pdf.savefig()
