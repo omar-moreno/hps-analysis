@@ -12,7 +12,7 @@
 
 void TridentDataAnalysis::processEvent(HpsEvent* event) { 
 
-    // Only look at pairs1 triggers.
+    // Only look at pair1 triggers.
     if (!event->isPair1Trigger()) return;
     ++trigger_count;
 
@@ -27,10 +27,22 @@ void TridentDataAnalysis::processEvent(HpsEvent* event) {
 
     // Skip events that had SVT header errors.
     if (event->hasSvtEventHeaderErrors()) return;
-    ++svt_event_count;
+    ++svt_quality_count;
 
     // Use the base class to process the event. 
     TridentAnalysis::processEvent(event); 
+}
+
+void TridentDataAnalysis::finalize() { 
+    std::cout << std::fixed;
+    std::cout << "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" << std::endl;
+    std::cout << "%   Data Only  " << std::endl;
+    std::cout << "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" << std::endl;
+    std::cout << "% Trigger count: " << trigger_count << std::endl;
+    std::cout << "% SVT quality count: " << svt_quality_count << std::endl;
+    std::cout << "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" << std::endl;
+
+    TridentAnalysis::finalize();
 }
 
 std::string TridentDataAnalysis::toString() { 

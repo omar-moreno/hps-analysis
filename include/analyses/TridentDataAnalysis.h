@@ -28,6 +28,9 @@ class TridentDataAnalysis : public TridentAnalysis {
          */
         void processEvent(HpsEvent* event);
 
+        /** Finalize an HPS analysis. */
+        void finalize(); 
+
         /** @return A string representation of this analysis. */
         std::string toString(); 
 
@@ -37,7 +40,7 @@ class TridentDataAnalysis : public TridentAnalysis {
         double trigger_count{};
 
         /** Good SVT event count */
-        double svt_event_count{};
+        double svt_quality_count{};
 
 
 }; // TridentDataAnalysis
