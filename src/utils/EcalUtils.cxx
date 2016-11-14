@@ -1,75 +1,45 @@
 
 #include <EcalUtils.h>
 
-EcalUtils::EcalUtils() 
-    : tuple(new FlatTupleMaker("ecal_cluster_tuple.root", "results")),
-      event_count(0),  
-      delta_t_lower_bound(-2.0),
-      delta_t_upper_bound(2.0), 
-      coin_time(3.0) {
-   
-    this->init();
+EcalUtils::EcalUtils() { 
 }
 
 EcalUtils::~EcalUtils() { 
 }
 
 bool EcalUtils::hasGoodClusterPair(HpsParticle* particle) { 
-   
+
     // Get the daughter particles composing this particle. 
     TRefArray* daughter_particles = particle->getParticles();
-
+        
     // Check that the mother particle has exactly two daughters. If not, return
     // false.
     if (daughter_particles->GetEntriesFast() != 2) return false;
-    
+
     // Check that the two daughters have an Ecal cluster associated with them.
     // If not, return false.
     if (particle->getClusters()->GetEntriesFast() != 2) return false; 
-    
-    //=== DEBUG
-    //std::cout << "[ EcalUtils ]: Both daughters have clusters associated with them." << std::endl;
-    //=== DEBUG
-    
-    std::vector<EcalCluster*> clusters = { 
-        (EcalCluster*) ((HpsParticle*) particle->getClusters()->At(0)),
-        (EcalCluster*) ((HpsParticle*) particle->getClusters()->At(1))
-    };
-    
-    //=== DEBUG
-    //std::cout << "[ EcalUtils ]: Cluster position: [" << clusters[0]->getPosition()[0] << ", " 
-    //          << clusters[0]->getPosition()[1] << ", " 
-    //          << clusters[0]->getPosition()[2] << "]" << std::endl; 
-    //std::cout << "[ EcalUtils ]: Cluster position: [" << clusters[1]->getPosition()[0] << ", " 
-    //          << clusters[1]->getPosition()[1] << ", " 
-    //          << clusters[1]->getPosition()[2] << "]" << std::endl; 
-    //=== DEBUG
-   
+
+    double top_index = 0;
+    double bot_index = 1;
+    if (((EcalCluster*) ((HpsParticle*) particle->getClusters()->At(bot_index)))->getPosition()[1] > 0) { 
+        top_index = 1;
+        bot_index = 0;
+    }
+
+    EcalCluster* top{(EcalCluster*) ((HpsParticle*) particle->getClusters()->At(top_index))};
+    EcalCluster* bot{(EcalCluster*) ((HpsParticle*) particle->getClusters()->At(bot_index))};
+
     // Make sure the clusters are in opposite Ecal volumes. 
-    if (clusters[0]->getPosition()[1]*clusters[1]->getPosition()[1] > 0) {
-        //=== DEBUG
-        //std::cout << "[ EcalUtils ]: Clusters are in same detector volume." << std::endl;
-        //=== DEBUG
+    if (top->getPosition()[1]*bot->getPosition()[1] > 0) {
         return false;
     }
-    //=== DEBUG
-    //std::cout << "[ EcalUtils ]: Clusters are in opposite volumes." << std::endl;
-    //=== DEBUG
 
-    // Calculate the coincidence time between the two clusters.
-    //double delta_cluster_time = clusters[0]->getClusterTime() - clusters[1]->getClusterTime();
+    if (top->getClusterTime() < top_time_window_low_ || top->getClusterTime() > top_time_window_high_) return false; 
+    if (bot->getClusterTime() < bot_time_window_low_ || bot->getClusterTime() > bot_time_window_high_) return false; 
     
-    //=== DEBUG
-    //std::cout << "[ EcalUtils ]: Cluster dt: " << delta_cluster_time << std::endl;
-    //=== DEBUG
-   
-    // Check that the coincidence time between the two clusters is within some 
-    // specified time window. 
-    //if (abs(delta_cluster_time) >= coin_time) return false;
-    
-    //=== DEBUG
-    //std::cout << "[ EcalUtils ]: Clusters are coincident" << std::endl;
-    //=== DEBUG
+    double coin_time = top->getClusterTime() - bot->getClusterTime();
+    if (abs(coin_time) > coin_time_) return false;
 
     return true; 
 }
@@ -104,7 +74,7 @@ std::vector<EcalCluster*> EcalUtils::getClusterPair(HpsEvent* event) {
     // a pair if: 
     // 1) They are in opposite Ecal volumes i.e. top-bottom
     // 2) They are in coincidence within 1.6 ns.
-    double min_delta_t = 100;
+    /*double min_delta_t = 100;
     for (int first_index = 0; first_index < clusters.size(); ++first_index) {
         
         double cluster0_y = clusters[first_index]->getPosition()[1];
@@ -125,35 +95,11 @@ std::vector<EcalCluster*> EcalUtils::getClusterPair(HpsEvent* event) {
             cluster_pair[0] = clusters[first_index];
             cluster_pair[1] = clusters[second_index]; 
         } 
-    }
+    }*/
     
     //tuple->fill(); 
 
     return cluster_pair;     
-}
-
-void EcalUtils::init() { 
-
-    tuple->addVariable("cluster0_energy");
-    tuple->addVariable("cluster1_energy");
-    tuple->addVariable("cluster0_x");
-    tuple->addVariable("cluster0_y");
-    tuple->addVariable("cluster1_x");
-    tuple->addVariable("cluster1_y");
-    tuple->addVariable("cluster0_time");
-    tuple->addVariable("cluster1_time");
-    tuple->addVariable("event_n"); 
-    tuple->addVariable("n_clusters");
-    tuple->addVariable("n_pairs"); 
-    tuple->addVariable("pass_cluster_n_cut");
-
-    tuple->addVector("cluster_time");
-    tuple->addVector("cluster_pair_dt");
-    tuple->addVector("cluster_pair_energy_diff"); 
-    tuple->addVector("cluster_pair_energy_sum");
-    tuple->addVector("pass_cluster_time_cut");
-    tuple->addVector("pass_geo_cut");
-    tuple->addVector("pass_coin_cut");
 }
 
 /*

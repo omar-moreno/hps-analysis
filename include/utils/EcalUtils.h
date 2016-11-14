@@ -44,27 +44,17 @@ class EcalUtils {
          */
         bool hasGoodClusterPair(HpsParticle* particle); 
    
-        /** Close the tuple */ 
-        void saveTuple() { tuple->close(); };
-
         /** */
-        void setCoincidenceTime(double coin_time) { this->coin_time = coin_time; };  
+        void setCoincidenceTime(double coin_time) { coin_time = coin_time_; };  
 
     private:
   
-        void init(); 
+        double coin_time_{3.0}; 
 
-        FlatTupleMaker* tuple;
-
-        double event_count; 
-
-        /** */
-        double delta_t_lower_bound;
-        
-        /** */
-        double delta_t_upper_bound;
-
-        double coin_time;  
+        double top_time_window_low_{38.625};
+        double top_time_window_high_{46.8125}; 
+        double bot_time_window_low_{37.25};
+        double bot_time_window_high_{47.23}; 
 };
 
 #endif // __ECAL_UTILS_H__
