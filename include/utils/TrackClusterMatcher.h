@@ -59,7 +59,7 @@ class TrackClusterMatcher {
         /**
          *
          */
-        bool  isGoodMatch(HpsParticle* particle); 
+        bool  hasGoodMatch(HpsParticle* particle); 
 
         /**
          * Get a track that is matched to the given cluster.
