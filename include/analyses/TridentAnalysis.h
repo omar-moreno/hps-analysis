@@ -77,6 +77,9 @@ class TridentAnalysis : public HpsAnalysis {
         /** Total number of events with only a single positron. */
         double event_has_single_positron{0};
 
+        /** Total number of events with a good cluster pair */
+        double event_has_good_cluster_pair{0};
+
 }; // TridentAnalysis
 
 #endif // __TRIDENT_ANALYSIS_H__

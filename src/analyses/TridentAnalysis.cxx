@@ -153,8 +153,7 @@ void TridentAnalysis::processEvent(HpsEvent* event) {
     int n_particles{event->getNumberOfParticles(HpsParticle::TC_V0_CANDIDATE)};
 
     // Loop over the collection of target contrained V0 particles.
-    HpsParticle* v0{nullptr};
-    double min_v0_chi2 = 1000000000000;
+    std::vector<HpsParticle*> v0_cand; 
     for (int particle_n = 0; particle_n < n_particles; ++particle_n) { 
     
         // Get the nth V0 particle from the event.
@@ -162,26 +161,29 @@ void TridentAnalysis::processEvent(HpsEvent* event) {
 
         // Only consider particles that were created from GBL tracks.
         if (particle->getType() < 32) continue;
-        ++n_v0; 
+        ++n_v0;
 
-        // Require the two tracks associated with the v0 particle to be 
-        // oppositely charged.      
-        SvtTrack* first_track{(SvtTrack*) particle->getTracks()->At(0)};
-        SvtTrack* second_track{(SvtTrack*) particle->getTracks()->At(1)};
-        if (first_track->getCharge()*second_track->getCharge() == 1) continue;
+        if (!ecal_utils->hasGoodClusterPair(particle)) continue;
+        v0_cand.push_back(particle);
+    }
+    tuple->setVariableValue("n_v0", n_v0); 
+    
+    if (v0_cand.size() == 0) return;
+    event_has_good_cluster_pair++;
+
+    HpsParticle* v0{nullptr};
+    double min_v0_chi2 = 1000000000000;
+    for (HpsParticle* particle : v0_cand) { 
         
-        // Require the two tracks associated with the v0 particle to be in 
-        // opposite volumes.
-        if (first_track->getMomentum()[1]*second_track->getMomentum()[1] > 0) continue;
+        if (!matcher->hasGoodMatch(particle)) continue;
 
         // Only consider the v0 particle with the smallest chi2
         if (particle->getVertexFitChi2() > min_v0_chi2) continue;
 
         min_v0_chi2 = particle->getVertexFitChi2();
-        v0 = particle; 
+        v0 = particle;
     }
-    tuple->setVariableValue("n_v0", n_v0); 
-    
+
     // If a v0 particle wasn't found, don't continue processing the event.
     if (v0 == nullptr) {
         tuple->fill();
@@ -232,6 +234,7 @@ void TridentAnalysis::processEvent(HpsEvent* event) {
     tuple->setVariableValue("electron_py", electron->getMomentum()[1]); 
     tuple->setVariableValue("electron_pz", electron->getMomentum()[2]);
     tuple->setVariableValue("electron_time", electron->getTrackTime()); 
+    tuple->setVariableValue("positron_chi2", positron->getChi2());
     tuple->setVariableValue("positron_hit_n", positron->getSvtHits()->GetEntriesFast());
     tuple->setVariableValue("positron_p", positron_p);
     tuple->setVariableValue("positron_px", positron->getMomentum()[0]); 
@@ -264,6 +267,7 @@ void TridentAnalysis::processEvent(HpsEvent* event) {
     tuple->setVariableValue("top_py", top->getMomentum()[1]); 
     tuple->setVariableValue("top_pz", top->getMomentum()[2]);
     tuple->setVariableValue("top_time", top->getTrackTime()); 
+    tuple->setVariableValue("bot_chi2", bot->getChi2());
     tuple->setVariableValue("bot_hit_n", bot->getSvtHits()->GetEntriesFast());
     tuple->setVariableValue("bot_p", bot_p);
     tuple->setVariableValue("bot_px", bot->getMomentum()[0]); 
@@ -332,6 +336,7 @@ void TridentAnalysis::finalize() {
     std::cout << "% Total events with a track: " << event_has_track << std::endl;
     std::cout << "% Total events with a positron track: " << event_has_positron << std::endl;
     std::cout << "% Events with a single positron track: " << event_has_single_positron << std::endl;
+    std::cout << "% Events with a good cluster pair: " << event_has_good_cluster_pair << std::endl;
     std::cout << "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" << std::endl;
 }
 
