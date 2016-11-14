@@ -29,41 +29,75 @@ class TridentSelection :
 
         results = rnp.root2array(root_file, "results")
 
-        cuts = results['electron_cluster_time'] != -9999
+        cuts = results['electron_p'] != -9999
         self.electron_chi2 = results['electron_chi2'][cuts]
-        self.electron_p = results['electron_p'][cuts]
+        self.electron_p    = results['electron_p'][cuts]
         self.electron_time = results['electron_time'][cuts]
        
-        self.electron_cluster_time = results['electron_cluster_time'][cuts]
-        self.electron_cluster_x = results['electron_cluster_x'][cuts]
-        self.electron_cluster_y = results['electron_cluster_y'][cuts]
-        self.electron_cluster_z = results['electron_cluster_z'][cuts]
-
-        self.positron_p = results['positron_p'][cuts]
+        self.positron_p    = results['positron_p'][cuts]
+        self.positron_chi2 = results['positron_chi2'][cuts]
         self.positron_time = results['positron_time'][cuts]
+
+        self.p_sum = np.array(self.electron_p) + np.array(self.positron_p)
        
-        self.positron_cluster_time = results['positron_cluster_time'][cuts]
-        self.positron_cluster_x = results['positron_cluster_x'][cuts]
-        self.positron_cluster_y = results['positron_cluster_y'][cuts]
-        self.positron_cluster_z = results['positron_cluster_z'][cuts]
-
         self.v_chi2 = results['v_chi2'][cuts]
-
-        #self.mass = np.append(self.mass, results["invariant_mass"])
-        #self.v0_p = np.append(self.v0_p, results["v0_p"])
-        #self.e_p = np.append(self.e_p, results["electron_p"])
-        #self.p_p = np.append(self.p_p, results["positron_p"])
-        #self.e_py = np.append(self.e_py, results["electron_py"])
-        #self.p_py = np.append(self.p_py, results["positron_py"])
+        self.mass = results['invariant_mass'][cuts]
+        self.v0_p =results["v0_p"][cuts]
     
     def process(self) :
 
-        selection = self.electron_p < 0.8
+        chi2_cut      = (self.electron_chi2 < 40) & (self.positron_chi2 < 40)
+        fee_cut       = self.electron_p < 0.8
+        p_sum_cut     = self.v0_p < 1.2
+        radiative_cut = self.v0_p > 0.8
+        selection     = chi2_cut & fee_cut & p_sum_cut & radiative_cut
         
         with PdfPages("trident_selection.pdf") as pdf :
-        
+       
+            fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(7.5, 7.5))  
+            bins = np.linspace(0, 100, 101)
+            ax.hist(self.electron_chi2, bins, histtype="step")
+            ax.hist(self.electron_chi2[chi2_cut], bins, histtype="step")
+            ax.set_xlabel("$e^-$ $\chi^2$")
+            pdf.savefig()
+            plt.close()
+
+            fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(7.5, 7.5))  
+            bins = np.linspace(0, 100, 101)
+            ax.hist(self.positron_chi2, bins, histtype="step")
+            ax.hist(self.positron_chi2[chi2_cut], bins, histtype="step")
+            ax.set_xlabel("$e^+$ $\chi^2$")
+            pdf.savefig()
+            plt.close()
+
             fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(7.5, 7.5))   
             
             bins = np.linspace(0, 1.5, 151)
             ax.hist(self.electron_p, bins, histtype="step", label="All")
-            ax.hist(self.electron_p[selection], bins, histtype="step", label="$e(p) < 0.8")
+            ax.hist(self.electron_p[fee_cut], bins, histtype="step", label="$e(p) < 0.8")
+            pdf.savefig()
+            plt.close()
+
+            
+            fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(7.5, 7.5)) 
+            bins = np.linspace(0, 1.5, 151)
+            ax.hist(self.p_sum, bins, histtype="step", label="All")
+            ax.hist(self.p_sum[selection], bins, histtype="step", label="$e(p) < 0.8")
+            pdf.savefig()
+            plt.close()
+            
+            fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(7.5, 7.5)) 
+            bins = np.linspace(0, .1, 2001)
+            ax.hist(self.mass, bins, histtype="step")
+            ax.hist(self.mass[selection], bins, histtype="step")
+            pdf.savefig()
+            plt.close()
+
+            file = r.TFile("invariant_mass_final_selection.root", "recreate")
+            mass_histo = r.TH1F("invariant_mass", "invariant_mass", 2000, 0., 0.1)
+            for value in np.nditer(self.mass[selection]) : 
+                mass_histo.Fill(value)
+        
+            mass_histo.Write()
+            file.Close()
+
