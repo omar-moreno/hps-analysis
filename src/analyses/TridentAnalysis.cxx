@@ -29,6 +29,7 @@ void TridentAnalysis::initialize() {
     tuple->addVariable("n_positrons");
     tuple->addVariable("n_tracks");
     tuple->addVariable("n_v0");
+    tuple->addVariable("p_diff"); 
 
     //-----------------//
     //   V0 particle   //
@@ -47,6 +48,13 @@ void TridentAnalysis::initialize() {
     tuple->addVariable("electron_ep");
     tuple->addVariable("electron_hit_n");
     tuple->addVariable("electron_has_l1");
+    tuple->addVariable("electron_has_l2");
+    tuple->addVariable("electron_has_l3");
+    tuple->addVariable("electron_d0");
+    tuple->addVariable("electron_phi0");
+    tuple->addVariable("electron_omega");
+    tuple->addVariable("electron_tan_lambda");
+    tuple->addVariable("electron_z0");
     tuple->addVariable("electron_p");
     tuple->addVariable("electron_px"); 
     tuple->addVariable("electron_py"); 
@@ -66,6 +74,13 @@ void TridentAnalysis::initialize() {
     tuple->addVariable("positron_ep");
     tuple->addVariable("positron_hit_n");
     tuple->addVariable("positron_has_l1");
+    tuple->addVariable("positron_has_l2");
+    tuple->addVariable("positron_has_l3");
+    tuple->addVariable("positron_d0");
+    tuple->addVariable("positron_phi0");
+    tuple->addVariable("positron_omega");
+    tuple->addVariable("positron_tan_lambda");
+    tuple->addVariable("positron_z0");
     tuple->addVariable("positron_p"); 
     tuple->addVariable("positron_px"); 
     tuple->addVariable("positron_py"); 
@@ -85,6 +100,13 @@ void TridentAnalysis::initialize() {
     tuple->addVariable("top_ep");
     tuple->addVariable("top_hit_n");
     tuple->addVariable("top_has_l1");
+    tuple->addVariable("top_has_l2");
+    tuple->addVariable("top_has_l3");
+    tuple->addVariable("top_d0");
+    tuple->addVariable("top_phi0");
+    tuple->addVariable("top_omega");
+    tuple->addVariable("top_tan_lambda");
+    tuple->addVariable("top_z0");
     tuple->addVariable("top_p");
     tuple->addVariable("top_px"); 
     tuple->addVariable("top_py"); 
@@ -104,6 +126,13 @@ void TridentAnalysis::initialize() {
     tuple->addVariable("bot_ep");
     tuple->addVariable("bot_hit_n");
     tuple->addVariable("bot_has_l1");
+    tuple->addVariable("bot_has_l2");
+    tuple->addVariable("bot_has_l3");
+    tuple->addVariable("bot_d0");
+    tuple->addVariable("bot_phi0");
+    tuple->addVariable("bot_omega");
+    tuple->addVariable("bot_tan_lambda");
+    tuple->addVariable("bot_z0");
     tuple->addVariable("bot_p");
     tuple->addVariable("bot_px"); 
     tuple->addVariable("bot_py"); 
@@ -170,12 +199,15 @@ void TridentAnalysis::processEvent(HpsEvent* event) {
     
     if (v0_cand.size() == 0) return;
     event_has_good_cluster_pair++;
+    total_v0_good_cluster_pair += v0_cand.size();
 
     HpsParticle* v0{nullptr};
     double min_v0_chi2 = 1000000000000;
+    int n_v0_match{0};
     for (HpsParticle* particle : v0_cand) { 
         
         if (!matcher->hasGoodMatch(particle)) continue;
+        n_v0_match++; 
 
         // Only consider the v0 particle with the smallest chi2
         if (particle->getVertexFitChi2() > min_v0_chi2) continue;
@@ -183,7 +215,8 @@ void TridentAnalysis::processEvent(HpsEvent* event) {
         min_v0_chi2 = particle->getVertexFitChi2();
         v0 = particle;
     }
-
+    
+    total_v0_good_track_match += n_v0_match;
     // If a v0 particle wasn't found, don't continue processing the event.
     if (v0 == nullptr) {
         tuple->fill();
@@ -229,6 +262,11 @@ void TridentAnalysis::processEvent(HpsEvent* event) {
 
     tuple->setVariableValue("electron_chi2", electron->getChi2());
     tuple->setVariableValue("electron_hit_n", electron->getSvtHits()->GetEntriesFast());
+    tuple->setVariableValue("electron_d0", electron->getD0());
+    tuple->setVariableValue("electron_phi0", electron->getPhi0());
+    tuple->setVariableValue("electron_omega", electron->getOmega());
+    tuple->setVariableValue("electron_tan_lambda", electron->getTanLambda());
+    tuple->setVariableValue("electron_z0", electron->getZ0());
     tuple->setVariableValue("electron_p", electron_p);
     tuple->setVariableValue("electron_px", electron->getMomentum()[0]); 
     tuple->setVariableValue("electron_py", electron->getMomentum()[1]); 
@@ -236,25 +274,40 @@ void TridentAnalysis::processEvent(HpsEvent* event) {
     tuple->setVariableValue("electron_time", electron->getTrackTime()); 
     tuple->setVariableValue("positron_chi2", positron->getChi2());
     tuple->setVariableValue("positron_hit_n", positron->getSvtHits()->GetEntriesFast());
+    tuple->setVariableValue("positron_d0", positron->getD0());
+    tuple->setVariableValue("positron_phi0", positron->getPhi0());
+    tuple->setVariableValue("positron_omega", positron->getOmega());
+    tuple->setVariableValue("positron_tan_lambda", positron->getTanLambda());
+    tuple->setVariableValue("positron_z0", positron->getZ0());
     tuple->setVariableValue("positron_p", positron_p);
     tuple->setVariableValue("positron_px", positron->getMomentum()[0]); 
     tuple->setVariableValue("positron_py", positron->getMomentum()[1]); 
     tuple->setVariableValue("positron_time", positron->getTrackTime());
 
+    tuple->setVariableValue("p_diff", electron_p-positron_p);
+
     // Loop over all hits associated composing a track and check if it has a 
     // layer 1 hit.
     tuple->setVariableValue("electron_has_l1", 0);
+    tuple->setVariableValue("electron_has_l2", 0);
+    tuple->setVariableValue("electron_has_l3", 0);
     TRefArray* hits = electron->getSvtHits(); 
     for (int hit_index = 0; hit_index < hits->GetEntriesFast(); ++hit_index) { 
         SvtHit* hit = (SvtHit*) hits->At(hit_index); 
         if (hit->getLayer() == 1) tuple->setVariableValue("electron_has_l1", 1);
+        if (hit->getLayer() == 2) tuple->setVariableValue("electron_has_l2", 1);
+        if (hit->getLayer() == 3) tuple->setVariableValue("electron_has_l3", 1);
     }
 
     tuple->setVariableValue("positron_has_l1", 0);
+    tuple->setVariableValue("positron_has_l2", 0);
+    tuple->setVariableValue("positron_has_l3", 0);
     hits = positron->getSvtHits(); 
     for (int hit_index = 0; hit_index < hits->GetEntriesFast(); ++hit_index) { 
         SvtHit* hit = (SvtHit*) hits->At(hit_index); 
         if (hit->getLayer() == 1) tuple->setVariableValue("positron_has_l1", 1);
+        if (hit->getLayer() == 2) tuple->setVariableValue("positron_has_l2", 1);
+        if (hit->getLayer() == 3) tuple->setVariableValue("positron_has_l3", 1);
     }
 
     double top_p = AnalysisUtils::getMagnitude(top->getMomentum());
@@ -263,12 +316,22 @@ void TridentAnalysis::processEvent(HpsEvent* event) {
     tuple->setVariableValue("top_chi2", top->getChi2());
     tuple->setVariableValue("top_hit_n", top->getSvtHits()->GetEntriesFast());
     tuple->setVariableValue("top_p", top_p);
+    tuple->setVariableValue("top_d0", top->getD0());
+    tuple->setVariableValue("top_phi0", top->getPhi0());
+    tuple->setVariableValue("top_omega", top->getOmega());
+    tuple->setVariableValue("top_tan_lambda", top->getTanLambda());
+    tuple->setVariableValue("top_z0", top->getZ0());
     tuple->setVariableValue("top_px", top->getMomentum()[0]); 
     tuple->setVariableValue("top_py", top->getMomentum()[1]); 
     tuple->setVariableValue("top_pz", top->getMomentum()[2]);
     tuple->setVariableValue("top_time", top->getTrackTime()); 
     tuple->setVariableValue("bot_chi2", bot->getChi2());
     tuple->setVariableValue("bot_hit_n", bot->getSvtHits()->GetEntriesFast());
+    tuple->setVariableValue("bot_d0", bot->getD0());
+    tuple->setVariableValue("bot_phi0", bot->getPhi0());
+    tuple->setVariableValue("bot_omega", bot->getOmega());
+    tuple->setVariableValue("bot_tan_lambda", bot->getTanLambda());
+    tuple->setVariableValue("bot_z0", bot->getZ0());
     tuple->setVariableValue("bot_p", bot_p);
     tuple->setVariableValue("bot_px", bot->getMomentum()[0]); 
     tuple->setVariableValue("bot_py", bot->getMomentum()[1]); 
@@ -277,17 +340,25 @@ void TridentAnalysis::processEvent(HpsEvent* event) {
     // Loop over all hits associated composing a track and check if it has a 
     // layer 1 hit.
     tuple->setVariableValue("top_has_l1", 0);
+    tuple->setVariableValue("top_has_l2", 0);
+    tuple->setVariableValue("top_has_l3", 0);
     hits = top->getSvtHits(); 
     for (int hit_index = 0; hit_index < hits->GetEntriesFast(); ++hit_index) { 
         SvtHit* hit = (SvtHit*) hits->At(hit_index); 
         if (hit->getLayer() == 1) tuple->setVariableValue("top_has_l1", 1);
+        if (hit->getLayer() == 2) tuple->setVariableValue("top_has_l2", 1);
+        if (hit->getLayer() == 3) tuple->setVariableValue("top_has_l3", 1);
     }
 
     tuple->setVariableValue("bot_has_l1", 0);
+    tuple->setVariableValue("bot_has_l2", 0);
+    tuple->setVariableValue("bot_has_l3", 0);
     hits = bot->getSvtHits(); 
     for (int hit_index = 0; hit_index < hits->GetEntriesFast(); ++hit_index) { 
         SvtHit* hit = (SvtHit*) hits->At(hit_index); 
         if (hit->getLayer() == 1) tuple->setVariableValue("bot_has_l1", 1);
+        if (hit->getLayer() == 2) tuple->setVariableValue("bot_has_l2", 1);
+        if (hit->getLayer() == 3) tuple->setVariableValue("bot_has_l3", 1);
     }
 
 
@@ -337,6 +408,8 @@ void TridentAnalysis::finalize() {
     std::cout << "% Total events with a positron track: " << event_has_positron << std::endl;
     std::cout << "% Events with a single positron track: " << event_has_single_positron << std::endl;
     std::cout << "% Events with a good cluster pair: " << event_has_good_cluster_pair << std::endl;
+    std::cout << "% Total v0 particles with a good cluster pair: " << total_v0_good_cluster_pair << std::endl;
+    std::cout << "% Total v0 particles with a good track match: " << total_v0_good_track_match << std::endl;
     std::cout << "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" << std::endl;
 }
 

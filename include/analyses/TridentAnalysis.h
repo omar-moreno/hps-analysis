@@ -80,6 +80,10 @@ class TridentAnalysis : public HpsAnalysis {
         /** Total number of events with a good cluster pair */
         double event_has_good_cluster_pair{0};
 
+        double total_v0_good_cluster_pair{0}; 
+
+        double total_v0_good_track_match{0};
+
 }; // TridentAnalysis
 
 #endif // __TRIDENT_ANALYSIS_H__
