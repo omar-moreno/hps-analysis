@@ -85,17 +85,8 @@ class TrackClusterMatcher {
          */
         void useFieldMap(bool use_field_map = true) { this->use_field_map = use_field_map; }; 
 
-        /**
-         * Enable/disable booking, filling and saving of plots.
-         *
-         * @param enable_plots : true to enable, false to disable
-         */
-        void enablePlots(bool enable_plots = true) { this->enable_plots = enable_plots; }; 
-
-        /**
-         * Save the histograms to a ROOT file.
-         */
-        void saveHistograms(); 
+        /** Use loose track-cluster matching requirement. */
+        void useLooseSelection(bool loose_selection) { loose_selection_ = loose_selection; } 
 
     private:
 
@@ -138,6 +129,8 @@ class TrackClusterMatcher {
          * face found using the full field map should be used. 
          */
         bool use_field_map; 
+        
+        bool loose_selection_{false}; 
 };
 
 #endif // __TRACK_CLUSTER_MATCHER_H__
