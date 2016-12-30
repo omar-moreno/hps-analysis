@@ -35,6 +35,8 @@ bool EcalUtils::hasGoodClusterPair(HpsParticle* particle) {
         return false;
     }
 
+    if (loose_selection_) return true;
+
     if (top->getClusterTime() < top_time_window_low_ || top->getClusterTime() > top_time_window_high_) return false; 
     if (bot->getClusterTime() < bot_time_window_low_ || bot->getClusterTime() > bot_time_window_high_) return false; 
     
@@ -102,80 +104,3 @@ std::vector<EcalCluster*> EcalUtils::getClusterPair(HpsEvent* event) {
     return cluster_pair;     
 }
 
-/*
-void EcalUtils::bookHistograms() { 
-  
-    //   Ecal cluster pair energy   //
-    //------------------------------//
-
-    plotter->build2DHistogram("cluster pair energy", 50, 0, 1.5, 50, 0, 1.5);
-    plotter->get2DHistogram("cluster pair energy")->GetXaxis()->SetTitle("Ecal cluster energy (GeV)");
-    plotter->get2DHistogram("cluster pair energy")->GetYaxis()->SetTitle("Ecal cluster energy (GeV)");
-
-    plotter->build2DHistogram("cluster pair energy - cuts: fiducial", 50, 0, 1.5, 50, 0, 1.5);
-    plotter->get2DHistogram("cluster pair energy - cuts: fiducial")->GetXaxis()->SetTitle("Ecal cluster energy (GeV)");
-    plotter->get2DHistogram("cluster pair energy - cuts: fiducial")->GetYaxis()->SetTitle("Ecal cluster energy (GeV)");
-
-    plotter->build2DHistogram("cluster pair energy - cuts: fiducial, time", 50, 0, 1.5, 50, 0, 1.5);
-    plotter->get2DHistogram("cluster pair energy - cuts: fiducial, time")->GetXaxis()->SetTitle("Ecal cluster energy (GeV)");
-    plotter->get2DHistogram("cluster pair energy - cuts: fiducial, time")->GetYaxis()->SetTitle("Ecal cluster energy (GeV)");
-
-    plotter->build1DHistogram("cluster energy sum", 100, 0, 1.5)->GetXaxis()->SetTitle("Ecal cluster energy sum (GeV)"); 
-    plotter->build1DHistogram("cluster energy sum - cuts: fiducial", 100, 0, 1.5)->GetXaxis()->SetTitle("Ecal cluster energy sum (GeV)");
-    plotter->build1DHistogram("cluster energy sum - cuts: fiducial, time", 100, 0, 1.5)->GetXaxis()->SetTitle("Ecal cluster energy sum (GeV)"); 
-    
-    //   Ecal cluster pair time   //
-    //----------------------------//
-
-    plotter->build1DHistogram("cluster pair #Delta t", 80, -10, 10)->GetXaxis()->SetTitle("Cluster pair #Delta t (ns)");
-    plotter->build1DHistogram("cluster pair #Delta t - cuts: fiducial", 80, -10, 10)->GetXaxis()->SetTitle("Cluster pair #Delta t (ns)");
-    plotter->build1DHistogram("cluster pair #Delta t - cuts: fiducial, time", 80, -10, 10)->GetXaxis()->SetTitle("Cluster pair #Delta t (ns)");
-
-    plotter->build2DHistogram("cluster pair time", 250, 0, 125, 250, 0, 125);
-    plotter->get2DHistogram("cluster pair time")->GetXaxis()->SetTitle("Ecal cluster time (ns)");
-    plotter->get2DHistogram("cluster pair time")->GetYaxis()->SetTitle("Ecal cluster time (ns)");
-
-    plotter->build2DHistogram("cluster pair time - cuts: fiducial", 250, 0, 125, 250, 0, 125);
-    plotter->get2DHistogram("cluster pair time - cuts: fiducial")->GetXaxis()->SetTitle("Ecal cluster time (ns)");
-    plotter->get2DHistogram("cluster pair time - cuts: fiducial")->GetYaxis()->SetTitle("Ecal cluster time (ns)");
-    
-    plotter->build2DHistogram("cluster pair time - cuts: fiducial, time", 250, 0, 125, 250, 0, 125);
-    plotter->get2DHistogram("cluster pair time - cuts: fiducial, time")->GetXaxis()->SetTitle("Ecal cluster time (ns)");
-    plotter->get2DHistogram("cluster pair time - cuts: fiducial, time")->GetYaxis()->SetTitle("Ecal cluster time (ns)");
-
-    //   Ecal cluster position   //
-    //---------------------------//
-
-    plotter->build1DHistogram("cluster pair delta x", 200, -200, 200)->GetXaxis()->SetTitle("Ecal cluster pair delta x (mm)");
-    plotter->build1DHistogram("cluster pair delta x - cuts: fiducial", 200, -200, 200)->GetXaxis()->SetTitle("Ecal cluster pair delta x (mm)");
-    plotter->build1DHistogram("cluster pair delta x - cuts: fiducial, time", 200, -200, 200)->GetXaxis()->SetTitle("Ecal cluster pair delta x (mm)");
-
-    plotter->build1DHistogram("cluster pair x sum", 200, -300, -100)->GetXaxis()->SetTitle("Ecal cluster pair x sum (mm)");
-    plotter->build1DHistogram("cluster pair x sum - cuts: fiducial", 200, -300, -100)->GetXaxis()->SetTitle("Ecal cluster pair x sum (mm)");
-    plotter->build1DHistogram("cluster pair x sum - cuts: fiducial, time", 200, -300, 100)->GetXaxis()->SetTitle("Ecal cluster pair x sum (mm)");
-
-    plotter->build2DHistogram("cluster x vs cluster x", 200, -200, 200, 200, -200, 200);
-    plotter->get2DHistogram("cluster x vs cluster x")->GetYaxis()->SetTitle("Cluster position - x (mm)");
-    plotter->get2DHistogram("cluster x vs cluster x")->GetYaxis()->SetTitle("Cluster position - x (mm)");
-
-    plotter->build2DHistogram("cluster y vs cluster y", 200, -200, 200, 200, -200, 200);
-    plotter->get2DHistogram("cluster y vs cluster y")->GetYaxis()->SetTitle("Cluster position - y (mm)");
-    plotter->get2DHistogram("cluster y vs cluster y")->GetYaxis()->SetTitle("Cluster position - y (mm)");
-
-    plotter->build2DHistogram("cluster x vs cluster x - cuts: fiducial", 200, -200, 200, 200, -200, 200);
-    plotter->get2DHistogram("cluster x vs cluster x - cuts: fiducial")->GetYaxis()->SetTitle("Cluster position - x (mm)");
-    plotter->get2DHistogram("cluster x vs cluster x - cuts: fiducial")->GetYaxis()->SetTitle("Cluster position - x (mm)");
-
-    plotter->build2DHistogram("cluster y vs cluster y - cuts: fiducial", 200, -200, 200, 200, -200, 200);
-    plotter->get2DHistogram("cluster y vs cluster y - cuts: fiducial")->GetYaxis()->SetTitle("Cluster position - y (mm)");
-    plotter->get2DHistogram("cluster y vs cluster y - cuts: fiducial")->GetYaxis()->SetTitle("Cluster position - y (mm)");
-    
-    plotter->build2DHistogram("cluster x vs cluster x - cuts: fiducial, time", 200, -200, 200, 200, -200, 200);
-    plotter->get2DHistogram("cluster x vs cluster x - cuts: fiducial, time")->GetYaxis()->SetTitle("Cluster position - x (mm)");
-    plotter->get2DHistogram("cluster x vs cluster x - cuts: fiducial, time")->GetYaxis()->SetTitle("Cluster position - x (mm)");
-
-    plotter->build2DHistogram("cluster y vs cluster y - cuts: fiducial, time", 200, -200, 200, 200, -200, 200);
-    plotter->get2DHistogram("cluster y vs cluster y - cuts: fiducial, time")->GetYaxis()->SetTitle("Cluster position - y (mm)");
-    plotter->get2DHistogram("cluster y vs cluster y - cuts: fiducial, time")->GetYaxis()->SetTitle("Cluster position - y (mm)");
-
-}*/

@@ -45,7 +45,10 @@ class EcalUtils {
         bool hasGoodClusterPair(HpsParticle* particle); 
    
         /** */
-        void setCoincidenceTime(double coin_time) { coin_time = coin_time_; };  
+        void setCoincidenceTime(double coin_time) { coin_time_ = coin_time; } 
+
+        /** Use loose Ecal cluster selection. */
+        void useLooseSelection(bool loose_selection) { loose_selection_ = loose_selection; } 
 
     private:
   
@@ -54,7 +57,9 @@ class EcalUtils {
         double top_time_window_low_{38.625};
         double top_time_window_high_{46.8125}; 
         double bot_time_window_low_{37.25};
-        double bot_time_window_high_{47.23}; 
+        double bot_time_window_high_{47.23};
+
+        bool loose_selection_{false}; 
 };
 
 #endif // __ECAL_UTILS_H__

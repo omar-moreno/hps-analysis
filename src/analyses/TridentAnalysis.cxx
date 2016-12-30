@@ -144,10 +144,9 @@ void TridentAnalysis::initialize() {
     tuple->addVariable("bot_cluster_x");
     tuple->addVariable("bot_cluster_y");
     tuple->addVariable("bot_cluster_z");
-
-    // Enable track-cluster matching plots
-    matcher->enablePlots();
-    matcher->useFieldMap();  
+   
+    ecal_utils->useLooseSelection(true);
+    matcher->useLooseSelection(true);
 
     this->bookHistograms(); 
 }
