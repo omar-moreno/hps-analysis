@@ -56,6 +56,10 @@ class TridentAnalysis : public HpsAnalysis {
     
     private: 
 
+        std::map<GblTrack*, int> buildSharedHitMap(HpsEvent* event);
+
+        void printDebug(std::string message); 
+
         /** Utility used to create ROOT ntuples. */
         FlatTupleMaker* tuple{new FlatTupleMaker("trident_analysis.root", "results")}; 
 
@@ -80,9 +84,13 @@ class TridentAnalysis : public HpsAnalysis {
         /** Total number of events with a good cluster pair */
         double event_has_good_cluster_pair{0};
 
+        double _dumped_positron_count{0}; 
+
         double total_v0_good_cluster_pair{0}; 
 
         double total_v0_good_track_match{0};
+
+        bool _debug{false};
 
 }; // TridentAnalysis
 
