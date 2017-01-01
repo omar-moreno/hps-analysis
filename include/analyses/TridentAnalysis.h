@@ -58,6 +58,12 @@ class TridentAnalysis : public HpsAnalysis {
 
         std::map<GblTrack*, int> buildSharedHitMap(HpsEvent* event);
 
+        bool electronsShareHits(std::vector<HpsParticle*> particles, std::map<GblTrack*, int> shared_hit_map); 
+
+        HpsParticle* getBestElectronChi2(std::vector<HpsParticle*> particles);
+
+        bool passFeeCut(HpsParticle* particle); 
+
         void printDebug(std::string message); 
 
         /** Utility used to create ROOT ntuples. */
@@ -89,6 +95,8 @@ class TridentAnalysis : public HpsAnalysis {
         double total_v0_good_cluster_pair{0}; 
 
         double total_v0_good_track_match{0};
+
+        double _total_v0_pass_fee{0};
 
         bool _debug{false};
 
