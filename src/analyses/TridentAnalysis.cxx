@@ -256,6 +256,9 @@ void TridentAnalysis::processEvent(HpsEvent* event) {
         std::vector<double> p = v0->getMomentum(); 
         double v0_p = AnalysisUtils::getMagnitude(p); 
         tuple->setVariableValue("v0_p", v0_p); 
+        tuple->setVariableValue("v0_px", p[0]); 
+        tuple->setVariableValue("v0_py", p[1]); 
+        tuple->setVariableValue("v0_pz", p[2]); 
         tuple->setVariableValue("vx", v0->getVertexPosition()[0]);
         tuple->setVariableValue("vy", v0->getVertexPosition()[1]);
         tuple->setVariableValue("vz", v0->getVertexPosition()[2]);
