@@ -55,13 +55,21 @@ def apply_tri_selection(rec):
     plt.rc('text', usetex=True)
 
     electron_p      = rec['electron_p']
+    electron_px     = rec['electron_px']
+    electron_py     = rec['electron_py']
     electron_chi2   = rec['electron_chi2']
     electron_has_l1 = rec['electron_has_l1']
+    electron_pt = np.sqrt(np.power(electron_px, 2) + np.power(electron_py, 2))
     
     positron_p      = rec['positron_p']
+    positron_px     = rec['positron_px']
+    positron_py     = rec['positron_py']
     positron_chi2   = rec['positron_chi2']
+    positron_d0     = rec['positron_d0']
     positron_has_l1 = rec['positron_has_l1']
     positron_has_l2 = rec['positron_has_l2']
+
+    positron_pt = np.sqrt(np.power(positron_px, 2) + np.power(positron_py, 2))
 
     top_cluster_time  = rec['top_cluster_time']
     bot_cluster_time  = rec['bot_cluster_time']
@@ -88,12 +96,19 @@ def apply_tri_selection(rec):
     track_cluster_dt_cut = ((np.absolute(top_track_cluster_dt - 43) < 4.5) 
                             & (np.absolute(bot_track_cluster_dt - 43) < 4.5))
     cluster_time_diff_cut = np.absolute(cluster_time_diff) < 2
+    
+    base_selection = radiative_cut & v0_p & chi2_cut & cluster_time_cut
 
     # WABS
-    l1_cut = (positron_has_l1 == 1)
-    l2_cut = (positron_has_l2 == 1)
+    l1_cut      = (positron_has_l1 == 1)
+    l2_cut      = (positron_has_l2 == 1)
+    positron_d0_cut = positron_d0 < 1.1
+    asym = (electron_pt - positron_pt)/(electron_pt + positron_pt)
+    asym_cut = asym < .47
 
-    selection = radiative_cut & v0_p_cut & chi2_cut & track_cluster_dt_cut & cluster_time_diff_cut
+    wab_cuts = l1_cut & l2_cut & positron_d0_cut & asym_cut
+
+    selection = base_selection & wab_cuts
 
     with PdfPages("trident_selection.pdf") as pdf :
         
