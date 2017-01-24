@@ -544,6 +544,8 @@ def apply_tri_selection(rec):
                 label="$p_t(e^-) - p_t(e^+)/p_t(e^-) + p_t(e^+) < .47$")
         ax.set_xlabel("Invariant mass (GeV)")
         ax.legend(loc=1, framealpha=0.0, frameon=False)
+        ax.set_yscale("symlog")
+        ax.set_xlim(0, .1)
         pdf.savefig()
         plt.close()
            
