@@ -58,7 +58,7 @@ def plot_bkg(axes, bkg, bkg_err, bins, **params):
     ax[2].legend()
 
 def plot_ul(axes, ul, bins, label):
-    
+
     axes.hist(ul, bins, histtype='step', lw=1.5, label=label)
     axes.set_xlabel('Signal Upper Limit')
     axes.set_ylabel('AU')
@@ -110,6 +110,7 @@ def make_plots(rec):
 
     ap_mass    = rec['ap_mass']
     poly_order = rec['poly_order']
+    res_factor = rec['res_factor']
 
     bkg_yield     = rec['bkg_yield']
     bkg_yield_err = rec['bkg_yield_err']
@@ -121,9 +122,15 @@ def make_plots(rec):
 
     # Create a unique list of A' masses
     ap_masses = np.unique(ap_mass)
+    print ap_masses
 
     # Create a unique list of Polynomials
     polys = np.unique(poly_order)
+    print ap_masses
+
+    # Create a unique list of resolution factors
+    res_facs = np.unique(res_factor)
+    print res_facs
 
     bkg_mean = {}
     bkg_pull = {}
@@ -140,7 +147,7 @@ def make_plots(rec):
     for mass in ap_masses:
         bkg_figures[mass], bkg_axes[mass] = plt.subplots(nrows=1, ncols=3, figsize=(30, 10))
         bkg_figures[mass].suptitle("A' mass: %s GeV" %mass)
-        
+
         sig_figures[mass], sig_axes[mass] = plt.subplots(nrows=1, ncols=3, figsize=(30, 10))
         sig_figures[mass].suptitle("A' mass: %s GeV" % mass)
 
@@ -155,56 +162,78 @@ def make_plots(rec):
     with PdfPages("results.pdf") as pdf :
 
         for poly in polys:
-            
-            bkg_mean[poly] = []
-            bkg_pull[poly] = []
-            sig_mean[poly] = []
-            sig_pull[poly] = []
-            ul_mean[poly]  = []
 
-            for mass in ap_masses :
+            bkg_mean[poly] = {}
+            bkg_pull[poly] = {}
+            sig_mean[poly] = {}
+            sig_pull[poly] = {}
+            ul_mean[poly]  = {}
 
-                selection = (ap_mass == mass) & (poly_order == poly)
+            for res_fac in res_facs:
 
-                print "Processing A' mass: " + str(mass)
+                bkg_mean[poly][res_fac] = []
+                bkg_pull[poly][res_fac] = []
+                sig_mean[poly][res_fac] = []
+                sig_pull[poly][res_fac] = []
+                ul_mean[poly][res_fac]  = []
 
-                bkg = bkg_yield[selection]
-                bkg_err = bkg_yield_err[selection]
-                plot_bkg(bkg_axes[mass], bkg, bkg_err, 15, label=("poly order: %s" % poly))
-                bkg_mean[poly].append(np.mean(bkg))
-                bkg_pull[poly].append(np.mean((bkg - np.mean(bkg))/bkg_err))
+                for mass in ap_masses :
 
-                sig = sig_yield[selection]
-                sig_err = sig_yield_err[selection]
-                plot_sig(sig_axes[mass], sig, sig_err, 15, label=("poly order: %s" % poly))
-                sig_mean[poly].append(np.mean(sig))
-                sig_pull[poly].append(np.mean(sig/sig_err))
+                    selection = (ap_mass == mass) & (poly_order == poly) & (res_factor == res_fac)
 
-                plot_ul(ul_axes[mass], upper_limit[selection], 15, ("poly order: %s" % poly))
-                ul_mean[poly].append(np.mean(upper_limit[selection]))
+                    print "Processing A' mass: " + str(mass)
 
-            poly_ax[0].plot(ap_masses, bkg_mean[poly], 'o-', label=("poly order: %s" % poly))
-            poly_ax[0].set_xlabel("$A'$ mass hypothesis")
-            poly_ax[0].set_ylabel("Background Yield")
+                    bkg = bkg_yield[selection]
+                    if len(bkg) == 0: 
+                        bkg_mean[poly][res_fac].append(-9999)
+                        bkg_pull[poly][res_fac].append(-9999)
+                        sig_mean[poly][res_fac].append(-9999)
+                        sig_pull[poly][res_fac].append(-9999)
+                        ul_mean[poly][res_fac].append(-9999)
+                        continue
+                        
 
-            poly_ax[1].plot(ap_masses, bkg_pull[poly], 'o-', label=("poly order: %s" % poly))
-            poly_ax[1].set_xlabel("$A'$ mass hypothesis")
-            poly_ax[1].set_ylabel("Background Yield Pull")
-            poly_ax[1].set_ylim([-2, 2])
+                    bkg_err = bkg_yield_err[selection]
+                    plot_bkg(bkg_axes[mass], bkg, bkg_err, 15, label=("poly order: %s, ref factor: %s" % (poly, res_fac)))
+                    bkg_mean[poly][res_fac].append(np.mean(bkg))
+                    bkg_pull[poly][res_fac].append(np.mean((bkg - np.mean(bkg))/bkg_err))
 
-            poly_ax[2].plot(ap_masses, sig_mean[poly], 'o-', label=("poly order: %s" % poly))
-            poly_ax[2].set_xlabel("$A'$ mass hypothesis")
-            poly_ax[2].set_ylabel("Signal Yield")
+                    sig = sig_yield[selection]
+                    sig_err = sig_yield_err[selection]
+                    plot_sig(sig_axes[mass], sig, sig_err, 15, label=("poly order: %s, ref factor: %s" % (poly, res_fac)))
+                    sig_mean[poly][res_fac].append(np.mean(sig))
+                    sig_pull[poly][res_fac].append(np.mean(sig/sig_err))
 
-            poly_ax[3].plot(ap_masses, sig_pull[poly], 'o-', label=("poly order: %s" % poly))
-            poly_ax[3].set_xlabel("$A'$ mass hypothesis")
-            poly_ax[3].set_ylabel("Signal Yield Pull")
-            poly_ax[3].set_ylim([-2, 2])
+                    plot_ul(ul_axes[mass], upper_limit[selection], 15, label=("poly order: %s, ref factor: %s" % (poly, res_fac)))
+                    ul_mean[poly][res_fac].append(np.median(upper_limit[selection]))
 
-            poly_ax[4].plot(ap_masses, ul_mean[poly], 'o-', label=("poly order: %s" % poly))
-            poly_ax[4].set_xlabel("$A'$ mass hypothesis")
-            poly_ax[4].set_ylabel("Signal Upper Limit")
-        
+                poly_ax[0].plot(ap_masses, bkg_mean[poly][res_fac], 'o-', label=("poly order: %s, ref factor: %s" % (poly, res_fac)))
+                poly_ax[0].set_xlabel("$A'$ mass hypothesis")
+                poly_ax[0].set_ylabel("Background Yield")
+                poly_ax[0].legend()
+
+                poly_ax[1].plot(ap_masses, bkg_pull[poly][res_fac], 'o-', label=("poly order: %s, ref factor: %s" % (poly, res_fac)))
+                poly_ax[1].set_xlabel("$A'$ mass hypothesis")
+                poly_ax[1].set_ylabel("Background Yield Pull")
+                poly_ax[1].set_ylim([-2, 2])
+                poly_ax[1].legend()
+
+                poly_ax[2].plot(ap_masses, sig_mean[poly][res_fac], 'o-', label=("poly order: %s, ref factor: %s" % (poly, res_fac)))
+                poly_ax[2].set_xlabel("$A'$ mass hypothesis")
+                poly_ax[2].set_ylabel("Signal Yield")
+                poly_ax[2].legend()
+
+                poly_ax[3].plot(ap_masses, sig_pull[poly][res_fac], 'o-', label=("poly order: %s, ref factor: %s" % (poly, res_fac)))
+                poly_ax[3].set_xlabel("$A'$ mass hypothesis")
+                poly_ax[3].set_ylabel("Signal Yield Pull")
+                poly_ax[3].set_ylim([-2, 2])
+                poly_ax[3].legend()
+
+                poly_ax[4].plot(ap_masses, ul_mean[poly][res_fac], 'o-', label=("poly order: %s, ref factor: %s" % (poly, res_fac)))
+                poly_ax[4].set_xlabel("$A'$ mass hypothesis")
+                poly_ax[4].set_ylabel("Signal Upper Limit")
+                poly_ax[4].legend()
+
         for mass in ap_masses:
             pdf.savefig(bkg_figures[mass], bbox_inches='tight')
             pdf.savefig(sig_figures[mass], bbox_inches='tight')
