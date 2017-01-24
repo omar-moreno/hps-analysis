@@ -17,20 +17,23 @@ def plot_sig(axes, sig, sig_err, bins, **params):
     if 'label' in params:
         label = params['label']
 
-    ax[0].hist(sig, bins, histtype='step', lw=1.5, label=label)
+    ax[0].hist(sig, bins, histtype='step', lw=1.5, normed=True, label=label)
     ax[0].set_xlabel('Signal Yield')
     ax[0].set_ylabel('AU')
+    ax[0].set_yscale('log')
     ax[0].legend()
 
-    ax[1].hist(sig_err, bins, histtype='step', lw=1.5, label=label)
+    ax[1].hist(sig_err, bins, histtype='step', lw=1.5, normed=True, label=label)
     ax[1].set_xlabel('Signal Yield Error')
     ax[1].set_ylabel('AU')
+    ax[1].set_yscale('log')
     ax[1].legend()
 
     pull = sig/sig_err
-    ax[2].hist(pull, bins, histtype='step', lw=1.5, label=label)
+    ax[2].hist(pull, bins, histtype='step', lw=1.5, normed=True, label=label)
     ax[2].set_xlabel('Pull')
     ax[2].set_ylabel('AU')
+    ax[2].set_yscale('log')
     ax[2].legend()
 
 def plot_bkg(axes, bkg, bkg_err, bins, **params):
@@ -41,25 +44,28 @@ def plot_bkg(axes, bkg, bkg_err, bins, **params):
     if 'label' in params:
         label=params['label']
 
-    ax[0].hist(bkg, bins, histtype='step', lw=1.5, label=label)
+    ax[0].hist(bkg, bins, histtype='step', lw=1.5, normed=True, label=label)
     ax[0].set_xlabel('Background Yield')
     ax[0].set_ylabel('AU')
+    ax[0].set_yscale('log')
     ax[0].legend()
 
-    ax[1].hist(bkg_err, bins, histtype='step', lw=1.5, label=label)
+    ax[1].hist(bkg_err, bins, histtype='step', lw=1.5, normed=True, label=label)
     ax[1].set_xlabel('Background Yield Error')
     ax[1].set_ylabel('AU')
+    ax[1].set_yscale('log')
     ax[1].legend()
 
     pull = bkg/bkg_err
-    ax[2].hist(pull, bins, histtype='step', lw=1.5, label=label)
+    ax[2].hist(pull, bins, histtype='step', lw=1.5, normed=True, label=label)
     ax[2].set_xlabel('Pull')
     ax[2].set_ylabel('AU')
+    ax[2].set_yscale('log')
     ax[2].legend()
 
 def plot_ul(axes, ul, bins, label):
 
-    axes.hist(ul, bins, histtype='step', lw=1.5, label=label)
+    axes.hist(ul, bins, histtype='step', lw=1.5, normed=True, label=label)
     axes.set_xlabel('Signal Upper Limit')
     axes.set_ylabel('AU')
     axes.legend()
@@ -157,7 +163,7 @@ def make_plots(rec):
     poly_fig = {}
     poly_ax = {}
     for fig_n in xrange(0, 5):
-        poly_fig[fig_n], poly_ax[fig_n] = plt.subplots(nrows=1, ncols=1, figsize=(10, 10))
+        poly_fig[fig_n], poly_ax[fig_n] = plt.subplots(nrows=1, ncols=1, figsize=(20, 10))
 
     with PdfPages("results.pdf") as pdf :
 
@@ -210,28 +216,31 @@ def make_plots(rec):
                 poly_ax[0].plot(ap_masses, bkg_mean[poly][res_fac], 'o-', label=("poly order: %s, ref factor: %s" % (poly, res_fac)))
                 poly_ax[0].set_xlabel("$A'$ mass hypothesis")
                 poly_ax[0].set_ylabel("Background Yield")
+                poly_ax[0].set_ylim([0, 1e6])
                 poly_ax[0].legend()
 
                 poly_ax[1].plot(ap_masses, bkg_pull[poly][res_fac], 'o-', label=("poly order: %s, ref factor: %s" % (poly, res_fac)))
                 poly_ax[1].set_xlabel("$A'$ mass hypothesis")
                 poly_ax[1].set_ylabel("Background Yield Pull")
-                poly_ax[1].set_ylim([-2, 2])
+                poly_ax[1].set_ylim([-0.1, 0.1])
                 poly_ax[1].legend()
 
                 poly_ax[2].plot(ap_masses, sig_mean[poly][res_fac], 'o-', label=("poly order: %s, ref factor: %s" % (poly, res_fac)))
                 poly_ax[2].set_xlabel("$A'$ mass hypothesis")
                 poly_ax[2].set_ylabel("Signal Yield")
+                poly_ax[2].set_ylim([-500, 500])
                 poly_ax[2].legend()
 
                 poly_ax[3].plot(ap_masses, sig_pull[poly][res_fac], 'o-', label=("poly order: %s, ref factor: %s" % (poly, res_fac)))
                 poly_ax[3].set_xlabel("$A'$ mass hypothesis")
                 poly_ax[3].set_ylabel("Signal Yield Pull")
-                poly_ax[3].set_ylim([-2, 2])
+                poly_ax[3].set_ylim([-0.2, 0.2])
                 poly_ax[3].legend()
 
                 poly_ax[4].plot(ap_masses, ul_mean[poly][res_fac], 'o-', label=("poly order: %s, ref factor: %s" % (poly, res_fac)))
                 poly_ax[4].set_xlabel("$A'$ mass hypothesis")
                 poly_ax[4].set_ylabel("Signal Upper Limit")
+                poly_ax[4].set_ylim([0, 6000])
                 poly_ax[4].legend()
 
         for mass in ap_masses:
