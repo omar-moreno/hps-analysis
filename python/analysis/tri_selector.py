@@ -17,7 +17,8 @@ def main() :
 
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='')
-    parser.add_argument("-l", "--file_list", help="List of ROOT files to process.")
+    parser.add_argument("-f", "--file_list", help="List of ROOT files to process.")
+    parser.add_argument("-l", "--lumi",      help="Luminosity")
     args = parser.parse_args()
 
     if not args.file_list:
@@ -38,9 +39,9 @@ def main() :
 
     rec = rnp.root2array(root_files, 'results')
 
-    apply_tri_selection(rec)
+    apply_tri_selection(rec, args.lumi)
 
-def apply_tri_selection(rec):
+def apply_tri_selection(rec, lumi):
 
     # Use the 'Bayesian Methods for Hackers' style
     plt.style.use('bmh')
@@ -108,7 +109,11 @@ def apply_tri_selection(rec):
 
     wab_cuts = l1_cut & l2_cut & positron_d0_cut & asym_cut
 
+    base_selection = base_selection & l1_cut & l2_cut & positron_d0_cut
     selection = base_selection & wab_cuts
+
+
+    file = r.TFile("invariant_mass_l1l2_d0.root", "recreate")
 
     with PdfPages("trident_selection.pdf") as pdf :
         
@@ -558,11 +563,17 @@ def apply_tri_selection(rec):
         pdf.savefig()
         plt.close()
 
-        file = r.TFile("invariant_mass_final_selection.root", "recreate")
-        mass_histo = r.TH1F("invariant_mass", "invariant_mass", 2000, 0., 0.1)
-        #mass_histo = r.TH1F("invariant_mass", "invariant_mass", 50, .0, 0.1)
-        for value in np.nditer(mass[selection]) : 
-            mass_histo.Fill(value)
+        #mass_histo = r.TH1F("invariant_mass", "invariant_mass", 2000, 0., 0.1)
+        mass_histo = r.TH1F("invariant_mass", "invariant_mass", 50, 0., 0.1)
+        mass_histo.GetXaxis().SetTitle("m(e^+e^-) (GeV)")
+        mass_histo.GetYaxis().SetTitle("#sigma(#mub)")
+        bin_width = mass_histo.GetXaxis().GetBinWidth(1)
+        
+        weights = np.empty(len(mass[base_selection]))
+        if lumi: weights.fill(1/(bin_width*float(lumi)))
+        else: weights.fill(1)
+        #rnp.fill_hist(mass_histo, mass[selection], weights=weights)
+        rnp.fill_hist(mass_histo, mass[base_selection], weights=weights)
         
         mass_histo.Write()
         file.Close()
