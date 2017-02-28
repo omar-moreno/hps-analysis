@@ -3,15 +3,13 @@
 from __future__ import division
 
 import argparse
+import collections
 import sys
 import math
-import matplotlib
-import matplotlib.pyplot as plt
 import numpy as np
+import Plotter
 import root_numpy as rnp
 import ROOT as r
-
-from matplotlib.backends.backend_pdf import PdfPages
 
 def main() :
 
@@ -43,18 +41,6 @@ def main() :
 
 def apply_tri_selection(rec, lumi):
 
-    # Use the 'Bayesian Methods for Hackers' style
-    plt.style.use('bmh')
-    matplotlib.rcParams.update({'font.size': 12})
-    matplotlib.rcParams['axes.facecolor'] = 'white'
-    matplotlib.rcParams['legend.numpoints'] = 1        
-
-    # Set the default font size for plots and legends    
-    matplotlib.rcParams.update({'font.size': 16, 'legend.fontsize': 9})
-
-    # Enable the use of LaTeX in titles
-    plt.rc('text', usetex=True)
-
     electron_p      = rec['electron_p']
     electron_px     = rec['electron_px']
     electron_py     = rec['electron_py']
@@ -83,203 +69,69 @@ def apply_tri_selection(rec, lumi):
     mass = rec['invariant_mass']
     v0_p = rec["v0_p"]
 
+    top_track_cluster_dt = top_cluster_time - top_time
+    abs_top_track_cluster_dt = np.absolute(top_track_cluster_dt - 43)
+    bot_track_cluster_dt = bot_cluster_time - bot_time
+    abs_bot_track_cluster_dt = np.absolute(bot_track_cluster_dt - 43)
+    track_cluster_dt_cut = ((abs_top_track_cluster_dt < 4.5) 
+                            & (abs_bot_track_cluster_dt < 4.5))
 
+    asym = (electron_pt - positron_pt)/(electron_pt + positron_pt)
     #
     # Define cuts
     #
-    # Accidentals
-    radiative_cut = v0_p > 0.8*1.056
-    v0_p_cut = v0_p < 1.2*1.056
-    chi2_cut = (electron_chi2 < 40) & (positron_chi2 < 40)
+    cuts = collections.OrderedDict()
 
-    top_track_cluster_dt = top_cluster_time - top_time
-    bot_track_cluster_dt = bot_cluster_time - bot_time
-    track_cluster_dt_cut = ((np.absolute(top_track_cluster_dt - 43) < 4.5) 
-                            & (np.absolute(bot_track_cluster_dt - 43) < 4.5))
-    cluster_time_diff_cut = np.absolute(cluster_time_diff) < 2
+    # Base cuts used to reduce accidentals
+    cuts['Radiative cut'] = v0_p > 0.8*1.056 # GeV
+    cuts['abs(Ecal clust time - trk time) - 43 ns < 4.5'] = track_cluster_dt_cut
+    cuts['$p(V_0) < 1.2 E_{beam}$'] = v0_p < 1.2*1.056 # GeV
+    cuts['trk $\chi^2$ < 40'] = (electron_chi2 < 40) & (positron_chi2 < 40)
+    cuts['Ecal clust pair dt < 2 ns'] = np.absolute(cluster_time_diff) < 2
+    cuts['l1 & l2 hit'] = (positron_has_l1 == 1) & (positron_has_l2 == 1)
+    cuts['$d_{0}(e^+) < 1.1$'] = positron_d0 < 1.1
+    cuts['$p_t(e^-) - p_t(e^+)/p_t(e^-) + p_t(e^+)$'] = asym < .47
     
-    base_selection = radiative_cut & v0_p_cut & chi2_cut & track_cluster_dt_cut & cluster_time_diff_cut
-
-    # WABS
-    l1_cut      = (positron_has_l1 == 1)
-    l2_cut      = (positron_has_l2 == 1)
-    positron_d0_cut = positron_d0 < 1.1
-    asym = (electron_pt - positron_pt)/(electron_pt + positron_pt)
-    asym_cut = asym < .47
-
-    wab_cuts = l1_cut & l2_cut & positron_d0_cut & asym_cut
-
-    base_selection = base_selection & l1_cut & l2_cut & positron_d0_cut
-    selection = base_selection & wab_cuts
-
+    labels = ['Opp. Ecal clusters, trk-cluster match $\chi^2 < 10$, $p(e^-)<0.75E_{beam}$']
+    clust_dt_arr = [cluster_time_diff]
+    v0_p_arr = [v0_p]
+    electron_p_arr = [electron_p]
+    
+    cut = np.ones(len(v0_p), dtype=bool)
+    for key, value in cuts.iteritems():
+        cut = cut & value
+        clust_dt_arr.append(cluster_time_diff[cut])
+        v0_p_arr.append(v0_p[cut])
+        electron_p_arr.append(electron_p[cut])
+        labels.append(key)
 
     file = r.TFile("invariant_mass_l1l2_d0.root", "recreate")
 
-    with PdfPages("trident_selection.pdf") as pdf :
+    plt = Plotter.Plotter('trident_selection.pdf')
+    
+    plt.plot_hists(clust_dt_arr, 
+                   np.linspace(-10, 10, 201),
+                   labels=labels,
+                   xlabel='Top cluster time - Bottom cluster time (ns)', 
+                   ylog=True)
+
+    plt.plot_hists(v0_p_arr, 
+                   np.linspace(0, 1.5, 151),
+                   labels=labels,
+                   label_loc=2,
+                   xlabel='$V_{0}(p)$ (GeV)', 
+                   ylog=True)
+    
+    plt.plot_hists(electron_p_arr, 
+                   np.linspace(0, 1.5, 151), 
+                   labels=labels, 
+                   xlabel='$p(e^-)$ (GeV)',
+                   ylog=True)
+    plt.close()
+
+
+'''
         
-        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(10, 10)) 
-        bins = np.linspace(-10, 10, 201)
-        ax.hist(cluster_time_diff, bins, histtype="step", lw=1.5, 
-                label="Opp. ECal cluster, trk-cluster match $\chi^2 < 10$, $p(e^-) < 0.75E_{beam}$")
-        ax.hist(cluster_time_diff[radiative_cut], bins, histtype="step", lw=1.5, label="Radiative cut")
-        ax.hist(cluster_time_diff[radiative_cut & track_cluster_dt_cut],
-                bins, histtype="step", lw=1.5, label="abs((Ecal cluster time - track time) - 43) $<$ 4.5")
-        ax.hist(cluster_time_diff[radiative_cut & track_cluster_dt_cut & v0_p_cut],
-                bins, histtype="step", lw=1.5, label="$p(V_0) < 1.2E_{beam}$")
-        ax.hist(cluster_time_diff[radiative_cut  & track_cluster_dt_cut & v0_p_cut & chi2_cut],
-                bins, histtype="step", lw=1.5, label="track $\chi^2 < 40$")
-        ax.hist(cluster_time_diff[radiative_cut  
-                                  & track_cluster_dt_cut 
-                                  & v0_p_cut 
-                                  & chi2_cut 
-                                  & cluster_time_diff_cut],
-                bins, histtype="step", lw=1.5,
-                label="Top cluster time - Bot cluster time $<$ 2 ns")
-        ax.hist(cluster_time_diff[radiative_cut  
-                                  & track_cluster_dt_cut 
-                                  & v0_p_cut 
-                                  & chi2_cut 
-                                  & cluster_time_diff_cut
-                                  & l1_cut & l2_cut
-                                 ],
-                bins, histtype="step", lw=1.5,
-                label="l1 and l2 hit")
-        ax.hist(cluster_time_diff[radiative_cut  
-                                  & track_cluster_dt_cut 
-                                  & v0_p_cut 
-                                  & chi2_cut 
-                                  & cluster_time_diff_cut
-                                  & l1_cut & l2_cut
-                                  & positron_d0_cut
-                                 ],
-                bins, histtype="step", lw=1.5,
-                label="$d0(e^+) < 1.1$")
-        ax.hist(cluster_time_diff[radiative_cut  
-                                  & track_cluster_dt_cut 
-                                  & v0_p_cut 
-                                  & chi2_cut 
-                                  & cluster_time_diff_cut
-                                  & l1_cut & l2_cut
-                                  & positron_d0_cut
-                                  & asym_cut
-                                 ],
-                bins, histtype="step", lw=1.5,
-                label="$p_t(e^-) - p_t(e^+)/p_t(e^-) + p_t(e^+) < .47$")
-        ax.set_xlabel("Top cluster time - Bottom cluster time (ns)")
-        ax.set_yscale("symlog")
-        ax.legend(loc=2, framealpha=0.0, frameon=False)
-        pdf.savefig()
-        plt.close()
-
-
-        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(10, 10)) 
-        bins = np.linspace(0, 1.5, 151)
-        ax.hist(v0_p, bins, histtype="step", lw=1.5, 
-                label="Opp. ECal cluster, trk-cluster match $\chi^2 < 10$, $p(e^-) < 0.75E_{beam}$")
-        ax.hist(v0_p[radiative_cut], bins, histtype="step", lw=1.5, label="Radiative cut")
-        ax.hist(v0_p[radiative_cut & track_cluster_dt_cut],
-                bins, histtype="step", lw=1.5, label="abs((Ecal cluster time - track time) - 43) $<$ 4.5")
-        ax.hist(v0_p[radiative_cut & track_cluster_dt_cut & v0_p_cut],
-                bins, histtype="step", lw=1.5, label="$p(V_0) < 1.2E_{beam}$")
-        ax.hist(v0_p[radiative_cut  & track_cluster_dt_cut & v0_p_cut & chi2_cut],
-                bins, histtype="step", lw=1.5, label="track $\chi^2 < 40$")
-        ax.hist(v0_p[radiative_cut  
-                                  & track_cluster_dt_cut 
-                                  & v0_p_cut 
-                                  & chi2_cut 
-                                  & cluster_time_diff_cut],
-                bins, histtype="step", lw=1.5,
-                label="Top cluster time - Bot cluster time $<$ 2 ns")
-        ax.hist(v0_p[radiative_cut  
-                                  & track_cluster_dt_cut 
-                                  & v0_p_cut 
-                                  & chi2_cut 
-                                  & cluster_time_diff_cut
-                                  & l1_cut & l2_cut
-                                 ],
-                bins, histtype="step", lw=1.5,
-                label="l1 and l2 hit")
-        ax.hist(v0_p[radiative_cut  
-                                  & track_cluster_dt_cut 
-                                  & v0_p_cut 
-                                  & chi2_cut 
-                                  & cluster_time_diff_cut
-                                  & l1_cut & l2_cut
-                                  & positron_d0_cut
-                                 ],
-                bins, histtype="step", lw=1.5,
-                label="$d0(e^+) < 1.1$")
-        ax.hist(v0_p[radiative_cut  
-                                  & track_cluster_dt_cut 
-                                  & v0_p_cut 
-                                  & chi2_cut 
-                                  & cluster_time_diff_cut
-                                  & l1_cut & l2_cut
-                                  & positron_d0_cut
-                                  & asym_cut
-                                 ],
-                bins, histtype="step", lw=1.5,
-                label="$p_t(e^-) - p_t(e^+)/p_t(e^-) + p_t(e^+) < .47$")
-        ax.set_xlabel("$p(V_{0})$ (GeV)")
-        ax.legend(loc=2, framealpha=0.0, frameon=False)
-        pdf.savefig()
-        plt.close()
-
-        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(10, 10)) 
-        bins = np.linspace(0, 1.5, 151)
-        ax.hist(electron_p, bins, histtype="step", lw=1.5, 
-                label="Opp. ECal cluster, trk-cluster match $\chi^2 < 10$, $p(e^-) < 0.75E_{beam}$")
-        ax.hist(electron_p[radiative_cut], bins, histtype="step", lw=1.5, label="Radiative cut")
-        ax.hist(electron_p[radiative_cut & track_cluster_dt_cut],
-                bins, histtype="step", lw=1.5, label="abs((Ecal cluster time - track time) - 43) $<$ 4.5")
-        ax.hist(electron_p[radiative_cut & track_cluster_dt_cut & v0_p_cut],
-                bins, histtype="step", lw=1.5, label="$p(V_0) < 1.2E_{beam}$")
-        ax.hist(electron_p[radiative_cut  & track_cluster_dt_cut & v0_p_cut & chi2_cut],
-                bins, histtype="step", lw=1.5, label="track $\chi^2 < 40$")
-        ax.hist(electron_p[radiative_cut  
-                                  & track_cluster_dt_cut 
-                                  & v0_p_cut 
-                                  & chi2_cut 
-                                  & cluster_time_diff_cut],
-                bins, histtype="step", lw=1.5,
-                label="Top cluster time - Bot cluster time $<$ 2 ns")
-        ax.hist(electron_p[radiative_cut  
-                                  & track_cluster_dt_cut 
-                                  & v0_p_cut 
-                                  & chi2_cut 
-                                  & cluster_time_diff_cut
-                                  & l1_cut & l2_cut
-                                 ],
-                bins, histtype="step", lw=1.5,
-                label="l1 and l2 hit")
-        ax.hist(electron_p[radiative_cut  
-                                  & track_cluster_dt_cut 
-                                  & v0_p_cut 
-                                  & chi2_cut 
-                                  & cluster_time_diff_cut
-                                  & l1_cut & l2_cut
-                                  & positron_d0_cut
-                                 ],
-                bins, histtype="step", lw=1.5,
-                label="$d0(e^+) < 1.1$")
-        ax.hist(electron_p[radiative_cut  
-                                  & track_cluster_dt_cut 
-                                  & v0_p_cut 
-                                  & chi2_cut 
-                                  & cluster_time_diff_cut
-                                  & l1_cut & l2_cut
-                                  & positron_d0_cut
-                                  & asym_cut
-                                 ],
-                bins, histtype="step", lw=1.5,
-                label="$p_t(e^-) - p_t(e^+)/p_t(e^-) + p_t(e^+) < .47$")
-        ax.set_xlabel("$p(e^-)$ (GeV)")
-        ax.legend(loc=1, framealpha=0.0, frameon=False)
-        pdf.savefig()
-        plt.close()
-
-        
-        top_track_cluster_dt = np.absolute(top_track_cluster_dt - 43)
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(10, 10)) 
         bins = np.linspace(0, 60, 121)
         ax.hist(top_track_cluster_dt, bins, histtype="step", lw=1.5, 
@@ -577,7 +429,7 @@ def apply_tri_selection(rec, lumi):
         
         mass_histo.Write()
         file.Close()
-
+'''
 
 
 if __name__ == "__main__" : 
