@@ -7,33 +7,32 @@
 !     Main EGS header file      
       include 'include/egs5_h.f'
 
-!     bounds contains
-!       ecut: An array of region-dependent charged particle cutoff
+!     bounds contains the COMMON block BOUNDS with the variables
+!       ECUT: An array of region-dependent charged particle cutoff
 !       energies in MeV.
-!       pcut: An array of region-dependent photon cutoff energies in
+!       PCUT: An array of region-dependent photon cutoff energies in
 !       MeV.
       include 'include/egs5_bounds.f'
-!     media contains
+!     media contains the COMMON block MEDIA with the variables
+!       NMED number of media being used
+!       MEDIA Array containing the density of the media in g/cm3
+!       IRAYLM Array of flags for turning on Rayleigh scattering in the
+!       various regions.
+!       CHARD Array used to define the dimensions in cm (default 1 cm)
+!       MED Array containing the medium index for each region
       include 'include/egs5_media.f'
-!     misc contains
-      include 'include/egs5_misc.f'
-!     thresh contains
-      include 'include/egs5_thresh.f'
-!     useful contains
-      include 'include/egs5_useful.f'
-!     usersrc contains
+!     usersrc contains the COMMON block USERSC with the variable 
+!       EMAXE: The maximum total energy of any electron in the
+!       simulation
       include 'include/egs5_usersc.f'
-!      
+!     edge contains the COMMON block EDGE2 with the variable IEDGFL     
       include 'include/egs5_edge.f'
-!  
+!     misc contains the COMMON block MISC with the variable IMPACR
+      include 'include/egs5_misc.f'
+!     randomm contains the COMMON block RLUXDAT with the variables
+!       INSEED: The initial seed
+!       LUXLEV: Luxury level used by RANLUX
       include 'include/randomm.f'
-
-!     bounds contains ecut and pcut
-!     media contains the array media
-!     misc contains med
-!     thresh contains ae and ap
-!     useful contains RM
-!     usersc contains emaxe
 
 !     Set the target thickness in cm. This value will be used by the
 !     subroutine howfar
@@ -54,7 +53,8 @@
 !-----------------------------------------------------------------------
 ! Step 2: pegs5-call
 !-----------------------------------------------------------------------
-      call block_set                 ! Initialize some general variables
+!     Initialize some general variables
+      call block_set                 
 
 !     Define the media before calling PEGS5
       nmed=1
@@ -87,14 +87,13 @@
       ecut(2) = 0.521
 !     Terminate photon histories at 0.001 MeV in the W target
       pcut(2) = 0.001
-      iphter(i) = 0       ! Switches for PE-angle sampling
-      iedgfl(i) = 1       ! K & L-edge fluorescence
-      iauger(i) = 0       ! K & L-Auger
-      iraylr(i) = 1       ! Rayleigh scattering
-      lpolar(i) = 0       ! Linearly-polarized photon scattering
-      incohr(i) = 0       ! S/Z rejection
-      iprofr(i) = 0       ! Doppler broadening
-      impacr(i) = 1       ! Electron impact ionization
+!     This turns on explicit modeling of K and L-edge fluorescent
+!     photons.
+      iedgfl(i) = 1
+!     This turns on Rayleigh scattering
+      iraylr(i) = 1
+!     This turns on electron impact ionization
+      impacr(i) = 1
 
 !     --------------------------------------------------------
 !     Random number seeds.  Must be defined before call hatch
@@ -166,7 +165,21 @@
 !       ir: Index of particle's current region
 !       np: The particle currently being pointed to
       include 'include/egs5_stack.f'
+      include 'include/egs5_useful.f'
 
+!     Arguments
+      integer iarg
+
+      real*8 kine
+
+      if (iarg.eq.3.and.ir(np).eq.3) then
+        if (iq(np).eq.0) then
+          print *, "Photon kinetic energy", e(np)
+        else 
+          print *, "Electron kinetic energy", e(np)-RM
+        end if
+      end if
+      return
       end
 !
 !
