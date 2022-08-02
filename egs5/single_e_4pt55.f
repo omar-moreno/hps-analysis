@@ -33,6 +33,9 @@
 !       INSEED: The initial seed
 !       LUXLEV: Luxury level used by RANLUX
       include 'include/randomm.f'
+!     useful contains the COMMON block USEFUL with the variable
+!       RM: Rest mass of the electron
+      include 'include/egs5_useful.f'
 
 !     Set the target thickness in cm. This value will be used by the
 !     subroutine howfar
@@ -50,6 +53,10 @@
       integer i, j
       character*24 medarr(1)
 
+      open(UNIT=6, FILE='egs5job.out', STATUS='UNKNOWN')
+      open(UNIT=7, FILE='electron.csv', STATUS='UNKNOWN')
+    
+      print *, 'Preparing for PEGS5 call.'
 !-----------------------------------------------------------------------
 ! Step 2: pegs5-call
 !-----------------------------------------------------------------------
@@ -58,7 +65,7 @@
 
 !     Define the media before calling PEGS5
       nmed=1
-      medarr(1)='W-RAYLEIGH              '
+      medarr(1)='W-RAY                   '
 
       do j=1,nmed
         do i=1,24
@@ -89,11 +96,11 @@
       pcut(2) = 0.001
 !     This turns on explicit modeling of K and L-edge fluorescent
 !     photons.
-      iedgfl(i) = 1
+      iedgfl(2) = 1
 !     This turns on Rayleigh scattering
-      iraylr(i) = 1
+      iraylr(2) = 1
 !     This turns on electron impact ionization
-      impacr(i) = 1
+      impacr(2) = 1
 
 !     --------------------------------------------------------
 !     Random number seeds.  Must be defined before call hatch
@@ -119,23 +126,33 @@
 !     Set the direction cosines
       ui = 0.0
       vi = 0.0
-      wi = 0.0
+      wi = 1.0
 !     Set the incident region to be 2 
       iri = 2
 !     Weight factor in importance sampling
       wti = 0
-!     ? 
 !     Total energy of the incident particle in MeV
-      ei=4500
+      ei=4550.D0
+      ekin=ei+iqi*RM
 
 !-----------------------------------------------------------------------
 ! Step 5:   hatch-call
 !-----------------------------------------------------------------------
 
 !     Maximum total energy
-      emaxe = ei
+      if (iqi.ne.0) then
+        emaxe = ei
+      else
+        emaxe = ei + RM
+      end if
+
+      open(UNIT=KMPI,FILE='pgs5job.pegs5dat',STATUS='old')
+      open(UNIT=KMPO,FILE='egs5job.dummy',STATUS='unknown')
 
       call hatch
+
+      close(UNIT=KMPI)
+      close(UNIT=KMPO)
 !-----------------------------------------------------------------------
 ! Step 6:  Initialization-for-howfar
 !-----------------------------------------------------------------------
@@ -146,8 +163,14 @@
 !-----------------------------------------------------------------------
 
       do i=1,10
+        write(7,100) 'Event: ', i
+100     format(A, A)
         call shower(iqi, ei, xi, yi, zi, ui, vi, wi, iri, wti)
-      enddo
+      end do
+
+      close(UNIT=6)
+      close(UNIT=7) 
+
       stop
       end
 
@@ -171,6 +194,8 @@
       integer iarg
 
       real*8 kine
+
+      print *, 'In ausgab with argument', iarg
 
       if (iarg.eq.3.and.ir(np).eq.3) then
         if (iq(np).eq.0) then
@@ -206,7 +231,6 @@
     
 !     The distance from the particle to the target boundary
       real*8 d
-
 
 !     First, check if the particle has exited the target i.e. not in
 !     region 2. If it's outside the target, discard the particle.
