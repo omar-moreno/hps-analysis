@@ -54,7 +54,7 @@
       character*24 medarr(1)
 
       open(UNIT=6, FILE='egs5job.out', STATUS='UNKNOWN')
-      open(UNIT=7, FILE='electron.csv', STATUS='UNKNOWN')
+      open(UNIT=100, FILE='electron.csv', STATUS='UNKNOWN')
     
       print *, 'Preparing for PEGS5 call.'
 !-----------------------------------------------------------------------
@@ -156,19 +156,18 @@
 !-----------------------------------------------------------------------
 ! Step 6:  Initialization-for-howfar
 !-----------------------------------------------------------------------
-      tgtdz = 0.002
+      tgtdz = 0.0002
 
 !-----------------------------------------------------------------------
 ! Step 7:  Initialization-for-ausgab
 !-----------------------------------------------------------------------
 
-      do i=1,10
-        write(7,100) 'Event: ', i
-100     format(A, A)
+      do i=1,1000000
+!        write(100,*) 'Event: ', i
         call shower(iqi, ei, xi, yi, zi, ui, vi, wi, iri, wti)
       end do
 
-      close(UNIT=6)
+      close(UNIT=100)
       close(UNIT=7) 
 
       stop
@@ -193,16 +192,16 @@
 !     Arguments
       integer iarg
 
-      real*8 kine
+      real*8 kine, thetaz
 
-      print *, 'In ausgab with argument', iarg
+      if (np.ne.1) then
+        return
+      end if
 
       if (iarg.eq.3.and.ir(np).eq.3) then
-        if (iq(np).eq.0) then
-          print *, "Photon kinetic energy", e(np)
-        else 
-          print *, "Electron kinetic energy", e(np)-RM
-        end if
+          kine = e(np) - RM
+          thetaz = acos(w(np))*1000
+          write(100, *) kine, thetaz 
       end if
       return
       end
