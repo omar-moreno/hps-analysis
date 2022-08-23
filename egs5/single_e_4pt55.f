@@ -36,11 +36,17 @@
 !     useful contains the COMMON block USEFUL with the variable
 !       RM: Rest mass of the electron
       include 'include/egs5_useful.f'
+!
+      include 'include/egs5_epcont.f'
 
 !     Set the target thickness in cm. This value will be used by the
 !     subroutine howfar
       common/geo/tgtdz
       real*8 tgtdz
+
+      common/sim/enp, emax
+      integer enp
+      real*8 emax
 
       real*8 ei, ekin, xi, yi, zi, ui, vi, wi, wti
       integer iqi, iri
@@ -156,14 +162,19 @@
 !-----------------------------------------------------------------------
 ! Step 6:  Initialization-for-howfar
 !-----------------------------------------------------------------------
-      tgtdz = 0.0002
+      tgtdz = 0.002
 
 !-----------------------------------------------------------------------
 ! Step 7:  Initialization-for-ausgab
 !-----------------------------------------------------------------------
 
-      do i=1,1000000
+      iausfl(8) = 1
+
+      write(100, *) 'Energy (GeV), Theta z (mrad)'
+      do i=1,10000000
 !        write(100,*) 'Event: ', i
+        enp = 1
+        emax = 0
         call shower(iqi, ei, xi, yi, zi, ui, vi, wi, iri, wti)
       end do
 
@@ -188,20 +199,47 @@
 !       np: The particle currently being pointed to
       include 'include/egs5_stack.f'
       include 'include/egs5_useful.f'
+      include 'include/egs5_epcont.f'
 
 !     Arguments
       integer iarg
 
       real*8 kine, thetaz
+      
+      common/sim/enp, emax
+      integer enp
+      real*8 emax
+      integer i
 
-      if (np.ne.1) then
+!      write(100, *) 'index:', np, 'energy:', e(np), 'charge:', iq(np)
+!      write(100, *) 'time:', time(np), 'eloss:', deinitial
+
+      if (iarg.eq.7) then
+        do i = 1, np
+          if (iq(i).eq.-1.and.e(i).gt.emax) then
+            enp = i
+            emax = e(i)
+          end if
+        end do
+!        write(100, *) 'Brem has occurred.'
+!        write(100, *) 'index: ', np, 'energy:', e(np), 'charge:', iq(np)
+!        write(100, *) 'i-1:',np-1,'energy:',e(np-1),'charge:',iq(np-1)
+!        if (e(np).gt.3000) then
         return
       end if
+!      if (np.ne.1) then
+!        write(100, *) 'Returning index: ', np
+!        return
+!      end if
 
-      if (iarg.eq.3.and.ir(np).eq.3) then
+      if (iarg.eq.3.and.ir(np).eq.3.and.iq(np).eq.-1.and.np.eq.enp) then
+
+!          write(100, *) 'Particle index: ', np
+!          write(100, *) 'Energy: ', e(np), 'Time: ', time(np)
+          
           kine = e(np) - RM
-          thetaz = acos(w(np))*1000
-          write(100, *) kine, thetaz 
+          thetaz = acos(w(np))
+          write(100, *) kine, ',', thetaz 
       end if
       return
       end
@@ -235,7 +273,8 @@
 !     region 2. If it's outside the target, discard the particle.
       if ( ir(np).eq.3 ) then
 !     Setting idisc to a non-zero value tells the simulation to
-!     discard the particle.        
+!     discard the particle.       
+         
         idisc = 1
         return
 !     Now consider the case where the particle is in the target and
